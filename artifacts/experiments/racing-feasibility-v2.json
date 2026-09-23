@@ -1,0 +1,85 @@
+{
+  "name": "racing-feasibility",
+  "createdAt": "2026-09-23T22:18:06.863Z",
+  "claim": "Feasibility of the racing game for the System One / System Two method (pre-registered go/no-go criteria).",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020,
+    10021,
+    10022,
+    10023,
+    10024,
+    10025,
+    10026,
+    10027,
+    10028,
+    10029,
+    10030
+  ],
+  "config": {
+    "teacher": "racing-rollout-d1",
+    "margins": [
+      0.85,
+      0.95,
+      1.05,
+      1.15,
+      1.25
+    ],
+    "horizon": 40,
+    "tau": 0.006666666666666667,
+    "imitationTrainEpisodes": 40,
+    "imitationDevEpisodes": 10,
+    "epochs": 30
+  },
+  "results": {
+    "criterion1_onTrack": {
+      "value": 1,
+      "threshold": "≥ 0.90",
+      "pass": true
+    },
+    "criterion2_progressRatio": {
+      "value": 1.1021718729232282,
+      "threshold": "≥ 1.10",
+      "pass": true,
+      "planner": 1189.5126059946829,
+      "controller": 1079.2442042998302
+    },
+    "criterion3_exactTies": {
+      "value": 0.0015555555555555555,
+      "threshold": "< 0.20",
+      "pass": true
+    },
+    "criterion4_imitationAgreement": {
+      "value": 0.8216666666666667,
+      "threshold": "≥ 0.85",
+      "pass": false,
+      "trainStates": 24000,
+      "devStates": 6000
+    },
+    "gapDistribution": {
+      "below0_05": 0.2355,
+      "below0_1": 0.2361111111111111,
+      "below0_25": 0.25305555555555553,
+      "below1": 0.7647222222222222
+    }
+  }
+}

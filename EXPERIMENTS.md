@@ -26,6 +26,11 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 9 | Lander: satisficing margin and preference for the autopilot's action | Imitation diagnostics (capacity, inputs, autopilot imitation) on training data. The quick 30-seed check of the earlier model used seeds 1–30 | train, 8000+; **1–30** | **Partly** | Dev: `lander-imitation` (below) |
 | 10 | Lander: do not adopt the acceptability head | Prototype on 30 seeds | 1–30 | **Yes** | Dev: `lander-acceptability` (below) |
 | 11 | Seed splits, multi-seed studies, one script per claim | Methodological review before publication | – | – | `add-research-protocol` |
+| 12 | Racing: fix the drag coefficient (0.02 → 0.002·v²) | Top speed was capped at ~14 m/s, so corners never mattered (planner = controller = 820 m) | 20000–20049 | No | `add-racing-game` design |
+| 13 | Racing planner: rollouts at speed margins {0.85 … 1.25} | Planner/controller progress: +0.5% (controller margin only) → +8.8% (3 margins) → +11.2% (5 margins) | 20000–20019 | No | `add-racing-game` design |
+| 14 | Racing feasibility spike (go/no-go criteria fixed in the proposal) | `pnpm exp racing-feasibility`: on-track 100% ✓, progress ratio 1.102 ✓, exact ties 0.16% ✓, imitation agreement **80.7% ✗** (threshold 85%) | dev 10001–10030 (+ train) | No | **Stopped**; see below |
+| 15 | Racing: declared τ revision (τ = smallest preference step / 3) and a single re-run of criterion 4 | Agreement 82.2% ✗ | dev (+ train) | No | Failed → design revision |
+| 16 | Racing: incremental steering commands {left, hold, right} × pedal | Adjacent-steering-level confusions were 16.4 of 17.8 error points. Full spike re-run: 100% ✓, 1.198 ✓, 0.58% ✓, agreement **80.5% ✗** | dev (+ train) | No | **Stopped**; decision with the author |
 
 ## Re-validation on the dev split
 
@@ -101,3 +106,34 @@ on 30 dev seeds. On average 2.9 of the 4 actions are acceptable.
 | hybrid + guard @ 0.95 | 25/30 | 107.3 | 4,839 | 48.4% |
 
 The decision holds: System One alone is strong, but no threshold gives a hybrid that beats it cheaply.
+
+### `racing-feasibility` (decision 14)
+
+Criteria fixed in the `add-racing-game` proposal before measuring. Planner: rollout algorithm, horizon 40,
+margins {0.85, 0.95, 1.05, 1.15, 1.25}. 30 dev seeds for criteria 1–3. For criterion 4: 40 training episodes
+(24,000 states) and 10 dev episodes (6,000 states), a 64×64 network, 30 epochs, τ = 0.05.
+
+| Criterion | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| 1. Planner stays on track | 100% | ≥ 90% | pass |
+| 2. Planner ÷ controller progress | 1.102 (1,190 m vs 1,079 m) | ≥ 1.10 | pass (narrow) |
+| 3. Exact ties | 0.16% | < 20% | pass |
+| 4. Imitation agreement (dev) | 80.7% | ≥ 85% | **fail** |
+
+Gap distribution: 23.5% of decisions have a top-2 gap below 0.05, where only the tie-breaking preferences
+(0.02–0.3) separate the actions. **Disclosed flaw:** the design said τ would be chosen from this gap
+analysis, but the spike script used a fixed τ = 0.05 without it. Per the protocol, implementation stopped
+here and the decision on how to proceed went to the author.
+
+Re-runs (the criteria and thresholds never changed):
+
+| Version | Change | 1. on track | 2. progress ratio | 3. exact ties | 4. agreement |
+| --- | --- | --- | --- | --- | --- |
+| v1 (`racing-feasibility-v1.json`) | first design, τ = 0.05 | 100% | 1.102 | 0.16% | 80.7% ✗ |
+| v2 (`racing-feasibility-v2.json`) | τ rule (0.0067) | 100% | 1.102 | 0.16% | 82.2% ✗ |
+| v3 (`racing-feasibility.json`) | incremental steering + τ rule | 100% | 1.198 | 0.58% | 80.5% ✗ |
+
+v3 error breakdown on dev states: "hold vs turn" 13.1 points, pedal 4.9, left vs right 0.1. The planner switches
+action on 38.9% of consecutive decisions and matches the base controller on only 21.1% of them. As on the
+lander, when a continuous control problem is discretized, the planner's choice depends on fine timing that
+a small classifier cannot predict confidently.

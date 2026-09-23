@@ -1,0 +1,5 @@
+schema: spec-driven
+
+context: |
+  Language: en
+  All artifacts, code, comments, tests and documentation must be written in English.

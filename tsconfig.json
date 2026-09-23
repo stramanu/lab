@@ -25,6 +25,7 @@
     "scripts",
     "test",
     "web",
+    "experiments",
     "vitest.config.ts",
     "vite.config.ts"
   ]

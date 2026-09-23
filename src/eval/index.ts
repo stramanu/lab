@@ -3,3 +3,4 @@ export * from './hypotheses';
 export * from './report';
 export * from './runner';
 export * from './seeds';
+export * from './aggregate';

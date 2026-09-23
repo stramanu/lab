@@ -1,6 +1,21 @@
 node_modules/
+# Generated outputs. Only the published evidence is tracked: seed splits,
+# final study results and experiment results (small JSON files).
 artifacts/*
 !artifacts/eval-seeds.json
+!artifacts/experiments/
+artifacts/experiments/*
+!artifacts/experiments/*.json
+!artifacts/snake/
+artifacts/snake/*
+!artifacts/snake/study/
+artifacts/snake/study/*
+!artifacts/snake/study/study-test-200.json
+!artifacts/lander/
+artifacts/lander/*
+!artifacts/lander/study/
+artifacts/lander/study/*
+!artifacts/lander/study/study-test-200.json
 .DS_Store
 dist/
 .playwright-mcp/

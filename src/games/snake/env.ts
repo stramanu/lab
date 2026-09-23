@@ -28,7 +28,7 @@ export class SnakeEnv implements Env {
   readonly name = 'snake';
   readonly numActions = 3;
   readonly actionNames = SNAKE_ACTIONS;
-  readonly encodingSize = SNAKE_ENCODING_SIZE;
+  readonly encodingSize: number = SNAKE_ENCODING_SIZE;
   readonly defaultAction = STRAIGHT;
 
   readonly config: SnakeConfig;

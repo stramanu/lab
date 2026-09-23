@@ -1,0 +1,90 @@
+{
+  "name": "lander-acceptability",
+  "createdAt": "2026-09-23T19:27:37.253Z",
+  "claim": "An acceptability head makes System One much stronger alone on the lander, but no threshold gives a cheap, reliable hybrid.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020,
+    10021,
+    10022,
+    10023,
+    10024,
+    10025,
+    10026,
+    10027,
+    10028,
+    10029,
+    10030
+  ],
+  "config": {
+    "delta": 1.5,
+    "teacher": "lander-rollout-d2",
+    "bootstrapEpisodes": 150,
+    "daggerRounds": 6,
+    "episodesPerRound": 20
+  },
+  "results": {
+    "meanAcceptableActions": 2.90657546337158,
+    "systemOneAlone": {
+      "landed": "26/30",
+      "score": 106.78124999999997,
+      "costPerMove": 1,
+      "escalationRate": 0
+    },
+    "hybrid@0.8": {
+      "landed": "25/30",
+      "score": 103.27013888888887,
+      "costPerMove": 299.9094781682641,
+      "escalationRate": 0.03879507074395253
+    },
+    "hybrid+guard@0.8": {
+      "landed": "24/30",
+      "score": 99.88472222222222,
+      "costPerMove": 367.90292490118577,
+      "escalationRate": 0.047114624505928855
+    },
+    "hybrid@0.9": {
+      "landed": "19/30",
+      "score": 78.58194444444446,
+      "costPerMove": 1839.8671352074966,
+      "escalationRate": 0.19829317269076305
+    },
+    "hybrid+guard@0.9": {
+      "landed": "20/30",
+      "score": 82.43194444444445,
+      "costPerMove": 2027.6865833785987,
+      "escalationRate": 0.23157704146297303
+    },
+    "hybrid@0.95": {
+      "landed": "21/30",
+      "score": 89.11840277777786,
+      "costPerMove": 4780.314764841943,
+      "escalationRate": 0.46761757902852735
+    },
+    "hybrid+guard@0.95": {
+      "landed": "25/30",
+      "score": 107.25798611111124,
+      "costPerMove": 4838.674535603715,
+      "escalationRate": 0.4841331269349845
+    }
+  }
+}

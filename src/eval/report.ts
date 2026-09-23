@@ -4,6 +4,8 @@ import type { ConditionResult } from './runner';
 export interface EvalReport {
   game: string;
   createdAt: string;
+  /** Seed split the report was computed on (absent in reports made before splits existed). */
+  split?: string;
   seeds: { count: number; first: number; last: number };
   model: { params: number; weightsKB: number; calibrationT: number; trainingSeconds: number | null };
   hardware: Record<string, string | number>;
@@ -17,7 +19,7 @@ const lpad = (s: string, n: number) => (s.length >= n ? s : ' '.repeat(n - s.len
 /** Human-readable summary table, one row per condition, followed by the hypotheses. */
 export function formatReport(r: EvalReport): string {
   const lines: string[] = [];
-  lines.push(`${r.game} — ${r.seeds.count} eval seeds (${r.seeds.first}..${r.seeds.last})`);
+  lines.push(`${r.game} — ${r.split ?? 'test'} split, ${r.seeds.count} seeds (${r.seeds.first}..${r.seeds.last})`);
   lines.push(
     `model: ${r.model.params} params, ${r.model.weightsKB.toFixed(1)} KB, T=${r.model.calibrationT.toFixed(2)}` +
       (r.model.trainingSeconds !== null ? `, trained in ${r.model.trainingSeconds}s` : ''),

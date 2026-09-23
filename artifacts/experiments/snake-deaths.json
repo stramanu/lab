@@ -1,0 +1,231 @@
+{
+  "name": "snake-deaths",
+  "createdAt": "2026-09-23T19:04:53.400Z",
+  "claim": "Without the guard, most hybrid deaths are sealed by a confident System One move that disagrees with the planner.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020,
+    10021,
+    10022,
+    10023,
+    10024,
+    10025,
+    10026,
+    10027,
+    10028,
+    10029,
+    10030
+  ],
+  "config": {
+    "threshold": 0.9,
+    "teacherDepth": 1,
+    "surviveMoves": 300,
+    "lookback": 100,
+    "model": "experiments/models/snake (pipeline seed 1)"
+  },
+  "results": {
+    "deaths": 30,
+    "sealedByConfidentMismatch": 20,
+    "perDeath": [
+      {
+        "seed": 10001,
+        "score": 86,
+        "lastMismatch": 67,
+        "lastSavable": 67
+      },
+      {
+        "seed": 10002,
+        "score": 96,
+        "lastMismatch": null,
+        "lastSavable": null
+      },
+      {
+        "seed": 10003,
+        "score": 99,
+        "lastMismatch": 1,
+        "lastSavable": 18
+      },
+      {
+        "seed": 10004,
+        "score": 37,
+        "lastMismatch": 1,
+        "lastSavable": 29
+      },
+      {
+        "seed": 10005,
+        "score": 75,
+        "lastMismatch": 4,
+        "lastSavable": 4
+      },
+      {
+        "seed": 10006,
+        "score": 84,
+        "lastMismatch": 22,
+        "lastSavable": 22
+      },
+      {
+        "seed": 10007,
+        "score": 53,
+        "lastMismatch": 1,
+        "lastSavable": 21
+      },
+      {
+        "seed": 10008,
+        "score": 93,
+        "lastMismatch": 11,
+        "lastSavable": 11
+      },
+      {
+        "seed": 10009,
+        "score": 74,
+        "lastMismatch": 1,
+        "lastSavable": 3
+      },
+      {
+        "seed": 10010,
+        "score": 153,
+        "lastMismatch": 4,
+        "lastSavable": 4
+      },
+      {
+        "seed": 10011,
+        "score": 118,
+        "lastMismatch": 7,
+        "lastSavable": 7
+      },
+      {
+        "seed": 10012,
+        "score": 49,
+        "lastMismatch": 35,
+        "lastSavable": 35
+      },
+      {
+        "seed": 10013,
+        "score": 53,
+        "lastMismatch": 1,
+        "lastSavable": 85
+      },
+      {
+        "seed": 10014,
+        "score": 131,
+        "lastMismatch": 10,
+        "lastSavable": 33
+      },
+      {
+        "seed": 10015,
+        "score": 63,
+        "lastMismatch": 66,
+        "lastSavable": 66
+      },
+      {
+        "seed": 10016,
+        "score": 82,
+        "lastMismatch": 9,
+        "lastSavable": 9
+      },
+      {
+        "seed": 10017,
+        "score": 63,
+        "lastMismatch": 25,
+        "lastSavable": 25
+      },
+      {
+        "seed": 10018,
+        "score": 57,
+        "lastMismatch": 15,
+        "lastSavable": 15
+      },
+      {
+        "seed": 10019,
+        "score": 54,
+        "lastMismatch": 5,
+        "lastSavable": 5
+      },
+      {
+        "seed": 10020,
+        "score": 121,
+        "lastMismatch": 11,
+        "lastSavable": 11
+      },
+      {
+        "seed": 10021,
+        "score": 79,
+        "lastMismatch": 17,
+        "lastSavable": 17
+      },
+      {
+        "seed": 10022,
+        "score": 93,
+        "lastMismatch": 15,
+        "lastSavable": 15
+      },
+      {
+        "seed": 10023,
+        "score": 95,
+        "lastMismatch": 4,
+        "lastSavable": 7
+      },
+      {
+        "seed": 10024,
+        "score": 40,
+        "lastMismatch": 15,
+        "lastSavable": 15
+      },
+      {
+        "seed": 10025,
+        "score": 120,
+        "lastMismatch": 7,
+        "lastSavable": 7
+      },
+      {
+        "seed": 10026,
+        "score": 68,
+        "lastMismatch": 49,
+        "lastSavable": 49
+      },
+      {
+        "seed": 10027,
+        "score": 96,
+        "lastMismatch": 49,
+        "lastSavable": 57
+      },
+      {
+        "seed": 10028,
+        "score": 72,
+        "lastMismatch": 27,
+        "lastSavable": 27
+      },
+      {
+        "seed": 10029,
+        "score": 109,
+        "lastMismatch": 1,
+        "lastSavable": 12
+      },
+      {
+        "seed": 10030,
+        "score": 51,
+        "lastMismatch": 5,
+        "lastSavable": 5
+      }
+    ]
+  }
+}

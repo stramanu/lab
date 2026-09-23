@@ -7,6 +7,7 @@ import { fitTemperature } from '../nn/calibration';
 import { softLabels } from '../nn/math';
 import { Mlp } from '../nn/mlp';
 import { exportPolicy, type SerializedPolicy } from '../nn/serialize';
+import { TRAIN_SEED_START } from '../eval/seeds';
 import { Trainer, evaluate } from '../nn/train';
 import { ReplayDataset } from './dataset';
 
@@ -45,7 +46,7 @@ export interface PipelineConfig {
 
 export const DEFAULT_PIPELINE: PipelineConfig = {
   seed: 1,
-  trainSeedStart: 1_000_000,
+  trainSeedStart: TRAIN_SEED_START,
   hidden: [64, 64],
   tau: 0.1,
   lr: 1e-3,

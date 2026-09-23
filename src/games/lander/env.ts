@@ -10,7 +10,7 @@ export class LanderEnv implements Env {
   readonly name = 'lander';
   readonly numActions = 4;
   readonly actionNames = LANDER_ACTIONS;
-  readonly encodingSize = LANDER_ENCODING_SIZE;
+  readonly encodingSize: number = LANDER_ENCODING_SIZE;
   readonly defaultAction = NONE;
   readonly config: LanderConfig;
   world: World;

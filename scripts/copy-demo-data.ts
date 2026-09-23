@@ -7,7 +7,7 @@ const dst = 'web/public/data';
 mkdirSync(dst, { recursive: true });
 for (const [from, to] of [
   ['weights.json', 'snake-weights.json'],
-  ['eval-report.json', 'snake-eval-report.json'],
+  ['eval-report-test.json', 'snake-eval-report.json'],
 ]) {
   const path = join(src, from);
   if (!existsSync(path)) {

@@ -1,28 +1,40 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkHypotheses, evalSeeds, formatReport, runCondition, standardConditions, type ConditionResult } from '../src/eval';
+import { SPLITS, TRAIN_SEED_START, checkHypotheses, formatReport, parseSplit, runCondition, seedsFor, splitOf, standardConditions, type ConditionResult } from '../src/eval';
 import { SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
 import { Mlp } from '../src/nn';
 import { DEFAULT_PIPELINE, TrainingPipeline } from '../src/training';
 
-describe('evaluation seeds', () => {
-  it('the published file matches evalSeeds() and has 200 seeds', () => {
+describe('seed splits', () => {
+  it('the published file matches the splits and keeps the original 200 test seeds', () => {
     const file = JSON.parse(readFileSync(join(__dirname, '..', 'artifacts', 'eval-seeds.json'), 'utf8'));
-    expect(file.seeds).toEqual(evalSeeds());
-    expect(file.seeds).toHaveLength(200);
+    expect(file.test).toEqual([...SPLITS.test]);
+    expect(file.dev).toEqual([...SPLITS.dev]);
+    expect(file.test).toEqual(Array.from({ length: 200 }, (_, i) => i + 1));
   });
 
-  it('is disjoint from training seeds', () => {
+  it('train, dev and test are pairwise disjoint', () => {
+    const test = new Set(SPLITS.test);
+    expect(SPLITS.dev.filter((s) => test.has(s))).toEqual([]);
+    expect(Math.max(...SPLITS.test, ...SPLITS.dev)).toBeLessThan(TRAIN_SEED_START);
+    expect(DEFAULT_PIPELINE.trainSeedStart).toBe(TRAIN_SEED_START);
     const p = new TrainingPipeline(
       { name: 'snake', makeEnv: () => new SnakeEnv(), teacher: new SnakeTeacher({ depth: 0 }) },
       { maxEpisodeSteps: 50, bootstrapEpisodes: 3, datasetCapacity: 1000, validationCapacity: 100, hidden: [4, 4], bootstrapEpochs: 1 },
     );
     p.bootstrap();
-    const train = new Set(p.trainingSeeds());
-    expect(train.size).toBe(3);
-    expect(evalSeeds().filter((s) => train.has(s))).toEqual([]);
-    expect(Math.max(...evalSeeds())).toBeLessThan(DEFAULT_PIPELINE.trainSeedStart);
+    expect(p.trainingSeeds().every((s) => splitOf(s) === 'train')).toBe(true);
+  });
+
+  it('dev is the default split and test must be explicit', () => {
+    expect(parseSplit(undefined)).toBe('dev');
+    expect(parseSplit('test')).toBe('test');
+    expect(() => parseSplit('train')).toThrow();
+    expect(seedsFor('dev', 3)).toEqual([10_001, 10_002, 10_003]);
+    expect(splitOf(5)).toBe('test');
+    expect(splitOf(10_050)).toBe('dev');
+    expect(splitOf(500)).toBeNull();
   });
 });
 

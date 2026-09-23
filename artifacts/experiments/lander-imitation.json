@@ -1,0 +1,64 @@
+{
+  "name": "lander-imitation",
+  "createdAt": "2026-09-23T19:26:40.631Z",
+  "claim": "Lander imitation is limited by action equivalence, not by network capacity or missing inputs.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "teacher": "lander-rollout-d2",
+    "tau": 0.03,
+    "trainEpisodes": 150,
+    "devEpisodes": 20,
+    "epochs": 40
+  },
+  "results": {
+    "plannerLabels_64x64": {
+      "trainAgreement": 0.7465173572228443,
+      "devAgreement": 0.6902095894343956
+    },
+    "plannerLabels_256x256": {
+      "trainAgreement": 0.8138409854423292,
+      "devAgreement": 0.7568188343382142
+    },
+    "plannerLabels_richInputs_64x64": {
+      "trainAgreement": 0.7132362821948488,
+      "devAgreement": 0.6666666666666666
+    },
+    "autopilotLabels_64x64": {
+      "trainAgreement": 0.7579656666131879,
+      "devAgreement": 0.7371334836989952
+    },
+    "autopilotLabels_256x256": {
+      "trainAgreement": 0.8307396117439435,
+      "devAgreement": 0.7799876973549313
+    },
+    "autopilotActionMix": {
+      "none": 0.416854623744105,
+      "main": 0.42423621078531887,
+      "left": 0.07955710477752717,
+      "right": 0.07935206069304901
+    },
+    "autopilotSwitchRate": 0.5993438589296699
+  }
+}

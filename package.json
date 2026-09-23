@@ -18,7 +18,9 @@
     "train:lander": "tsx scripts/train.ts --game lander",
     "eval:lander": "tsx scripts/eval.ts --game lander",
     "train": "tsx scripts/train.ts",
-    "eval": "tsx scripts/eval.ts"
+    "eval": "tsx scripts/eval.ts",
+    "study": "tsx scripts/study.ts",
+    "exp": "tsx experiments/run.ts"
   },
   "engines": {
     "node": ">=22"

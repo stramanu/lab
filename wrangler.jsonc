@@ -1,0 +1,11 @@
+{
+  // Static site for lab.emanuelestrazzullo.dev: assets only, no Worker code.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lab",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "lab.emanuelestrazzullo.dev", "custom_domain": true }]
+}

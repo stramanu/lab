@@ -19,3 +19,5 @@ artifacts/lander/study/*
 .DS_Store
 dist/
 .playwright-mcp/
+site/
+.wrangler/

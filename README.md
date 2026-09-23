@@ -203,6 +203,18 @@ One static page, with no backend, for every game in the registry (Snake and land
 
 The pretrained weights are run 1 of each study, a choice fixed in advance rather than the best run.
 
+**Live:** <https://lab.emanuelestrazzullo.dev/systemone/>
+
+### Deployment
+
+The site is a Cloudflare Worker with static assets only (`wrangler.jsonc`), served on the Custom Domain
+`lab.emanuelestrazzullo.dev`. The demo lives under `/systemone/`, and `/` redirects there.
+
+```sh
+pnpm site:build     # assemble site/ (demo in site/systemone/ + _redirects, _headers, 404.html from deploy/)
+pnpm site:deploy    # site:build + wrangler deploy (needs `pnpm exec wrangler login` once)
+```
+
 ## Layout
 
 ```

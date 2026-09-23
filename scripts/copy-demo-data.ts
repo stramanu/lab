@@ -1,19 +1,27 @@
-/** Copies the trained weights and the evaluation report into the demo's public data folder. */
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+/**
+ * Publishes the demo data for every registered game that has a finished test study:
+ * `<game>-weights.json` (run 1 of the study, fixed in advance, not the best run) and
+ * `<game>-study.json` (the aggregated 5-run test results).
+ */
+import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { GAMES } from '../src/games/registry';
 
-const src = 'artifacts/snake';
 const dst = 'web/public/data';
 mkdirSync(dst, { recursive: true });
-for (const [from, to] of [
-  ['weights.json', 'snake-weights.json'],
-  ['eval-report-test.json', 'snake-eval-report.json'],
-]) {
-  const path = join(src, from);
-  if (!existsSync(path)) {
-    console.error(`Missing ${path}: run \`pnpm train:snake\` and \`pnpm eval:snake\` first.`);
-    process.exit(1);
+rmSync(join(dst, 'snake-eval-report.json'), { force: true });
+
+let published = 0;
+for (const name of Object.keys(GAMES)) {
+  const weights = join('artifacts', name, 'study', 'run-1', 'weights.json');
+  const study = join('artifacts', name, 'study', 'study-test-200.json');
+  if (!existsSync(weights) || !existsSync(study)) {
+    console.warn(`Skipping ${name}: run \`pnpm study --game ${name} --runs 5 --split test\` first.`);
+    continue;
   }
-  copyFileSync(path, join(dst, to));
-  console.log(`${path} → ${join(dst, to)}`);
+  copyFileSync(weights, join(dst, `${name}-weights.json`));
+  copyFileSync(study, join(dst, `${name}-study.json`));
+  console.log(`${name}: ${weights} and ${study} → ${dst}/`);
+  published++;
 }
+if (!published) process.exit(1);

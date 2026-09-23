@@ -148,3 +148,23 @@ describe('serialization', () => {
     expect(json.weights.length).toBeLessThan(100_000);
   });
 });
+
+describe('activation trace', () => {
+  it('matches the policy and exposes ReLU hidden activations', () => {
+    const net = new Mlp({ inputSize: 12, hidden: [8, 6], outputSize: 3, seed: 4 });
+    const rng = Rng.stream(2, 'trace');
+    for (let s = 0; s < 20; s++) {
+      const x = Float32Array.from({ length: 12 }, () => rng.normal());
+      const t = net.trace(x);
+      const p = net.probs(x, null, 1);
+      const max = Math.max(...t.logits);
+      const e = Array.from(t.logits, (z) => Math.exp(z - max));
+      const sum = e.reduce((a, b) => a + b, 0);
+      e.forEach((v, k) => expect(Math.abs(v / sum - p[k])).toBeLessThan(1e-6));
+      expect(t.h1.length).toBe(8);
+      expect(t.h2.length).toBe(6);
+      expect(Array.from(t.h1).every((v) => v >= 0)).toBe(true);
+      expect(Array.from(t.input)).toEqual(Array.from(x));
+    }
+  });
+});

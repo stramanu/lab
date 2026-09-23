@@ -139,6 +139,8 @@ export interface ScatterPoint {
   color: string;
   label: string;
   highlight?: boolean;
+  /** Half-length of a vertical error bar, in y units. */
+  yErr?: number;
 }
 
 export interface ScatterLayout {
@@ -159,7 +161,7 @@ export function drawScatter(
 ): ScatterLayout {
   const { ctx, w, h } = fitCanvas(canvas);
   ctx.clearRect(0, 0, w, h);
-  const pad = { ...PAD, b: 34, l: 44 };
+  const pad = { ...PAD, b: 34, l: 44, r: 18 };
   const x = logScale(xDomain[0], xDomain[1], pad.l, w - pad.r);
   const y = linearScale(yDomain[0], yDomain[1], h - pad.b, pad.t, 4);
   const ink = cssVar(canvas, '--ink-3');
@@ -201,6 +203,20 @@ export function drawScatter(
     const px = x(Math.max(p.x, xDomain[0]));
     const py = y(p.y);
     positions.push({ px, py, point: p });
+    if (p.yErr) {
+      const top = y(Math.min(p.y + p.yErr, yDomain[1]));
+      const bottom = y(Math.max(p.y - p.yErr, yDomain[0]));
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, top);
+      ctx.lineTo(px, bottom);
+      ctx.moveTo(px - 3, top);
+      ctx.lineTo(px + 3, top);
+      ctx.moveTo(px - 3, bottom);
+      ctx.lineTo(px + 3, bottom);
+      ctx.stroke();
+    }
     drawMarker(ctx, p.shape, px, py, p.highlight ? 6 : 4.5, p.color);
   }
   return { x, y, positions };

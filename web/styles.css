@@ -140,6 +140,35 @@ h1 em {
   color: var(--ink-2);
 }
 
+/* ——— Game selector ——— */
+
+.game-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 20px 0 6px;
+  flex-wrap: wrap;
+}
+
+.game-tabs button {
+  font: 400 26px/1 var(--serif);
+  padding: 8px 16px 10px;
+  border-color: var(--panel-edge);
+  min-height: 44px;
+}
+
+.game-tabs button[aria-current='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--panel);
+}
+
+.blurb {
+  margin: 6px 0 0;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-3);
+  max-width: 90ch;
+}
+
 /* ——— Layout ——— */
 
 .layout {
@@ -151,7 +180,7 @@ h1 em {
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 0.9fr);
   grid-template-areas:
     'board decision controls'
-    'board decision controls'
+    'network network network'
     'training training frontier';
   align-items: start;
 }
@@ -171,6 +200,9 @@ h1 em {
 .frontier-panel {
   grid-area: frontier;
 }
+.network-panel {
+  grid-area: network;
+}
 
 @media (max-width: 1080px) {
   .layout {
@@ -178,6 +210,7 @@ h1 em {
     grid-template-areas:
       'board board'
       'decision controls'
+      'network network'
       'training training'
       'frontier frontier';
   }
@@ -191,7 +224,7 @@ h1 em {
   }
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'board' 'decision' 'controls' 'training' 'frontier';
+    grid-template-areas: 'board' 'decision' 'controls' 'network' 'training' 'frontier';
   }
 }
 
@@ -219,6 +252,9 @@ h1 em {
 }
 .frontier-panel {
   animation-delay: 0.33s;
+}
+.network-panel {
+  animation-delay: 0.3s;
 }
 
 @keyframes rise {
@@ -257,7 +293,7 @@ h3 small {
 
 .board-wrap {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: var(--board-aspect, 1 / 1);
   width: 100%;
 }
 
@@ -720,5 +756,63 @@ input[type='number'] {
   }
   .cost-value {
     font-size: 42px;
+  }
+}
+
+/* ——— Network view ——— */
+
+.network-wrap {
+  position: relative;
+  height: 440px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--s1) 7%, transparent), transparent 70%),
+    var(--board);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.network-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.net-label {
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  font: 500 11px/1 var(--mono);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.net-label[data-chosen='true'] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fallback {
+  padding: 24px;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-3);
+}
+
+.warm {
+  color: #e8793a;
+  font-weight: 600;
+}
+
+.cool {
+  color: #3a86e8;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .network-wrap {
+    height: 320px;
   }
 }

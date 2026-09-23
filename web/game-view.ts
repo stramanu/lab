@@ -1,21 +1,30 @@
+import type { Env } from '../src/core/types';
 import { DX, DY } from '../src/games/snake/config';
 import type { SnakeEnv } from '../src/games/snake/env';
 import { cssVar, fitCanvas } from './charts';
 
 export type DecisionState = 'system1' | 'guard' | 'system2';
 
+/** What every game's board renderer implements. */
+export interface BoardView {
+  reset(): void;
+  /** Called after each move with the environment already stepped. */
+  record(env: Env, state: DecisionState, action: number): void;
+  draw(env: Env, last: DecisionState): void;
+}
+
 export function decisionState(decider: string, reason?: string): DecisionState {
   if (decider !== 'system2') return 'system1';
   return reason === 'guard' ? 'guard' : 'system2';
 }
 
-const STATE_VAR: Record<DecisionState, string> = { system1: '--s1', guard: '--guard', system2: '--s2' };
+export const STATE_VAR: Record<DecisionState, string> = { system1: '--s1', guard: '--guard', system2: '--s2' };
 
 /**
  * Renders the board: a fading trail of recent decisions under the body, the
  * snake with its head colored by who decided the last move, and the food.
  */
-export class GameView {
+export class SnakeView implements BoardView {
   /** Decision state of the move that brought the head onto each cell, for the trail. */
   private trail = new Map<number, { state: DecisionState; age: number }>();
 
@@ -25,7 +34,8 @@ export class GameView {
     this.trail.clear();
   }
 
-  record(env: SnakeEnv, state: DecisionState): void {
+  record(e: Env, state: DecisionState): void {
+    const env = e as SnakeEnv;
     for (const [cell, t] of this.trail) {
       t.age++;
       if (t.age > 60) this.trail.delete(cell);
@@ -33,7 +43,8 @@ export class GameView {
     this.trail.set(env.head(), { state, age: 0 });
   }
 
-  draw(env: SnakeEnv, last: DecisionState): void {
+  draw(e: Env, last: DecisionState): void {
+    const env = e as SnakeEnv;
     const { ctx, w, h } = fitCanvas(this.canvas);
     const size = Math.min(w, h);
     const cell = size / env.width;

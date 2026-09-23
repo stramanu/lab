@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>System One · Snake</title>
+    <title>System One · live</title>
     <meta
       name="description"
-      content="A 17k-parameter network learns Snake from a planner in your browser tab, and knows when to ask for help."
+      content="Tiny networks learn games from a slow planner in your browser tab, and know when to ask for help."
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%23f2ede2%27/%3E%3Crect x=%272%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%276%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%2710%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%231f8a5b%27/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -20,21 +20,23 @@
   <body>
     <header class="masthead">
       <div class="masthead-top">
-        <span class="kicker">Experiment 01 · Snake</span>
+        <span class="kicker">Experiment · System One / System Two</span>
         <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
       </div>
       <h1>System <em>One</em></h1>
       <p class="lede">
-        A 17,283-parameter network learns Snake from a slow planner, inside this tab. It plays on intuition,
-        a cheap check catches its dangerous moves, and it asks the planner only when it is unsure.
+        A tiny network learns a game from a slow planner, inside this tab. It plays on intuition, a cheap check
+        catches its dangerous moves, and it asks the planner only when it is unsure.
       </p>
+      <nav class="game-tabs" aria-label="Game" id="game-tabs"></nav>
+      <p class="blurb" id="game-blurb"></p>
     </header>
 
     <main class="layout">
       <section class="panel board-panel" aria-labelledby="board-title">
         <h2 id="board-title" class="visually-hidden">Live game</h2>
-        <div class="board-wrap">
-          <canvas id="board" aria-label="Snake board" role="img"></canvas>
+        <div class="board-wrap" id="board-wrap">
+          <canvas id="board" aria-label="Game board" role="img"></canvas>
           <div id="rec-badge" class="rec-badge" hidden>● REC</div>
         </div>
         <dl class="readout">
@@ -67,9 +69,12 @@
         </ul>
         <div class="cost">
           <span class="cost-value" id="cost-value">–</span>
-          <span class="cost-label">compute units per move, now<br /><small>whole-game averages: planner 1,018 · hybrid + guard @0.7: 106</small></span>
+          <span class="cost-label">compute units per move, now<br /><small id="cost-context"></small></span>
         </div>
-        <p class="window-note">Over the last 1,000 moves. Late in a game the board is crowded and every search is cheaper, so compare with the averages only over whole games.</p>
+        <p class="window-note">
+          Over the last 1,000 moves. The cost of a search depends on the state (a crowded Snake board is cheap to
+          search), so compare with the averages only over whole games.
+        </p>
 
         <h3>System One's policy</h3>
         <canvas id="bars" class="bars" aria-label="Probability of each action" role="img"></canvas>
@@ -103,9 +108,21 @@
         <p class="hint" id="rec-hint"></p>
       </section>
 
+      <section class="panel network-panel" aria-labelledby="network-title">
+        <h2 id="network-title">Inside System One</h2>
+        <p class="sub">
+          The live forward pass behind the current decision. Nodes light up with their real activations, and only
+          the connections that contribute most to this decision are drawn (<span class="warm">positive</span>,
+          <span class="cool">negative</span>). Drag to orbit. The view re-runs the forward pass for display; that
+          work is not counted in the cost.
+        </p>
+        <div class="network-wrap" id="network"></div>
+        <p class="chart-legend" id="network-legend"></p>
+      </section>
+
       <section class="panel training-panel" aria-labelledby="training-title">
         <h2 id="training-title">Training in this tab</h2>
-        <p class="status" id="train-status">Idle. Training takes about two minutes on a laptop and runs in a background worker.</p>
+        <p class="status" id="train-status">Idle. Training takes one to two minutes on a laptop and runs in a background worker.</p>
         <div class="chart-block">
           <h3>Share of moves <small>per iteration</small></h3>
           <canvas id="chart-share" class="chart"></canvas>
@@ -123,10 +140,7 @@
 
       <section class="panel frontier-panel" aria-labelledby="frontier-title">
         <h2 id="frontier-title">Cost vs quality</h2>
-        <p class="sub">
-          200 fixed evaluation seeds. Up is better, left is cheaper. The target is the upper-left corner: at least
-          90% of the planner's score for a tenth of its cost.
-        </p>
+        <p class="sub" id="frontier-sub">Published results.</p>
         <div class="frontier-wrap">
           <canvas id="frontier" class="frontier" aria-label="Cost per move versus score for every condition" role="img"></canvas>
           <div id="tip" class="tip" hidden></div>
@@ -135,7 +149,7 @@
           <span><i class="mk square"></i>planner alone</span>
           <span><i class="mk ring"></i>hybrid, no guard</span>
           <span><i class="mk dot"></i>hybrid + guard</span>
-          <span><i class="mk diamond"></i>other</span>
+          <span><i class="mk diamond"></i>other / baseline</span>
           <span><i class="mk here"></i>live game</span>
         </p>
       </section>
@@ -143,9 +157,10 @@
 
     <footer class="colophon">
       <p>
-        Everything runs in your browser: the environment, the BFS planner, the network and its backprop, written from
-        scratch in TypeScript. Cost is counted in compute units: nodes expanded by the planner or the guard, and one
-        unit per network forward pass.
+        Everything runs in your browser: the environments, the planners, the network and its backprop, written from
+        scratch in TypeScript. Cost is counted in compute units: nodes expanded or physics steps simulated by the
+        planner or the guard, and one unit per network forward pass. Method, protocol, results and references are in
+        the repository README.
       </p>
     </footer>
 

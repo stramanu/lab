@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { EvalReport } from '../src/eval';
+import { getGame } from '../src/games/registry';
 import { formatTick, linearScale, logScale, niceTicks } from '../web/charts';
-import { costDomain, frontierPoints } from '../web/frontier';
+import { costDomain, frontierPoints, referencePoint, scoreDomain, type StudyFile } from '../web/frontier';
 
 describe('chart scales', () => {
   it('linear scale maps the domain onto the range', () => {
@@ -34,29 +34,39 @@ describe('chart scales', () => {
   });
 });
 
-describe('frontier', () => {
-  const report = JSON.parse(readFileSync(join(__dirname, '..', 'web', 'public', 'data', 'snake-eval-report.json'), 'utf8')) as EvalReport;
-  const points = frontierPoints(report);
+describe('frontier from studies', () => {
+  for (const game of ['snake', 'lander']) {
+    const study = JSON.parse(readFileSync(join(__dirname, '..', 'web', 'public', 'data', `${game}-study.json`), 'utf8')) as StudyFile;
+    const points = frontierPoints(study);
 
-  it('yields one point per condition', () => {
-    expect(points).toHaveLength(report.conditions.length);
-    expect(points.map((p) => p.label)).toEqual(report.conditions.map((c) => c.name));
-  });
+    it(`${game}: one point per condition, with intervals`, () => {
+      expect(points).toHaveLength(study.conditions.length);
+      expect(points.map((p) => p.label)).toEqual(study.conditions.map((c) => c.name));
+      expect(study.runs).toBe(5);
+      expect(study.split).toBe('test');
+      expect(points.some((p) => p.ci95 > 0)).toBe(true);
+    });
 
-  it('classifies kinds and flags zero-cost points', () => {
-    const kinds = new Set(points.map((p) => p.kind));
-    expect(kinds).toEqual(new Set(['system2', 'hybrid', 'hybrid+guard', 'other']));
-    expect(points.find((p) => p.label === 'random')!.zeroCost).toBe(true);
-    expect(points.find((p) => p.label === 'guard only')!.kind).toBe('other');
-  });
+    it(`${game}: kinds, zero-cost flag and reference planner`, () => {
+      expect(points.find((p) => p.label === 'random')!.zeroCost).toBe(true);
+      expect(points.find((p) => p.label === 'guard only')!.kind).toBe('other');
+      expect(new Set(points.map((p) => p.kind))).toContain('hybrid+guard');
+      const level = getGame(game).referenceLevel;
+      expect(referencePoint(points, level)?.kind).toBe('system2');
+    });
 
-  it('cost domain covers every non-zero cost in whole decades', () => {
-    const [lo, hi] = costDomain(points);
-    for (const p of points.filter((q) => !q.zeroCost)) {
-      expect(p.cost).toBeGreaterThanOrEqual(lo);
-      expect(p.cost).toBeLessThanOrEqual(hi);
-    }
-    expect(Math.log10(lo) % 1).toBe(0);
-    expect(Math.log10(hi) % 1).toBe(0);
+    it(`${game}: domains cover every point`, () => {
+      const [lo, hi] = costDomain(points);
+      const [, top] = scoreDomain(points);
+      for (const p of points.filter((q) => !q.zeroCost)) {
+        expect(p.cost).toBeGreaterThanOrEqual(lo);
+        expect(p.cost).toBeLessThanOrEqual(hi);
+        expect(p.score + p.ci95).toBeLessThanOrEqual(top);
+      }
+    });
+  }
+  it('lander study includes the autopilot baseline', () => {
+    const study = JSON.parse(readFileSync(join(__dirname, '..', 'web', 'public', 'data', 'lander-study.json'), 'utf8')) as StudyFile;
+    expect(frontierPoints(study).find((p) => p.label === 'autopilot')!.kind).toBe('baseline');
   });
 });

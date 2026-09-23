@@ -105,6 +105,15 @@ export class Mlp {
     return logitsBuf;
   }
 
+  /**
+   * Activations of every layer for one input (copies): input, hidden layers after
+   * ReLU and output logits, from the same forward pass as `logits` / `probs`.
+   */
+  trace(x: ArrayLike<number>): { input: Float64Array; h1: Float64Array; h2: Float64Array; logits: Float64Array } {
+    const logits = Float64Array.from(this.logits(x));
+    return { input: Float64Array.from(x), h1: Float64Array.from(this.a1), h2: Float64Array.from(this.a2), logits };
+  }
+
   /** Masked policy probabilities at the given temperature. */
   probs(x: ArrayLike<number>, legal: ArrayLike<number | boolean> | null, temperature = 1, out?: Float32Array): Float32Array {
     const o = out ?? new Float32Array(this.config.outputSize);

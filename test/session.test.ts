@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { EvalReport } from '../src/eval';
 import { SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
 import { importPolicy } from '../src/nn';
 import { TrainingPipeline, runSession, type PipelineConfig } from '../src/training';
@@ -59,13 +58,10 @@ describe('runSession', () => {
 
 describe('demo data', () => {
   const dir = join(__dirname, '..', 'web', 'public', 'data');
-  it('ships loadable pretrained weights', () => {
-    const { net } = importPolicy(JSON.parse(readFileSync(join(dir, 'snake-weights.json'), 'utf8')));
-    expect(net.numParams).toBe(17_283);
-  });
-  it('ships a parseable evaluation report', () => {
-    const report = JSON.parse(readFileSync(join(dir, 'snake-eval-report.json'), 'utf8')) as EvalReport;
-    expect(report.game).toBe('snake');
-    expect(report.conditions.length).toBeGreaterThan(10);
-  });
+  for (const [game, params] of [['snake', 17_283], ['lander', 5_508]] as const) {
+    it(`ships loadable pretrained ${game} weights (study run 1)`, () => {
+      const { net } = importPolicy(JSON.parse(readFileSync(join(dir, `${game}-weights.json`), 'utf8')));
+      expect(net.numParams).toBe(params);
+    });
+  }
 });

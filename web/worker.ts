@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
+import { getGame } from '../src/games/registry';
 import { TrainingPipeline, runSession } from '../src/training';
 import type { FromWorker, ToWorker } from './protocol';
 
@@ -19,9 +19,10 @@ self.onmessage = async (ev: MessageEvent<ToWorker>) => {
   running = true;
   stopRequested = false;
   try {
+    const game = getGame(msg.game);
     const pipeline = new TrainingPipeline(
-      { name: 'snake', makeEnv: () => new SnakeEnv(), teacher: new SnakeTeacher({ depth: 1 }), guard: new SnakeGuard() },
-      msg.config,
+      { name: game.name, makeEnv: game.makeEnv, teacher: game.makeTeacher(game.referenceLevel), guard: game.makeGuard() },
+      { ...game.pipeline, ...msg.config },
     );
     const result = await runSession(pipeline, {
       shouldStop: () => stopRequested,

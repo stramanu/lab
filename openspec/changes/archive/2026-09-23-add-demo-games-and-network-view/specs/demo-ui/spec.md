@@ -1,16 +1,6 @@
-# demo-ui Specification
+# Spec Delta
 
-## Purpose
-Provides the single static demo page that makes the System One / System Two pattern visible: who decides each move, how confident System One is, how escalation evolves during training, and where each condition sits on the cost–quality frontier.
-
-## Requirements
-
-### Requirement: Static page
-The demo SHALL be a static site with no server-side logic, buildable with one command, and usable on desktop and on a phone-width screen without horizontal scrolling.
-
-#### Scenario: Build
-- **WHEN** the build command runs
-- **THEN** it produces a directory of static files that works when served by any static file server
+## MODIFIED Requirements
 
 ### Requirement: Pretrained weights
 The page SHALL ship pretrained weights for every game it offers and load them on request. For each game, the shipped weights MUST be run 1 of that game's published multi-run study (a choice fixed in advance, not the best run), and the page MUST say so.
@@ -30,27 +20,6 @@ The page SHALL render the selected game at a selectable speed with the hybrid pl
 - **WHEN** an episode ends
 - **THEN** the page records its score and starts a new episode on the next seed
 
-### Requirement: Probability bars with threshold
-For every decision the page SHALL show one bar per action with System One's probability, highlight the chosen action and draw the current confidence threshold.
-
-#### Scenario: Bars match the policy
-- **WHEN** System One decides
-- **THEN** the bar lengths equal the policy probabilities and sum to the full scale
-
-### Requirement: Live training curves
-During training the page SHALL plot, per iteration, the escalation rate (total and guard), the mean episode score and the validation agreement, updating as progress arrives.
-
-#### Scenario: Curve update
-- **WHEN** a progress entry arrives
-- **THEN** each curve gains one point without reloading the page
-
-### Requirement: Controls
-The page SHALL provide controls for: start and stop training, load pretrained weights, confidence threshold (0.5–0.99), guard on/off, game speed, and seed. Changing the threshold or the guard MUST affect the next decision of the live game.
-
-#### Scenario: Threshold change
-- **WHEN** the visitor raises the threshold
-- **THEN** the threshold line on the bars moves and subsequent decisions escalate according to the new value
-
 ### Requirement: Results panel
 The page SHALL render the cost–quality frontier of the selected game from its published multi-run study: mean cost per move on a logarithmic x axis, mean score on the y axis, one point per condition with a 95% interval error bar on the score, with guarded and unguarded hybrids, System Two and baselines visually distinguished and labeled. The panel MUST state the split and the number of runs.
 
@@ -58,12 +27,7 @@ The page SHALL render the cost–quality frontier of the selected game from its 
 - **WHEN** the results panel is shown for a game
 - **THEN** every condition of that game's study appears as a labeled point at its mean cost and mean score, with its score interval
 
-### Requirement: Video export
-The visitor SHALL be able to record the game view and download it as a video file.
-
-#### Scenario: Recording
-- **WHEN** the visitor starts and then stops a recording
-- **THEN** a video file of the game view between the two moments is offered for download
+## ADDED Requirements
 
 ### Requirement: Game selector
 The page SHALL let the visitor switch between the games of the shared game registry that have published demo data. Switching MUST reset the live game, the counters and the curves, and load that game's planner, guard, action names, views and results.

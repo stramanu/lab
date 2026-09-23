@@ -187,13 +187,21 @@ options such as `--seeds 30`, `--levels 1,2`, `--threshold 0.9`, `--tau 0.1` and
 pnpm dev            # local dev server
 pnpm build          # static site in dist/ (works from any path)
 pnpm preview        # serve dist/
-pnpm demo:data      # refresh web/public/data/ from artifacts/snake/
+pnpm demo:data      # publish <game>-weights.json (study run 1) and <game>-study.json to web/public/data/
 ```
 
-The page plays Snake live and colors every move by who decided it. It shows System One's probabilities
-against the threshold, trains from scratch in a Web Worker in about two minutes while the game picks up
-each new version of the weights, plots the published cost–quality frontier, and records the board as
-video. The lander is not in the demo yet.
+One static page, with no backend, for every game in the registry (Snake and lander):
+
+- the live game, with every move colored by who decided it (System One, guard, System Two);
+- System One's probabilities against the confidence threshold;
+- **Inside System One**, a 3D view (three.js) of the real forward pass behind the displayed decision.
+  Inputs are laid out per game (Snake's 7×7 window, the lander's 16 labeled values), hidden units are lit by
+  their activations, and only the connections with the largest |weight × activation| are drawn;
+- in-tab training in a Web Worker, where the game picks up each new version of the weights;
+- the cost–quality frontier from the 5-run test study, with 95% intervals;
+- video recording of the board.
+
+The pretrained weights are run 1 of each study, a choice fixed in advance rather than the best run.
 
 ## Layout
 
@@ -206,7 +214,7 @@ src/training/     replay dataset, bootstrap → DAgger-style escalation loop →
 src/eval/         seed splits, conditions, runner, hypothesis checks, multi-run aggregation, report
 scripts/          Node CLIs (train, eval, study, benchmarks)
 experiments/      one reproducible script per supporting claim (dev seeds only)
-web/              browser demo
+web/              browser demo: game views, 3D network view, charts, training worker
 openspec/         specs (openspec/specs) and the history of every change, with design notes (openspec/changes/archive)
 ```
 

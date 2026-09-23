@@ -1,17 +1,18 @@
-import type { EvalReport } from '../src/eval/report';
-import { SNAKE_ACTIONS, SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
+import { argmax, type Env } from '../src/core/types';
 import { HybridPlayer, NetStudent } from '../src/hybrid';
 import { Mlp, importPolicy, type SerializedPolicy } from '../src/nn';
 import type { LogEntry } from '../src/training/pipeline';
-import { argmax } from '../src/core/types';
 import { drawBars } from './bars';
 import { cssVar, drawLines, drawScatter, formatTick, type ScatterLayout, type ScatterPoint } from './charts';
-import { costDomain, frontierPoints, type FrontierPoint } from './frontier';
-import { GameView, decisionState, type DecisionState } from './game-view';
+import { costDomain, frontierPoints, referencePoint, scoreDomain, type FrontierPoint, type StudyFile } from './frontier';
+import { STATE_VAR, decisionState, type BoardView, type DecisionState } from './game-view';
+import { DEMO_GAMES, demoGame, type DemoGame } from './games';
+import type { NetworkView } from './network-view';
 import type { FromWorker, ToWorker } from './protocol';
 import { CanvasRecorder, download } from './recorder';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const root = document.documentElement;
 
 // ——— Elements ———
 const boardCanvas = $<HTMLCanvasElement>('board');
@@ -29,30 +30,37 @@ const btnTrain = $<HTMLButtonElement>('btn-train');
 const btnRecord = $<HTMLButtonElement>('btn-record');
 const btnPause = $<HTMLButtonElement>('btn-pause');
 
-// ——— Model and players ———
-const teacher = new SnakeTeacher({ depth: 1 });
-const guard = new SnakeGuard();
-let student = new NetStudent(new Mlp({ inputSize: 201, hidden: [64, 64], outputSize: 3, seed: 20260923 }), 1, 'maxProb');
+// ——— Per-game state ———
+let game: DemoGame = DEMO_GAMES[0];
+let env: Env = game.def.makeEnv();
+let view: BoardView = game.createView(boardCanvas);
+let student!: NetStudent;
 let hybrid!: HybridPlayer;
 let threshold = Number(thresholdInput.value);
 let guardOn = guardInput.checked;
 
 function rebuildHybrid(): void {
-  hybrid = new HybridPlayer(student, teacher, { threshold, auditRate: 0 }, guardOn ? guard : undefined);
+  hybrid = new HybridPlayer(student, game.def.makeTeacher(game.def.referenceLevel), { threshold, auditRate: 0 }, guardOn ? game.def.makeGuard() : undefined);
 }
-rebuildHybrid();
+
+function untrainedNet(): Mlp {
+  return new Mlp({ inputSize: env.encodingSize, hidden: [64, 64], outputSize: env.numActions, seed: 20260923 });
+}
+
+function setModel(net: Mlp, temperature: number, info: string): void {
+  student = new NetStudent(net, temperature, 'maxProb');
+  rebuildHybrid();
+  $('model-info').textContent = info;
+  network?.setModel(net, game.input, env.actionNames);
+}
 
 function applyPolicy(policy: SerializedPolicy, source: string): void {
   const { net, calibrationT } = importPolicy(policy);
-  student = new NetStudent(net, calibrationT, 'maxProb');
-  rebuildHybrid();
   const kb = (JSON.stringify(policy).length / 1024).toFixed(1);
-  $('model-info').textContent = `Model: ${source} · ${net.numParams.toLocaleString('en-US')} params · ${kb} KB · T=${calibrationT.toFixed(2)}`;
+  setModel(net, calibrationT, `Model: ${source} · ${net.numParams.toLocaleString('en-US')} params · ${kb} KB · T=${calibrationT.toFixed(2)}`);
 }
 
-// ——— Game state ———
-const view = new GameView(boardCanvas);
-const env = new SnakeEnv();
+// ——— Live play ———
 let seed = Number(seedInput.value) || 1;
 let episode = 1;
 const episodeScores: number[] = [];
@@ -60,6 +68,14 @@ let lastState: DecisionState = 'system1';
 let lastProbs: Float32Array | null = null;
 let lastChoice = 0;
 let lastPlayed = 0;
+let lastEncoding: Float32Array | null = null;
+
+/**
+ * The decision shown by the bars and the 3D view. It is refreshed at most every
+ * 80 ms from the latest move, so both panels always show the same decision.
+ */
+let shown: { probs: Float32Array; encoding: Float32Array; chosen: number; played: number; state: DecisionState } | null = null;
+let lastShown = 0;
 
 const WINDOW = 1000;
 const winState = new Uint8Array(WINDOW); // 0 system1, 1 guard, 2 system2
@@ -72,10 +88,13 @@ function resetGame(newSeed: number): void {
   seed = newSeed;
   episode = 1;
   episodeScores.length = 0;
+  winCount = 0;
+  winPtr = 0;
   env.reset(seed);
   view.reset();
+  lastProbs = null;
+  shown = null;
 }
-resetGame(seed);
 
 function playMove(): void {
   if (env.isDone()) {
@@ -88,6 +107,7 @@ function playMove(): void {
   const m = hybrid.act(env);
   lastState = decisionState(m.decider, m.escalationReason);
   lastProbs = m.probs ?? null;
+  lastEncoding = m.state ?? null;
   lastChoice = lastProbs ? argmax(lastProbs) : m.action;
   lastPlayed = m.action;
   winState[winPtr] = STATE_CODE[lastState];
@@ -95,7 +115,7 @@ function playMove(): void {
   winPtr = (winPtr + 1) % WINDOW;
   winCount = Math.min(winCount + 1, WINDOW);
   env.step(m.action);
-  view.record(env, lastState);
+  view.record(env, lastState, m.action);
   movesThisSecond++;
 }
 
@@ -115,12 +135,12 @@ function frame(now: number): void {
   lastFrame = now;
   if (!paused) {
     acc += (dt * speedFromSlider(Number(speedInput.value))) / 1000;
-    const budgetEnd = now + 10; // keep rendering smooth: at most ~10 ms of moves per frame
+    const budgetEnd = now + 10; // at most ~10 ms of moves per frame, so rendering stays smooth
     while (acc >= 1 && performance.now() < budgetEnd) {
       playMove();
       acc -= 1;
     }
-    if (acc > 50) acc = 50; // do not accumulate an unbounded backlog
+    if (acc > 50) acc = 50;
   }
   if (now - secondStart >= 1000) {
     actualSpeed = (movesThisSecond * 1000) / (now - secondStart);
@@ -128,7 +148,15 @@ function frame(now: number): void {
     secondStart = now;
   }
   view.draw(env, lastState);
-  drawBars(barsCanvas, SNAKE_ACTIONS, lastProbs, lastChoice, lastPlayed, threshold);
+  if (lastProbs && lastEncoding && (now - lastShown > 80 || !shown)) {
+    shown = { probs: lastProbs, encoding: lastEncoding, chosen: lastChoice, played: lastPlayed, state: lastState };
+    lastShown = now;
+    network?.update(
+      { trace: student.net.trace(shown.encoding), probs: shown.probs, chosen: shown.chosen, threshold, deciderVar: STATE_VAR[shown.state] },
+      game.input,
+    );
+  }
+  drawBars(barsCanvas, env.actionNames, shown?.probs ?? null, shown?.chosen ?? 0, shown?.played ?? 0, threshold);
   if (now - lastDomUpdate > 120) {
     updateReadouts();
     lastDomUpdate = now;
@@ -141,31 +169,28 @@ const STATE_LABEL: Record<DecisionState, string> = {
   guard: 'Guard stopped System One',
   system2: 'System Two decided',
 };
-const STATE_VAR: Record<DecisionState, string> = { system1: '--s1', guard: '--guard', system2: '--s2' };
 
 function updateReadouts(): void {
-  $('r-score').textContent = String(env.score());
+  $('r-score').textContent = game.scoreLabel(env);
   $('r-episode').textContent = String(episode);
   const recent = episodeScores.slice(-10);
   $('r-avg').textContent = recent.length ? (recent.reduce((a, b) => a + b, 0) / recent.length).toFixed(0) : '–';
   $('r-speed').textContent = paused ? 'paused' : actualSpeed ? actualSpeed.toFixed(0) : '–';
   $('now-label').textContent = STATE_LABEL[lastState];
-  $('now-dot').style.background = cssVar(document.documentElement, STATE_VAR[lastState]);
-
-  if (winCount) {
-    const counts = [0, 0, 0];
-    let cost = 0;
-    for (let i = 0; i < winCount; i++) {
-      counts[winState[i]]++;
-      cost += winCost[i];
-    }
-    const pct = (c: number) => `${((100 * c) / winCount).toFixed(winCount >= 100 ? 1 : 0)}%`;
-    $('t-system1').textContent = pct(counts[0]);
-    $('t-guard').textContent = pct(counts[1]);
-    $('t-system2').textContent = pct(counts[2]);
-    const perMove = cost / winCount;
-    $('cost-value').textContent = perMove >= 100 ? perMove.toFixed(0) : perMove.toFixed(1);
+  $('now-dot').style.background = cssVar(root, STATE_VAR[lastState]);
+  if (!winCount) return;
+  const counts = [0, 0, 0];
+  let cost = 0;
+  for (let i = 0; i < winCount; i++) {
+    counts[winState[i]]++;
+    cost += winCost[i];
   }
+  const pct = (c: number) => `${((100 * c) / winCount).toFixed(winCount >= 100 ? 1 : 0)}%`;
+  $('t-system1').textContent = pct(counts[0]);
+  $('t-guard').textContent = pct(counts[1]);
+  $('t-system2').textContent = pct(counts[2]);
+  const perMove = cost / winCount;
+  $('cost-value').textContent = perMove >= 100 ? perMove.toFixed(0) : perMove.toFixed(1);
 }
 
 // ——— Controls ———
@@ -188,14 +213,13 @@ btnPause.addEventListener('click', () => {
   paused = !paused;
   btnPause.textContent = paused ? 'Resume' : 'Pause';
 });
-syncOutputs();
 
 btnPretrained.addEventListener('click', async () => {
   btnPretrained.disabled = true;
   try {
-    const res = await fetch('./data/snake-weights.json');
+    const res = await fetch(`./data/${game.def.name}-weights.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    applyPolicy((await res.json()) as SerializedPolicy, 'pretrained');
+    applyPolicy((await res.json()) as SerializedPolicy, 'pretrained (run 1 of the 5-run study)');
   } catch (err) {
     $('model-info').textContent = `Could not load the pretrained weights: ${String(err)}`;
   } finally {
@@ -214,6 +238,7 @@ function setTraining(on: boolean): void {
   btnTrain.setAttribute('aria-pressed', String(on));
   btnTrain.disabled = false;
   btnPretrained.disabled = on;
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.disabled = on;
 }
 
 function describe(e: LogEntry): string {
@@ -252,13 +277,12 @@ btnTrain.addEventListener('click', () => {
   };
   log.length = 0;
   drawCurves();
-  $('train-status').textContent = 'Bootstrap: the planner plays 5 games to create the first labels…';
-  worker.postMessage({ type: 'start', config: {} } satisfies ToWorker);
+  $('train-status').textContent = 'Bootstrap: the planner plays the first games to create labels…';
+  worker.postMessage({ type: 'start', game: game.def.name, config: {} } satisfies ToWorker);
   setTraining(true);
 });
 
 function drawCurves(): void {
-  const root = document.documentElement;
   drawLines(
     shareCanvas,
     [
@@ -269,7 +293,7 @@ function drawCurves(): void {
     1,
     (v) => `${Math.round(v * 100)}%`,
   );
-  drawLines(scoreCanvas, [{ label: 'score', color: cssVar(root, '--s1'), values: log.map((e) => e.meanScore) }], 400, (v) => String(v));
+  drawLines(scoreCanvas, [{ label: 'score', color: cssVar(root, '--s1'), values: log.map((e) => e.meanScore) }], game.scoreMax, (v) => String(v));
 }
 
 // ——— Recorder ———
@@ -290,11 +314,12 @@ btnRecord.addEventListener('click', async () => {
   btnRecord.textContent = 'Record clip';
   btnRecord.setAttribute('aria-pressed', 'false');
   $('rec-badge').hidden = true;
-  download(blob, filename);
+  download(blob, filename.replace('snake', game.def.name));
   $('rec-hint').textContent = `Saved ${filename} (${(blob.size / 1024).toFixed(0)} KB).`;
 });
 
-// ——— Frontier ———
+// ——— Frontier (published multi-run study) ———
+let study: StudyFile | null = null;
 let frontier: FrontierPoint[] = [];
 let layout: ScatterLayout | null = null;
 
@@ -303,32 +328,30 @@ function livePoint(): FrontierPoint | null {
   let cost = 0;
   for (let i = 0; i < winCount; i++) cost += winCost[i];
   const recent = episodeScores.slice(-10);
-  return {
-    label: `live game (last ${recent.length} episodes)`,
-    kind: 'other',
-    cost: cost / winCount,
-    score: recent.reduce((a, b) => a + b, 0) / recent.length,
-    ci95: 0,
-    zeroCost: false,
-  };
+  return { label: `live game (last ${recent.length} episodes)`, kind: 'other', cost: cost / winCount, score: recent.reduce((a, b) => a + b, 0) / recent.length, ci95: 0, zeroCost: false };
+}
+
+function pointLabel(p: FrontierPoint): string {
+  const cost = p.zeroCost ? '0' : formatTick(Number(p.cost.toFixed(1)));
+  return `${p.label} · score ${p.score.toFixed(1)}${p.ci95 ? ` ±${p.ci95.toFixed(1)}` : ''} · ${cost} units/move`;
 }
 
 function drawFrontier(): void {
   if (!frontier.length) return;
-  const root = document.documentElement;
-  const color = { system2: cssVar(root, '--s2'), hybrid: cssVar(root, '--ink-3'), 'hybrid+guard': cssVar(root, '--s1'), other: cssVar(root, '--ink-3') };
-  const shape = { system2: 'square', hybrid: 'ring', 'hybrid+guard': 'circle', other: 'diamond' } as const;
-  const domain = costDomain(frontier);
-  const points: ScatterPoint[] = frontier.map((p) => ({ x: p.zeroCost ? domain[0] : p.cost, y: p.score, shape: shape[p.kind], color: color[p.kind], label: pointLabel(p) }));
+  const color = { system2: cssVar(root, '--s2'), hybrid: cssVar(root, '--ink-3'), 'hybrid+guard': cssVar(root, '--s1'), baseline: cssVar(root, '--ink-2'), other: cssVar(root, '--ink-3') };
+  const shape = { system2: 'square', hybrid: 'ring', 'hybrid+guard': 'circle', baseline: 'diamond', other: 'diamond' } as const;
+  const xDomain = costDomain(frontier);
+  const yDomain = scoreDomain(frontier);
+  const points: ScatterPoint[] = frontier.map((p) => ({ x: p.zeroCost ? xDomain[0] : p.cost, y: p.score, yErr: p.ci95, shape: shape[p.kind], color: color[p.kind], label: pointLabel(p) }));
   const live = livePoint();
-  if (live) points.push({ x: Math.min(Math.max(live.cost, domain[0]), domain[1]), y: live.score, shape: 'ring', color: cssVar(root, '--here'), label: pointLabel(live), highlight: true });
-  const reference = frontier.find((p) => p.label === 'system2 (level 1)');
-  layout = drawScatter(frontierCanvas, points, domain, [0, 400], 'compute units per move (log)', 'mean score', (ctx, x, y) => {
+  if (live) points.push({ x: Math.min(Math.max(live.cost, xDomain[0]), xDomain[1]), y: live.score, shape: 'ring', color: cssVar(root, '--here'), label: pointLabel(live), highlight: true });
+  const reference = referencePoint(frontier, game.def.referenceLevel);
+  layout = drawScatter(frontierCanvas, points, xDomain, yDomain, 'compute units per move (log)', 'mean score', (ctx, x, y) => {
     if (!reference) return;
     // H2 target region: at least 90% of the planner's score for at most a tenth of its cost.
-    const x0 = x(domain[0]);
+    const x0 = x(xDomain[0]);
     const x1 = x(reference.cost / 10);
-    const y0 = y(400);
+    const y0 = y(yDomain[1]);
     const y1 = y(reference.score * 0.9);
     ctx.fillStyle = cssVar(root, '--s1');
     ctx.globalAlpha = 0.09;
@@ -340,11 +363,6 @@ function drawFrontier(): void {
     ctx.textBaseline = 'top';
     ctx.fillText('target', x0 + 4, y0 + 4);
   });
-}
-
-function pointLabel(p: FrontierPoint): string {
-  const cost = p.zeroCost ? '0' : formatTick(Number(p.cost.toFixed(1)));
-  return `${p.label} · score ${p.score.toFixed(1)}${p.ci95 ? ` ±${p.ci95.toFixed(1)}` : ''} · ${cost} units/move`;
 }
 
 function showTip(clientX: number, clientY: number): void {
@@ -374,20 +392,74 @@ frontierCanvas.addEventListener('pointermove', (e) => showTip(e.clientX, e.clien
 frontierCanvas.addEventListener('pointerdown', (e) => showTip(e.clientX, e.clientY));
 frontierCanvas.addEventListener('pointerleave', () => (tip.hidden = true));
 
-fetch('./data/snake-eval-report.json')
-  .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-  .then((report: EvalReport) => {
-    frontier = frontierPoints(report);
+async function loadStudy(name: string): Promise<void> {
+  study = null;
+  frontier = [];
+  const ctx = frontierCanvas.getContext('2d');
+  ctx?.clearRect(0, 0, frontierCanvas.width, frontierCanvas.height);
+  try {
+    const res = await fetch(`./data/${name}-study.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as StudyFile;
+    if (name !== game.def.name) return; // the visitor switched game meanwhile
+    study = data;
+    frontier = frontierPoints(study);
+    const ref = referencePoint(frontier, game.def.referenceLevel);
+    const guard07 = frontier.find((p) => p.label === 'hybrid+guard maxProb@0.7');
+    $('frontier-sub').textContent =
+      `Mean of ${study.runs} training runs on ${study.seeds.count} held-out ${study.split} seeds, with 95% intervals. ` +
+      'Up is better, left is cheaper. The shaded target: at least 90% of the planner’s score for a tenth of its cost.';
+    $('cost-context').textContent = ref
+      ? `whole-game averages: planner ${ref.cost.toFixed(0)}${guard07 ? ` · hybrid + guard @0.7 ${guard07.cost.toFixed(0)}` : ''}`
+      : '';
     drawFrontier();
-  })
-  .catch((err) => {
-    $('frontier-title').insertAdjacentHTML('afterend', `<p class="sub">Could not load the evaluation report: ${String(err)}</p>`);
-  });
+  } catch (err) {
+    $('frontier-sub').textContent = `Could not load the published results: ${String(err)}`;
+  }
+}
 setInterval(drawFrontier, 1000);
+
+// ——— Game selector ———
+function selectGame(name: string): void {
+  if (training) return;
+  game = demoGame(name);
+  env = game.def.makeEnv();
+  view = game.createView(boardCanvas);
+  root.style.setProperty('--board-aspect', game.aspect);
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.setAttribute('aria-current', String(b.dataset.game === name));
+  $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;
+  $('network-legend').textContent =
+    game.input.kind === 'window'
+      ? 'Inputs: the 7×7 window around the head (colored by what each cell holds), then food direction and length. Hidden layers: 64 + 64 ReLU units. Outputs: straight, left, right.'
+      : `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${env.actionNames.join(', ')}.`;
+  log.length = 0;
+  drawCurves();
+  $('train-status').textContent = 'Idle. Training takes one to two minutes on a laptop and runs in a background worker.';
+  setModel(untrainedNet(), 1, 'Model: untrained (random weights)');
+  resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1));
+  void loadStudy(name);
+  history.replaceState(null, '', `#${name}`);
+}
+
+const tabs = $('game-tabs');
+for (const g of DEMO_GAMES) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.game = g.def.name;
+  b.textContent = g.def.title;
+  b.addEventListener('click', () => selectGame(g.def.name));
+  tabs.append(b);
+}
+
+// ——— Network view (lazy, WebGL) ———
+let network: NetworkView | null = null;
+void import('./network-view').then(async ({ NetworkView }) => {
+  network = await NetworkView.create($('network'));
+  network?.setModel(student.net, game.input, env.actionNames);
+});
 
 // ——— Theme and resize ———
 $('theme').addEventListener('click', () => {
-  const root = document.documentElement;
   const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.theme = dark ? 'light' : 'dark';
   drawCurves();
@@ -398,5 +470,6 @@ new ResizeObserver(() => {
   drawFrontier();
 }).observe(document.body);
 
-drawCurves();
+syncOutputs();
+selectGame(location.hash.slice(1) || DEMO_GAMES[0].def.name);
 requestAnimationFrame(frame);

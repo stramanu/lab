@@ -2,7 +2,7 @@ import type { SerializedPolicy } from '../src/nn/serialize';
 import type { LogEntry, PipelineConfig } from '../src/training/pipeline';
 
 /** Page → worker. */
-export type ToWorker = { type: 'start'; config: Partial<PipelineConfig> } | { type: 'stop' };
+export type ToWorker = { type: 'start'; game: string; config: Partial<PipelineConfig> } | { type: 'stop' };
 
 /** Worker → page. */
 export type FromWorker =

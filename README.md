@@ -1,138 +1,190 @@
 # System One in the browser
 
-An experiment on a question: can a tiny, vertical neural network, trained from scratch by an algorithmic
-planner, make most decisions at a fraction of the planner's cost and know when not to trust itself?
+Can a tiny network, trained from scratch by a slow planner, make most decisions at a fraction of the
+planner's cost, and know when to hand control back? This repository is an open, reproducible experiment
+on that question. It covers two games and uses no ML libraries: the environments, planners, network,
+backprop and training loop are all written in TypeScript, and everything runs in Node or in a browser tab.
 
-- **System Two** is a slow, strong planner (the teacher).
-- **System One** is a micro-MLP written from scratch in TypeScript, with no ML libraries. It decides
-  first. When its confidence is low, or when a cheap **guard** rejects its move, the hybrid escalates
-  to System Two, and the escalated state becomes a new training example (expert iteration / DAgger).
+- **System Two** is a slow, strong planner that acts as the teacher.
+- **System One** is a micro-MLP (5k–17k parameters, He initialization [18], trained with Adam [17]).
+  It proposes a move with a confidence.
+- **Guard**: a cheap deterministic check on System One's proposed move.
+- **Hybrid**: System One decides first. When its confidence is low, or when the guard rejects its
+  move, the planner decides, and the escalated state becomes a new training example.
 
-This repository currently contains the **headless Snake pipeline**: environment, planner, network,
-hybrid, three-phase training and evaluation, all running in Node. Library code in `src/` has no Node
-dependencies, so it can later move into a Web Worker for the browser demo.
+## Background
 
-The work is tracked with [OpenSpec](https://github.com/Fission-AI/OpenSpec). The main specs are in
-`openspec/specs/`; the changes, with proposal, design and tasks, are in `openspec/changes/`
-(completed ones under `archive/`).
+The fast/slow framing comes from dual-process theory [1]. In machine learning it maps onto
+**expert iteration** [2]: a search-based "System 2" produces improved decisions, and a neural "System 1"
+is trained to imitate them, as in AlphaGo Zero [3]. Imitating an expert only on the expert's own
+trajectories suffers from compounding errors [5]. We therefore label the states that the *learner*
+visits, as in **DAgger** [4]. Targets are the teacher's per-action scores turned into soft labels with a
+temperature, as in knowledge and policy distillation [6, 7]. Distilling an expensive planner (MPC) into a
+fast policy is an established pattern in robotics [15, 16].
 
-## Commands
+Deciding *when* the cheap model should defer is studied as selective classification and learning to
+defer [10, 11, 12]. It is also the logic of cost-aware cascades, from classic detectors to LLM
+routing [19, 20]. Confidence is only useful if it is calibrated. We use temperature scaling and report
+the expected calibration error (ECE) [8, 9].
+
+The guard is a **shield** in the sense of safe RL [13]: a verifier that sits between the policy and the
+environment and blocks actions that fail a safety check. The lander's planner is a **rollout
+algorithm** [14]: lookahead over a base policy, which by construction does no worse than the base policy.
+
+The original motivation was a post showing a general 4B LLM used as a "System One". Here we ask the
+complementary question: what if System One is a tiny, vertical model trained for one task?
+
+## Protocol
+
+- **Targets set in advance.** The hypotheses and their thresholds were written before any experiment
+  and were never changed:
+  - H1: escalation falls during training and settles below 10%;
+  - H2: the hybrid reaches ≥ 90% of the planner's score at ≥ 10× lower mean cost per move;
+  - H3: System One alone reaches ≥ 60% of the planner's score;
+  - H4: above the 0.9 confidence threshold, System One agrees with the planner at least 95% of the time.
+- **Seeds.** Evaluation uses 200 fixed seeds (1–200, `artifacts/eval-seeds.json`). Training uses seeds
+  from 1,000,000 upward. Planner benchmarks and tuning use other ranges (5000+, 6000+, 7000+, 8000+).
+- **Cost** is counted in hardware-independent compute units. Planner and guard units are nodes expanded
+  (Snake) or physics steps simulated (lander); a network forward pass counts as 1. Wall-clock µs are
+  reported alongside.
+- **Everything is seeded.** The same configuration produces byte-identical weights (tested).
+- **Conditions** (all on the same seeds): random; planner alone at three cost levels; System One alone;
+  hybrid at confidence thresholds 0.5–0.95, with max-probability and margin confidence, with and without
+  the guard; guard only (threshold 0); and, for the lander, a hand-written autopilot baseline.
+
+## Results
+
+Hardware: Apple M4 Max (16 cores, 48 GB), Node 22.21.1. There is one training run per game (see Limitations).
+Full reports: `artifacts/<game>/eval-report.json` (generated; `web/public/data/` holds the published Snake copy).
+
+### Snake (20×20, planner = BFS + tail-safety + 1-step lookahead)
+
+Model: 17,283 parameters (90.8 KB), 7×7 egocentric view, trained in 105 s. Score = food eaten (max 397).
+
+| Condition | Score (±95%) | % of planner | Cost / move | Planner cost ÷ condition cost | Escalated (guard) |
+| --- | --- | --- | --- | --- | --- |
+| Planner (teacher) | 383.9 ± 2.1 | 100% | 1,018 | 1× | – |
+| System One alone | 36.0 ± 1.7 | 9% | 1 | – | – |
+| Hybrid, no guard @ 0.95 | 116.0 ± 6.6 | 30% | 1,271 | 0.8× | 28.6% |
+| Guard only | 300.9 ± 13.6 | 78% | 55 | 18.5× | 1.3% (1.3%) |
+| **Hybrid + guard @ 0.7** | **375.6 ± 3.5** | **98%** | **106** | **9.6×** | 4.3% (0.8%) |
+| Hybrid + guard @ 0.9 | 377.4 ± 3.9 | 98% | 251 | 4.1× | 14.6% (0.3%) |
+
+H1 ✗ (16.0% → 14.4%) · H2 ✗ just short (97.8% at 9.6×) · H3 ✗ (9.4%) · **H4 ✓** (97.4%, ECE 0.009).
+
+### Lander (2D physics, planner = rollout algorithm over an autopilot)
+
+Model: 5,508 parameters (29.5 KB), 16 egocentric inputs, trained in 52 s. Score = 100 + fuel bonus
+(≤ 50) for a landing, else 0. Planner reference = tree depth 2.
+
+| Condition | Score (±95%) | Landed | % of planner | Cost / move | Planner cost ÷ condition cost |
+| --- | --- | --- | --- | --- | --- |
+| Planner (teacher, depth 2) | 128.7 ± 3.0 | 195/200 | 100% | 11,491 | 1× |
+| **Hand-written autopilot** | **121.9 ± 2.9** | **195/200** | **95%** | **1** | – |
+| System One alone | 119.7 ± 4.8 | 185/200 | 93% | 1 | – |
+| Guard only | 116.8 ± 5.5 | 180/200 | 91% | 68 | 168× |
+| Hybrid + guard @ 0.9 | 128.7 ± 3.0 | 195/200 | 100% | 7,088 | 1.6× |
+
+H1 ✗ (98% → 72%) · **H2 ✓** (guard only: 90.7% at 168×, a narrow margin) · **H3 ✓** (93%) · H4 ✗ (83.5%).
+The same 5 seeds end out of bounds for every condition, the planner included.
+
+### What the numbers say
+
+- **Snake: the method works, but only with the guard.** A confident System One fails exactly on the
+  rare states where a mistake is fatal. In 28 of 30 analysed deaths, the fatal move was a confident
+  disagreement with the planner. Confidence measures ambiguity, not stakes; a shield-style check [13]
+  closes that gap at ~50 units per move.
+- **Lander: the student flies well alone, but a hand-written controller is as good for free.**
+  System One lands 92.5% on its own (H3 holds). Yet the autopilot that the planner itself uses as base
+  policy scores higher at the same cost. On this task, distillation does not beat a simple rule.
+- **Agreement is the wrong metric when actions are equivalent.** The lander's autopilot is bang-bang:
+  "none" and "main engine" often have the same effect, and which one is chosen is only a matter of
+  phase. System One agrees with the planner only 43% of the time yet lands 92.5%. This caps confidence,
+  inflates escalation (H1 fails) and makes H4 fail by construction. Set-valued targets and "learning to
+  defer" losses [11, 12] address this; a prototype acceptability head was not enough (see the design
+  notes).
+- **Calibration holds where labels are unambiguous.** On Snake, ECE is below 0.01 above threshold.
+
+### Limitations and deviations (read before citing numbers)
+
+- **Test-set contamination during development.** Some design decisions were checked on evaluation seeds
+  1–30: the input-variant comparison and the guard prototype on Snake, and quick lander checks. The
+  effects involved are large (e.g. 84 → 375 points on Snake), but a clean protocol would have used a
+  separate development set. A follow-up will re-validate these decisions on dedicated development
+  seeds.
+- **One training run per game.** Confidence intervals cover evaluation seeds, not training randomness.
+  Multi-seed training is planned.
+- **Tuned on the fly, disclosed.** Planner tie-breaking, τ and the lander's physics and planner design
+  were changed after measuring them on non-evaluation seeds. Each change and its reason is recorded in
+  the OpenSpec archive (`openspec/changes/archive/*/design.md`).
+- **Strong or simple teachers.** Snake's planner nearly fills the board, and the lander's planner is
+  built on a hand-written autopilot. Both games are testbeds, not tasks that need a network.
+
+## Reproduce
 
 Requires Node ≥ 22 and pnpm.
 
 ```sh
 pnpm install
-pnpm typecheck
-pnpm test            # unit tests, including gradient checking and reproducibility
-pnpm train:snake     # ~2 min: writes artifacts/snake/weights.json and train-log.jsonl
-pnpm eval:snake      # ~20 min: 200 fixed seeds, writes artifacts/snake/eval-report.json
-pnpm bench:teacher   # planner quality and time per decision at lookahead depth 0/1/2
+pnpm typecheck && pnpm test        # unit tests: gradient checking, determinism, reproducibility, …
+pnpm train:snake  && pnpm eval:snake     # ~2 min + ~20 min
+pnpm train:lander && pnpm eval:lander    # ~1 min + ~10 min
+pnpm bench:teacher                 # Snake planner at depth 0/1/2
+pnpm bench:lander                  # lander planner at depth 1/2/3, autopilot, random
 ```
 
-Browser demo (static site, no backend):
+Generic form: `pnpm train --game <name>` and `pnpm eval --game <name>`, with options such as
+`--seeds 30`, `--levels 1,2`, `--threshold 0.9`, `--tau 0.1` and `--no-guard`.
+
+### Browser demo
 
 ```sh
-pnpm dev             # local dev server
-pnpm build           # static site in dist/ (works from any path)
-pnpm preview         # serve dist/ locally
-pnpm demo:data       # refresh web/public/data/ from artifacts/snake/ after retraining or re-evaluating
+pnpm dev            # local dev server
+pnpm build          # static site in dist/ (works from any path)
+pnpm preview        # serve dist/
+pnpm demo:data      # refresh web/public/data/ from artifacts/snake/
 ```
 
-The page plays Snake live with the hybrid and colors every move by who decided it: System One,
-the guard stopping System One, or System Two on low confidence. It shows System One's probabilities
-against the confidence threshold. You can load the pretrained weights, or train from scratch in a Web
-Worker in about two minutes, and the live game picks up each new version of the weights as it arrives.
-It also plots the cost–quality frontier of the published evaluation and can record the board as a video.
-
-Useful options:
-
-- `pnpm train:snake --iterations 30 --tau 0.1 --threshold 0.9 --audit 0.02 --depth 1 --seed 1`
-- `pnpm eval:snake --seeds 30 --levels 0,1` for a quick run; `--no-guard` on either script disables the guard.
+The page plays Snake live and colors every move by who decided it. It shows System One's probabilities
+against the threshold, trains from scratch in a Web Worker in about two minutes while the game picks up
+each new version of the weights, plots the published cost–quality frontier, and records the board as
+video. The lander is not in the demo yet.
 
 ## Layout
 
 ```
-src/core/         Env / Teacher / Student / Player contracts, seeded PRNG, statistics
-src/games/snake/  20x20 Snake, 7x7 egocentric encoding (201 values), BFS planner, tail-reachability guard
+src/core/         Env / Teacher / Student / Guard / Player contracts, seeded PRNG, statistics
+src/games/        registry.ts, snake/ (env, 7×7 encoding, BFS planner, guard), lander/ (physics, autopilot, rollout planner, guard)
 src/nn/           MLP, backprop, Adam, soft labels, temperature scaling, ECE, serialization
-src/hybrid/       confidence measures, System One / System Two / hybrid (with optional guard) players
-src/training/     replay dataset with dedup, bootstrap → escalation loop → consolidation
+src/hybrid/       confidence measures and System One / System Two / hybrid players
+src/training/     replay dataset, bootstrap → DAgger-style escalation loop → consolidation, worker session
 src/eval/         conditions, runner, hypothesis checks, report
-scripts/          Node CLIs (the only place Node APIs are used)
-web/              demo page: game view, bars, charts, frontier, recorder, training worker
-artifacts/        eval-seeds.json (committed); generated weights, logs and reports (ignored)
+scripts/          Node CLIs (train, eval, benchmarks)
+web/              browser demo
+openspec/         specs (openspec/specs) and the history of every change, with design notes (openspec/changes/archive)
 ```
 
-## Architecture: three tiers
+Specifications and design decisions are tracked with [OpenSpec](https://github.com/Fission-AI/OpenSpec).
 
-1. **System One** (1 unit): one forward pass of the micro-MLP proposes a move with a confidence.
-2. **Guard** (~50–60 units on average, counted): if System One is confident, a cheap deterministic
-   check verifies the proposed move only. For Snake it simulates the move and runs one early-exit BFS
-   to confirm the tail is still reachable. The guard is a fragment of the planner, run on a single action.
-3. **System Two** (~1,000 units): the planner runs only when confidence is low or the guard rejects.
+## References
 
-Why the guard exists: without it, the hybrid scored 85 against the teacher's 384. In 28 of 30 analyzed
-deaths, the last point where the teacher could still save the game was a move that System One played
-confidently (≥ 0.9) against the teacher's choice. Confidence measures ambiguity, not stakes. Richer
-inputs (11x11 window, body age, tail direction, obstacle rays) and a learned risk head helped only
-marginally (+11 and +30 points).
-
-## Results
-
-Measured on an Apple M4 Max (16 cores, 48 GB), Node 22.21.1, on 200 fixed evaluation seeds (1–200).
-Training seeds start at 1,000,000 and do not overlap with them. Score = food eaten (maximum 397).
-Cost is measured in compute units: planner or guard nodes expanded, with one network forward pass = 1.
-
-**Model:** 17,283 parameters, 90.8 KB of JSON weights, calibration temperature 1.12, trained in 105 s with
-the guard enabled (5 bootstrap episodes + 30 escalation iterations at threshold 0.9 + consolidation).
-
-| Condition | Score (±95%) | % of teacher | Cost / move | Teacher/hybrid cost | µs / move | Escalated (guard) |
-| --- | --- | --- | --- | --- | --- | --- |
-| Random | 0.2 ± 0.1 | 0% | 0 | – | 0.1 | – |
-| System Two, depth 0 | 375.5 ± 4.1 | 98% | 309 | – | 5.3 | – |
-| **System Two, depth 1 (teacher)** | **383.9 ± 2.1** | 100% | 1,018 | 1x | 16.7 | – |
-| System Two, depth 2 | 383.5 ± 2.4 | 100% | 2,727 | – | 42.4 | – |
-| System One alone | 36.0 ± 1.7 | 9% | 1 | – | 6.4 | – |
-| Hybrid, no guard, max-prob @ 0.95 | 116.0 ± 6.6 | 30% | 1,271 | 0.8x | 24.2 | 28.6% |
-| Guard only (threshold 0) | 300.9 ± 13.6 | 78% | 55 | 18.5x | 9.1 | 1.3% (1.3%) |
-| Hybrid + guard, max-prob @ 0.5 | 330.4 ± 11.8 | 86% | 60 | 17.0x | 8.2 | 1.6% (1.3%) |
-| **Hybrid + guard, max-prob @ 0.7** | **375.6 ± 3.5** | **98%** | **106** | **9.6x** | 8.9 | 4.3% (0.8%) |
-| Hybrid + guard, max-prob @ 0.8 | 378.2 ± 3.3 | 99% | 147 | 6.9x | 9.6 | 7.0% (0.6%) |
-| Hybrid + guard, max-prob @ 0.9 | 377.4 ± 3.9 | 98% | 251 | 4.1x | 11.3 | 14.6% (0.3%) |
-| Hybrid + guard, margin @ 0.9 | 382.7 ± 2.9 | 100% | 382 | 2.7x | 13.3 | 24.5% (0.1%) |
-
-The full table, with every threshold and measure with and without guard, is in
-`artifacts/snake/eval-report.json`.
-
-### Hypotheses (targets unchanged from the design document)
-
-| | Target | Measured | Outcome |
-| --- | --- | --- | --- |
-| H1 escalation falls and settles | < 10% during training | 16.0% → 14.4% (training at threshold 0.9) | not confirmed |
-| H2 efficient hybrid | ≥ 90% of teacher score at ≥ 10x lower cost/move | hybrid + guard @ 0.7: 97.8% at 9.6x | not confirmed (just short) |
-| H3 pure intuition | System One alone ≥ 60% of teacher | 9.4% | not confirmed |
-| H4 calibration | ≥ 95% agreement above threshold 0.9 | 97.4%, ECE 0.009 | **confirmed** |
-
-### What the numbers say
-
-- **Snake works.** With the guard, the hybrid plays at 98% of the teacher's score while spending about
-  a tenth of its compute per move. It escalates on 4.3% of the moves, and the guard catches the traps
-  that confidence misses.
-- **The cost/quality frontier straddles the H2 target.** At threshold 0.7: 97.8% of the score at 9.6x.
-  At 0.5: 86% at 17x. The target region (≥ 90% and ≥ 10x) lies between two measured thresholds. We did
-  not add thresholds after the fact to land inside it.
-- **Intuition alone is still myopic.** System One alone reaches 9% of the teacher: a 7x7 window cannot
-  see global traps. The guard is what makes the hybrid safe, and its cost is reported (12–34% of the
-  total at the useful thresholds).
-- **Calibration holds.** When System One is confident, it agrees with the planner 97–99% of the time,
-  with an ECE below 0.01.
-- **H1 depends on the training threshold.** Training at 0.9 settles at ~15% escalation, because guarded
-  games now last to the crowded end-game, where the planner is needed most. Evaluation shows 4.3% at 0.7.
-
-Earlier fixes, recorded in the OpenSpec archive: deterministic tie-breaking in the planner (it removed
-50/50 labels that stalled escalation around 65%), and a lookahead bug that made the planner avoid food.
-
-## Reproducibility
-
-Everything is seeded. The same configuration and seed produce byte-identical weights (tested), and
-`Math.random` is banned from `src/` (tested). Wall-clock time is logged but never drives decisions.
+1. Kahneman, D. (2011). *Thinking, Fast and Slow*. Farrar, Straus and Giroux.
+2. Anthony, T., Tian, Z., & Barber, D. (2017). Thinking Fast and Slow with Deep Learning and Tree Search. *NeurIPS 30*.
+3. Silver, D., et al. (2017). Mastering the game of Go without human knowledge. *Nature*, 550, 354–359.
+4. Ross, S., Gordon, G., & Bagnell, D. (2011). A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning. *AISTATS 2011*.
+5. Ross, S., & Bagnell, D. (2010). Efficient Reductions for Imitation Learning. *AISTATS 2010*.
+6. Hinton, G., Vinyals, O., & Dean, J. (2015). Distilling the Knowledge in a Neural Network. arXiv:1503.02531.
+7. Rusu, A. A., et al. (2016). Policy Distillation. *ICLR 2016*.
+8. Guo, C., Pleiss, G., Sun, Y., & Weinberger, K. Q. (2017). On Calibration of Modern Neural Networks. *ICML 2017*.
+9. Naeini, M. P., Cooper, G., & Hauskrecht, M. (2015). Obtaining Well Calibrated Probabilities Using Bayesian Binning. *AAAI 2015*.
+10. Geifman, Y., & El-Yaniv, R. (2017). Selective Classification for Deep Neural Networks. *NeurIPS 30*.
+11. Madras, D., Pitassi, T., & Zemel, R. (2018). Predict Responsibly: Improving Fairness and Accuracy by Learning to Defer. *NeurIPS 31*.
+12. Mozannar, H., & Sontag, D. (2020). Consistent Estimators for Learning to Defer to an Expert. *ICML 2020*.
+13. Alshiekh, M., Bloem, R., Ehlers, R., Könighofer, B., Niekum, S., & Topcu, U. (2018). Safe Reinforcement Learning via Shielding. *AAAI 2018*.
+14. Bertsekas, D. P., Tsitsiklis, J. N., & Wu, C. (1997). Rollout Algorithms for Combinatorial Optimization. *Journal of Heuristics*, 3, 245–262.
+15. Levine, S., & Koltun, V. (2013). Guided Policy Search. *ICML 2013*.
+16. Zhang, T., Kahn, G., Levine, S., & Abbeel, P. (2016). Learning Deep Control Policies for Autonomous Aerial Vehicles with MPC-Guided Policy Search. *ICRA 2016*.
+17. Kingma, D. P., & Ba, J. (2015). Adam: A Method for Stochastic Optimization. *ICLR 2015*.
+18. He, K., Zhang, X., Ren, S., & Sun, J. (2015). Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. *ICCV 2015*.
+19. Viola, P., & Jones, M. (2001). Rapid Object Detection using a Boosted Cascade of Simple Features. *CVPR 2001*.
+20. Chen, L., Zaharia, M., & Zou, J. (2023). FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance. arXiv:2305.05176.

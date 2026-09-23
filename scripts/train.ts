@@ -1,21 +1,23 @@
 /**
- * Offline Snake training in Node.
- * Usage: pnpm train:snake [--out artifacts/snake] [--seed 1] [--iterations 30] [--tau 1]
- *        [--threshold 0.9] [--audit 0.02] [--retrain-every 2000] [--bootstrap-episodes 5]
- *        [--depth 1] [--confidence maxProb|margin] [--capacity 100000] [--no-guard]
+ * Offline training in Node for any registered game.
+ * Usage: pnpm tsx scripts/train.ts --game snake|lander [--out artifacts/<game>] [--seed 1] [--iterations 30]
+ *        [--tau T] [--threshold 0.9] [--audit 0.02] [--retrain-every 2000] [--bootstrap-episodes K]
+ *        [--level L] [--confidence maxProb|margin] [--capacity 100000] [--no-guard]
+ * Package aliases: pnpm train:snake, pnpm train:lander.
  */
-import { mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
+import { getGame } from '../src/games/registry';
 import type { ConfidenceMeasure } from '../src/hybrid';
 import { TrainingPipeline, type LogEntry, type PipelineConfig } from '../src/training';
 import { num, parseArgs } from './cli';
 
 const args = parseArgs(process.argv.slice(2));
-const outDir = args.out ?? 'artifacts/snake';
-const depth = num(args, 'depth') ?? 1;
+const game = getGame(args.game ?? 'snake');
+const outDir = args.out ?? `artifacts/${game.name}`;
+const level = num(args, 'level') ?? num(args, 'depth') ?? game.referenceLevel;
 
-const overrides: Partial<PipelineConfig> = {};
+const overrides: Partial<PipelineConfig> = { ...game.pipeline };
 const map: Array<[string, keyof PipelineConfig]> = [
   ['seed', 'seed'],
   ['iterations', 'iterations'],
@@ -52,10 +54,13 @@ const onLog = (e: LogEntry) => {
   );
 };
 
-const teacher = new SnakeTeacher({ depth });
-const pipeline = new TrainingPipeline({ name: 'snake', makeEnv: () => new SnakeEnv(), teacher, guard: new SnakeGuard() }, overrides, onLog);
+const pipeline = new TrainingPipeline(
+  { name: game.name, makeEnv: game.makeEnv, teacher: game.makeTeacher(level), guard: game.makeGuard() },
+  overrides,
+  onLog,
+);
 const t0 = performance.now();
-const policy = pipeline.run();
+const policy = pipeline.run({ teacherLevel: level });
 const seconds = (performance.now() - t0) / 1000;
 policy.meta = { ...policy.meta, trainingSeconds: Number(seconds.toFixed(1)) };
 

@@ -87,7 +87,7 @@ export interface Guard {
   check(env: Env, action: number): GuardResult;
 }
 
-export type Decider = 'system1' | 'system2' | 'random';
+export type Decider = 'system1' | 'system2' | 'random' | 'baseline';
 
 export type EscalationReason = 'confidence' | 'guard';
 

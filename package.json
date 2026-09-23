@@ -7,13 +7,18 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "train:snake": "tsx scripts/train-snake.ts",
-    "eval:snake": "tsx scripts/eval-snake.ts",
+    "train:snake": "tsx scripts/train.ts --game snake",
+    "eval:snake": "tsx scripts/eval.ts --game snake",
     "bench:teacher": "tsx scripts/bench-teacher.ts",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "demo:data": "tsx scripts/copy-demo-data.ts"
+    "demo:data": "tsx scripts/copy-demo-data.ts",
+    "bench:lander": "tsx scripts/bench-lander.ts",
+    "train:lander": "tsx scripts/train.ts --game lander",
+    "eval:lander": "tsx scripts/eval.ts --game lander",
+    "train": "tsx scripts/train.ts",
+    "eval": "tsx scripts/eval.ts"
   },
   "engines": {
     "node": ">=22"

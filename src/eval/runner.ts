@@ -2,7 +2,7 @@ import { ci95, mean, median } from '../core/stats';
 import { argmax, type Env, type Player, type Teacher } from '../core/types';
 import { reliability, type Reliability } from '../nn/calibration';
 
-export type ConditionKind = 'random' | 'system2' | 'system1' | 'hybrid';
+export type ConditionKind = 'random' | 'system2' | 'system1' | 'hybrid' | 'baseline';
 
 export interface Condition {
   name: string;

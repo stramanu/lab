@@ -196,3 +196,42 @@ describe('racing teacher and guard', () => {
     expect(g / n).toBeLessThanOrEqual(tc / n / 10);
   });
 });
+
+describe('racing continuous actions', () => {
+  const start = () => {
+    const t = generateTrack(12, cfg);
+    return RacingEnv.fromState(t, { x: t.x[0], y: t.y[0], heading: Math.atan2(t.ty[0], t.tx[0]), speed: 20, index: 0 });
+  };
+
+  it('discrete commands and their continuous equivalents reach the same state', () => {
+    for (let a = 0; a < 6; a++) {
+      const d = start();
+      const c = start();
+      for (let k = 0; k < 5; k++) {
+        const cont = c.continuousOf(a);
+        d.step(a);
+        c.stepContinuous(cont);
+      }
+      expect(c.car).toEqual(d.car);
+    }
+  });
+
+  it('scales braking with the pedal', () => {
+    const half = start();
+    const full = start();
+    half.stepContinuous([0, -0.5]);
+    full.stepContinuous([0, -1]);
+    const lossHalf = 20 - half.car.speed;
+    const lossFull = 20 - full.car.speed;
+    // Drag is common to both, so compare the braking share only approximately.
+    expect(lossHalf).toBeLessThan(lossFull);
+    expect(lossHalf).toBeGreaterThan(0.4 * lossFull);
+    expect(lossHalf).toBeLessThan(0.6 * lossFull);
+  });
+
+  it('clamps out-of-range actions', () => {
+    const e = start();
+    e.stepContinuous([5, 9]);
+    expect(e.car.steerTarget).toBeCloseTo(0.3, 10);
+  });
+});

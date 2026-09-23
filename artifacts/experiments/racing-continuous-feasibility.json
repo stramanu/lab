@@ -1,0 +1,97 @@
+{
+  "name": "racing-continuous-feasibility",
+  "createdAt": "2026-09-23T22:29:15.173Z",
+  "claim": "Feasibility of a continuous (ensemble-regression) System One on racing (pre-registered go/no-go criteria).",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "teacher": "racing-rollout-d1",
+    "members": 5,
+    "hidden": [
+      64,
+      64
+    ],
+    "bootstrapEpisodes": 40,
+    "daggerRounds": 2,
+    "episodesPerRound": 10,
+    "steerTolerance": 0.03,
+    "trainingStates": 36000
+  },
+  "results": {
+    "criterion1_agreement": {
+      "value": 0.774,
+      "threshold": "≥ 0.85",
+      "pass": false,
+      "states": 6000
+    },
+    "criterion2_errorDetectionAUROC": {
+      "value": 0.5522560273795096,
+      "threshold": "≥ 0.75",
+      "pass": false
+    },
+    "criterion3_aloneOnTrack": {
+      "value": 1,
+      "threshold": "≥ 0.80",
+      "pass": true
+    },
+    "aloneMeanProgress": 1361.2635555523993,
+    "controllerMeanProgress": 1102.9601732160922,
+    "confidenceMap": {
+      "edges": [
+        0.011860482119934653,
+        0.01408434620643503,
+        0.015910079089602534,
+        0.01745870208328379,
+        0.01951063117284107,
+        0.022329218686397277,
+        0.02575023982824313,
+        0.030199009084767164,
+        0.036058317217878826,
+        null
+      ],
+      "values": [
+        0.8866666666666667,
+        0.7966666666666666,
+        0.7966666666666666,
+        0.7966666666666666,
+        0.77,
+        0.73,
+        0.73,
+        0.73,
+        0.73,
+        0.73
+      ]
+    }
+  }
+}

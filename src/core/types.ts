@@ -111,6 +111,16 @@ export interface MoveRecord {
   state?: Float32Array;
 }
 
+/** Optional continuous-action extension of an environment (shares the physics of the discrete step). */
+export interface ContinuousEnv extends Env {
+  readonly actionDim: number;
+  readonly actionLow: readonly number[];
+  readonly actionHigh: readonly number[];
+  stepContinuous(action: ArrayLike<number>): StepResult;
+  /** Continuous equivalent of a discrete action in the current state. */
+  continuousOf(action: number): Float64Array;
+}
+
 /** A generic player: what the evaluation compares. */
 export interface Player {
   readonly name: string;

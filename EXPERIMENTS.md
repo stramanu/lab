@@ -31,6 +31,7 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 14 | Racing feasibility spike (go/no-go criteria fixed in the proposal) | `pnpm exp racing-feasibility`: on-track 100% ✓, progress ratio 1.102 ✓, exact ties 0.16% ✓, imitation agreement **80.7% ✗** (threshold 85%) | dev 10001–10030 (+ train) | No | **Stopped**; see below |
 | 15 | Racing: declared τ revision (τ = smallest preference step / 3) and a single re-run of criterion 4 | Agreement 82.2% ✗ | dev (+ train) | No | Failed → design revision |
 | 16 | Racing: incremental steering commands {left, hold, right} × pedal | Adjacent-steering-level confusions were 16.4 of 17.8 error points. Full spike re-run: 100% ✓, 1.198 ✓, 0.58% ✓, agreement **80.5% ✗** | dev (+ train) | No | **Stopped**; decision with the author |
+| 17 | Continuous System One (deep-ensemble regression) for racing; new spike with criteria fixed in `add-continuous-student` | `pnpm exp racing-continuous-feasibility`: agreement **77.4% ✗** (≥ 85%), error-detection AUROC **0.55 ✗** (≥ 0.75), alone on track 100% ✓ (≥ 80%). Alone progress 1,361 m vs base controller 1,103 m on the same seeds | dev (+ train) | No | **Stopped**; decision with the author |
 
 ## Re-validation on the dev split
 
@@ -137,3 +138,23 @@ v3 error breakdown on dev states: "hold vs turn" 13.1 points, pedal 4.9, left vs
 action on 38.9% of consecutive decisions and matches the base controller on only 21.1% of them. As on the
 lander, when a continuous control problem is discretized, the planner's choice depends on fine timing that
 a small classifier cannot predict confidently.
+
+### `racing-continuous-feasibility` (decision 17)
+
+K = 5 ensemble of 20→64→64→2 regressors (MSE on the planner's continuous action). Trained on 40
+planner-driven training episodes plus 2 DAgger rounds of 10 episodes, with the confidence map fitted on 5
+further episodes. Criteria 1–2 are measured on 10 planner-driven dev episodes (6,000 states), criterion 3 on
+20 dev episodes driven by the ensemble alone.
+
+| Criterion | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| 1. Agreement (≤ 0.03 rad steering, same pedal sign) | 77.4% | ≥ 85% | fail |
+| 2. Disagreement detects errors (AUROC) | 0.55 | ≥ 0.75 | fail |
+| 3. Ensemble alone stays on track | 100% | ≥ 80% | pass |
+
+Alone, the continuous student covers 1,361 m against the base controller's 1,103 m on the same 20 dev seeds
+(×1.23). In spike v3, on different dev seeds, the discrete planner itself reached ×1.20 over the controller.
+The student drives with continuous steering and pedal, while its teacher is limited to discrete commands.
+It therefore **matches or beats its teacher on the task** while "disagreeing" on 23% of decisions, and its
+uncertainty carries almost no information about its errors. For this game the premise of escalation (a
+student that needs its teacher and knows when) does not hold.

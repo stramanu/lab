@@ -1,17 +1,21 @@
 import { Rng } from '../../core/rng';
-import type { Env, GameSummary, StepResult } from '../../core/types';
-import { DEFAULT_RACING_CONFIG, RACING_ACTIONS, STEER_HOLD, action, GAS, type RacingConfig } from './config';
+import type { ContinuousEnv, GameSummary, StepResult } from '../../core/types';
+import { DEFAULT_RACING_CONFIG, GAS, MAX_STEER, RACING_ACTIONS, STEER_HOLD, action, pedalOf, type RacingConfig } from './config';
 import { encodeRacing, RACING_ENCODING_SIZE } from './encoding';
-import { copyCar, emptyCar, simulateDecision, type CarState } from './physics';
+import { commandTarget, copyCar, emptyCar, simulateControl, simulateDecision, type CarState } from './physics';
 import { generateTrack, type Track } from './track';
 
 /** Headless top-down racing on a procedural closed track. Deterministic given the seed. */
-export class RacingEnv implements Env {
+export class RacingEnv implements ContinuousEnv {
   readonly name = 'racing';
   readonly numActions = RACING_ACTIONS.length;
   readonly actionNames = RACING_ACTIONS;
   readonly encodingSize: number = RACING_ENCODING_SIZE;
   readonly defaultAction = action(STEER_HOLD, GAS);
+  /** Continuous action: [steering target (rad), pedal (−1 brake … +1 gas)]. */
+  readonly actionDim = 2;
+  readonly actionLow = [-MAX_STEER, -1] as const;
+  readonly actionHigh = [MAX_STEER, 1] as const;
   readonly config: RacingConfig;
   track: Track;
   readonly car: CarState = emptyCar();
@@ -46,6 +50,17 @@ export class RacingEnv implements Env {
     const before = this.car.progress;
     simulateDecision(this.car, this.track, this.config, a);
     return { reward: this.car.progress - before, done: this.car.end !== null, score: this.score() };
+  }
+
+  stepContinuous(a: ArrayLike<number>): StepResult {
+    if (this.car.end) return { reward: 0, done: true, score: this.score() };
+    const before = this.car.progress;
+    simulateControl(this.car, this.track, this.config, a[0], a[1]);
+    return { reward: this.car.progress - before, done: this.car.end !== null, score: this.score() };
+  }
+
+  continuousOf(a: number): Float64Array {
+    return Float64Array.of(commandTarget(this.car, a), pedalOf(a) === GAS ? 1 : -1);
   }
 
   legalActions(): boolean[] {

@@ -47,11 +47,26 @@ export function copyCar(src: CarState, dst: CarState): CarState {
  */
 export function simulateDecision(c: CarState, track: Track, cfg: RacingConfig, action: number): number {
   if (c.end) return 0;
+  return simulateControl(c, track, cfg, commandTarget(c, action), pedalOf(action) === GAS ? 1 : -1);
+}
+
+/** Steering target produced by a discrete command in the current state. */
+export function commandTarget(c: CarState, action: number): number {
   const command = commandOf(action);
   const change = command === STEER_LEFT ? STEER_STEP : command === STEER_RIGHT ? -STEER_STEP : 0;
-  c.steerTarget = Math.max(-MAX_STEER, Math.min(MAX_STEER, c.steerTarget + change));
+  return Math.max(-MAX_STEER, Math.min(MAX_STEER, c.steerTarget + change));
+}
+
+/**
+ * One decision with a continuous control: steering target (clamped to ±MAX_STEER)
+ * and pedal in [−1, 1] (positive scales gas, negative scales braking).
+ * The discrete step is the special case pedal = ±1.
+ */
+export function simulateControl(c: CarState, track: Track, cfg: RacingConfig, steerTarget: number, pedalInput: number): number {
+  if (c.end) return 0;
+  c.steerTarget = Math.max(-MAX_STEER, Math.min(MAX_STEER, steerTarget));
   const target = c.steerTarget;
-  const gas = pedalOf(action) === GAS;
+  const pedal = Math.max(-1, Math.min(1, pedalInput));
   const { dt } = cfg;
   const cap = cfg.mu * cfg.gravity;
   let steps = 0;
@@ -60,7 +75,7 @@ export function simulateDecision(c: CarState, track: Track, cfg: RacingConfig, a
     const maxDelta = cfg.steerRate * dt;
     c.steer += Math.max(-maxDelta, Math.min(maxDelta, target - c.steer));
 
-    let accel = gas ? cfg.gas * Math.max(0, 1 - c.speed / cfg.topSpeed) : c.speed > 0 ? -cfg.brake : 0;
+    let accel = pedal >= 0 ? pedal * cfg.gas * Math.max(0, 1 - c.speed / cfg.topSpeed) : c.speed > 0 ? pedal * cfg.brake : 0;
     accel -= 0.002 * c.speed * c.speed + (c.speed > 0 ? 0.2 : 0);
 
     let yawRate = (c.speed * Math.tan(c.steer)) / cfg.wheelbase;

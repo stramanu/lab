@@ -66,6 +66,14 @@ export class RacingTeacher implements Teacher {
     return { scores, cost: Math.max(1, counter.steps) };
   }
 
+  /** Continuous equivalent of the planner's chosen command, with its cost (the regression label). */
+  targetAction(env: RacingEnv): { action: Float64Array; cost: number; scores: Float64Array } {
+    const r = this.score(env);
+    let best = 0;
+    for (let a = 1; a < r.scores.length; a++) if (r.scores[a] > r.scores[best]) best = a;
+    return { action: env.continuousOf(best), cost: r.cost, scores: r.scores };
+  }
+
   private search(c: CarState, level: number, env: RacingEnv, counter: { steps: number }): number {
     const remaining = this.config.horizon + this.config.depth - level;
     if (c.end) return branchValue(c, env.car, remaining);

@@ -132,18 +132,43 @@ export class Mlp {
     grad: Float64Array,
     scale: number,
   ): number {
-    const p = this.params;
-    const { inputSize: n0, hidden: [n1, n2], outputSize: n3 } = this.config;
-    const { w1, b1, w2, b2, w3, b3 } = this.offsets;
+    const n3 = this.config.outputSize;
     const logits = this.logits(x);
-    const { z1, a1, z2, a2, dz1, dz2, dz3 } = this;
-
+    const dz3 = this.dz3;
     maskedSoftmax(logits, legal, 1, dz3);
     let loss = 0;
     for (let k = 0; k < n3; k++) {
       if (target[k] > 0) loss -= target[k] * Math.log(Math.max(dz3[k], 1e-300));
       dz3[k] -= target[k]; // dL/dlogit = p - y (both zero on masked actions)
     }
+    this.backward(x, grad, scale);
+    return loss;
+  }
+
+  /**
+   * Forward + backward for one sample with mean-squared error on the raw
+   * outputs, L = ½ · mean_k (out_k − target_k)². Returns the loss.
+   */
+  accumulateMse(x: ArrayLike<number>, target: ArrayLike<number>, grad: Float64Array, scale: number): number {
+    const n3 = this.config.outputSize;
+    const out = this.logits(x);
+    let loss = 0;
+    for (let k = 0; k < n3; k++) {
+      const e = out[k] - target[k];
+      loss += (0.5 * e * e) / n3;
+      this.dz3[k] = e / n3;
+    }
+    this.backward(x, grad, scale);
+    return loss;
+  }
+
+  /** Backpropagates `dz3` (dLoss/dOutput, from the last forward pass) into `grad`. */
+  private backward(x: ArrayLike<number>, grad: Float64Array, scale: number): void {
+    const p = this.params;
+    const { inputSize: n0, hidden: [n1, n2], outputSize: n3 } = this.config;
+    const { w1, b1, w2, b2, w3 } = this.offsets;
+    const b3 = this.offsets.b3;
+    const { z1, a1, z2, a2, dz1, dz2, dz3 } = this;
 
     for (let k = 0; k < n3; k++) {
       const g = dz3[k] * scale;
@@ -188,6 +213,5 @@ export class Mlp {
       if (xi === 0) continue;
       for (let j = 0; j < n1; j++) grad[w1 + j * n0 + i] += dz1[j] * scale * xi;
     }
-    return loss;
   }
 }

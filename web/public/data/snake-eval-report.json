@@ -1,0 +1,2671 @@
+{
+  "game": "snake",
+  "createdAt": "2026-09-23T16:12:07.849Z",
+  "seeds": {
+    "count": 200,
+    "first": 1,
+    "last": 200
+  },
+  "model": {
+    "params": 17283,
+    "weightsKB": 90.8,
+    "calibrationT": 1.118033988749895,
+    "trainingSeconds": 104.7
+  },
+  "hardware": {
+    "cpu": "Apple M4 Max",
+    "cores": 16,
+    "memoryGB": 48,
+    "platform": "darwin-arm64",
+    "node": "v22.21.1"
+  },
+  "conditions": [
+    {
+      "name": "random",
+      "kind": "random",
+      "params": {},
+      "episodes": 200,
+      "score": {
+        "mean": 0.18,
+        "ci95": 0.0601791362700651,
+        "median": 0,
+        "min": 0,
+        "max": 2
+      },
+      "endReasons": {
+        "wall": 198,
+        "body": 2
+      },
+      "gameMetrics": {
+        "length": 3.18,
+        "movesPerFood": 73.3925
+      },
+      "moves": 14960,
+      "costPerMove": 0,
+      "usPerMove": 0.1237947192513082,
+      "system2Calls": 0,
+      "escalationRate": null,
+      "escalationByReason": null,
+      "guardCostShare": null,
+      "agreementAboveThreshold": null,
+      "calibration": null
+    },
+    {
+      "name": "system2 (level 0)",
+      "kind": "system2",
+      "params": {
+        "level": 0
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 375.48,
+        "ci95": 4.100492461759285,
+        "median": 385,
+        "min": 239,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 126,
+        "body": 52,
+        "win": 21,
+        "wall": 1
+      },
+      "gameMetrics": {
+        "length": 378.48,
+        "movesPerFood": 57.9508198783783
+      },
+      "moves": 4373327,
+      "costPerMove": 309.4244331603834,
+      "usPerMove": 5.324278570068316,
+      "system2Calls": 4373327,
+      "escalationRate": null,
+      "escalationByReason": null,
+      "guardCostShare": null,
+      "agreementAboveThreshold": null,
+      "calibration": null
+    },
+    {
+      "name": "system2 (level 1)",
+      "kind": "system2",
+      "params": {
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 383.905,
+        "ci95": 2.077644483737298,
+        "median": 389,
+        "min": 307,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 109,
+        "body": 62,
+        "win": 29
+      },
+      "gameMetrics": {
+        "length": 386.905,
+        "movesPerFood": 54.9318114784263
+      },
+      "moves": 4220351,
+      "costPerMove": 1018.3015694666154,
+      "usPerMove": 16.66839120253306,
+      "system2Calls": 4220351,
+      "escalationRate": null,
+      "escalationByReason": null,
+      "guardCostShare": null,
+      "agreementAboveThreshold": null,
+      "calibration": null
+    },
+    {
+      "name": "system2 (level 2)",
+      "kind": "system2",
+      "params": {
+        "level": 2
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 383.46,
+        "ci95": 2.380790423874403,
+        "median": 389.5,
+        "min": 299,
+        "max": 397
+      },
+      "endReasons": {
+        "body": 68,
+        "starvation": 98,
+        "win": 32,
+        "wall": 2
+      },
+      "gameMetrics": {
+        "length": 386.46,
+        "movesPerFood": 56.74204831418955
+      },
+      "moves": 4356862,
+      "costPerMove": 2727.0919308438047,
+      "usPerMove": 42.44463973107071,
+      "system2Calls": 4356862,
+      "escalationRate": null,
+      "escalationByReason": null,
+      "guardCostShare": null,
+      "agreementAboveThreshold": null,
+      "calibration": null
+    },
+    {
+      "name": "system1",
+      "kind": "system1",
+      "params": {
+        "confidence": "maxProb"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 35.995,
+        "ci95": 1.7023780351829516,
+        "median": 35,
+        "min": 9,
+        "max": 80
+      },
+      "endReasons": {
+        "body": 191,
+        "wall": 9
+      },
+      "gameMetrics": {
+        "length": 38.995,
+        "movesPerFood": 16.922711643001783
+      },
+      "moves": 125161,
+      "costPerMove": 1,
+      "usPerMove": 6.3787997220661765,
+      "system2Calls": 0,
+      "escalationRate": null,
+      "escalationByReason": null,
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.8995294061249112,
+      "calibration": {
+        "ece": 0.04179502553651082,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 108,
+            "meanConfidence": 0.37705794583868096,
+            "accuracy": 0.37037037037037035
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 1075,
+            "meanConfidence": 0.4631758022031119,
+            "accuracy": 0.40837209302325583
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 3202,
+            "meanConfidence": 0.5499132507149687,
+            "accuracy": 0.45440349781386635
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 3500,
+            "meanConfidence": 0.6496815480164119,
+            "accuracy": 0.47885714285714287
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 4937,
+            "meanConfidence": 0.7519360499896813,
+            "accuracy": 0.39497670650192424
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 7053,
+            "meanConfidence": 0.8585633724763109,
+            "accuracy": 0.7177087764072027
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 105286,
+            "meanConfidence": 0.9828088022522943,
+            "accuracy": 0.9684478468172406
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid maxProb@0.5",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.5,
+        "confidence": "maxProb",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 37.95,
+        "ci95": 1.8595101046097406,
+        "median": 37,
+        "min": 9,
+        "max": 88
+      },
+      "endReasons": {
+        "body": 194,
+        "wall": 6
+      },
+      "gameMetrics": {
+        "length": 40.95,
+        "movesPerFood": 16.75016688808039
+      },
+      "moves": 129821,
+      "costPerMove": 70.26167569191425,
+      "usPerMove": 7.282019357467088,
+      "system2Calls": 1059,
+      "escalationRate": 0.008157385939100762,
+      "escalationByReason": {
+        "confidence": 0.008157385939100762,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9101753622963297,
+      "calibration": {
+        "ece": 0.036532432272019154,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 114,
+            "meanConfidence": 0.3781565644761972,
+            "accuracy": 0.3508771929824561
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 945,
+            "meanConfidence": 0.46183304547002074,
+            "accuracy": 0.46984126984126984
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 3116,
+            "meanConfidence": 0.5507736023950638,
+            "accuracy": 0.47913992297817715
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 3507,
+            "meanConfidence": 0.6504638470031612,
+            "accuracy": 0.46592529227259766
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 5180,
+            "meanConfidence": 0.7522572834059078,
+            "accuracy": 0.38996138996138996
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 7225,
+            "meanConfidence": 0.8583859163254602,
+            "accuracy": 0.7298269896193772
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 109734,
+            "meanConfidence": 0.9826679155011895,
+            "accuracy": 0.9730439061731095
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid maxProb@0.7",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.7,
+        "confidence": "maxProb",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 54.865,
+        "ci95": 2.9223720753755296,
+        "median": 53.5,
+        "min": 9,
+        "max": 107
+      },
+      "endReasons": {
+        "body": 196,
+        "wall": 4
+      },
+      "gameMetrics": {
+        "length": 57.865,
+        "movesPerFood": 16.413603135950098
+      },
+      "moves": 187017,
+      "costPerMove": 339.19616398509226,
+      "usPerMove": 10.929254409955234,
+      "system2Calls": 9780,
+      "escalationRate": 0.05229471117598935,
+      "escalationByReason": {
+        "confidence": 0.05229471117598935,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9484419167555307,
+      "calibration": {
+        "ece": 0.017524864752502145,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 187,
+            "meanConfidence": 0.37968638268384064,
+            "accuracy": 0.41711229946524064
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 1453,
+            "meanConfidence": 0.4623089640286571,
+            "accuracy": 0.48245010323468684
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 4020,
+            "meanConfidence": 0.5505836685053744,
+            "accuracy": 0.5455223880597015
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 4120,
+            "meanConfidence": 0.6494945407637115,
+            "accuracy": 0.6429611650485437
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 5733,
+            "meanConfidence": 0.7542008275389359,
+            "accuracy": 0.6220129077271934
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 11578,
+            "meanConfidence": 0.8584540384557915,
+            "accuracy": 0.7629124201070997
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 159926,
+            "meanConfidence": 0.9818910361845744,
+            "accuracy": 0.973575278566337
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid maxProb@0.8",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.8,
+        "confidence": "maxProb",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 62.7,
+        "ci95": 3.428796773881898,
+        "median": 62,
+        "min": 9,
+        "max": 136
+      },
+      "endReasons": {
+        "body": 191,
+        "wall": 9
+      },
+      "gameMetrics": {
+        "length": 65.7,
+        "movesPerFood": 16.719838461574636
+      },
+      "moves": 218207,
+      "costPerMove": 478.86532054425385,
+      "usPerMove": 12.999956399215003,
+      "system2Calls": 17709,
+      "escalationRate": 0.08115688314307057,
+      "escalationByReason": {
+        "confidence": 0.08115688314307057,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9653961635527536,
+      "calibration": {
+        "ece": 0.0081336343660789,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 209,
+            "meanConfidence": 0.3790751113845971,
+            "accuracy": 0.48325358851674644
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 1673,
+            "meanConfidence": 0.4605492917599253,
+            "accuracy": 0.4769874476987448
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 4689,
+            "meanConfidence": 0.5503859836222852,
+            "accuracy": 0.5395606739176797
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 4859,
+            "meanConfidence": 0.6496202523852111,
+            "accuracy": 0.6550730603004733
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 6279,
+            "meanConfidence": 0.752717721090136,
+            "accuracy": 0.7361044752349101
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 13596,
+            "meanConfidence": 0.8602396961861619,
+            "accuracy": 0.8325242718446602
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 186902,
+            "meanConfidence": 0.9813065299813567,
+            "accuracy": 0.9750617970915239
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid maxProb@0.9",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.9,
+        "confidence": "maxProb",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 88.115,
+        "ci95": 4.718999827405728,
+        "median": 84,
+        "min": 13,
+        "max": 203
+      },
+      "endReasons": {
+        "body": 187,
+        "wall": 13
+      },
+      "gameMetrics": {
+        "length": 91.115,
+        "movesPerFood": 18.30376235590193
+      },
+      "moves": 340604,
+      "costPerMove": 814.5453194912567,
+      "usPerMove": 17.710205758046026,
+      "system2Calls": 54607,
+      "escalationRate": 0.16032401263637538,
+      "escalationByReason": {
+        "confidence": 0.16032401263637538,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9740346926716015,
+      "calibration": {
+        "ece": 0.00875038269362683,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 354,
+            "meanConfidence": 0.37696349368257037,
+            "accuracy": 0.3983050847457627
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 2676,
+            "meanConfidence": 0.46198104333093526,
+            "accuracy": 0.48019431988041855
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 7845,
+            "meanConfidence": 0.5508306185708371,
+            "accuracy": 0.5646908859145953
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 8506,
+            "meanConfidence": 0.6506087953220836,
+            "accuracy": 0.6722313660945215
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 11422,
+            "meanConfidence": 0.7530988503141175,
+            "accuracy": 0.7698301523375941
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 23804,
+            "meanConfidence": 0.8599769924016905,
+            "accuracy": 0.8843051587968409
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 285997,
+            "meanConfidence": 0.9805426410305452,
+            "accuracy": 0.9740346926716015
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid maxProb@0.95",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.95,
+        "confidence": "maxProb",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 116.025,
+        "ci95": 6.569140533719671,
+        "median": 113,
+        "min": 24,
+        "max": 300
+      },
+      "endReasons": {
+        "body": 190,
+        "wall": 10
+      },
+      "gameMetrics": {
+        "length": 119.025,
+        "movesPerFood": 20.50100615432169
+      },
+      "moves": 515436,
+      "costPerMove": 1270.9319391738256,
+      "usPerMove": 24.207702259864565,
+      "system2Calls": 147325,
+      "escalationRate": 0.28582598033509493,
+      "escalationByReason": {
+        "confidence": 0.28582598033509493,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9844584921395992,
+      "calibration": {
+        "ece": 0.006446477542625861,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 474,
+            "meanConfidence": 0.37772050826861386,
+            "accuracy": 0.39029535864978904
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 3784,
+            "meanConfidence": 0.46188260658976893,
+            "accuracy": 0.4883720930232558
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 11886,
+            "meanConfidence": 0.5504957119834437,
+            "accuracy": 0.5608278647147905
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 13134,
+            "meanConfidence": 0.6512546983278196,
+            "accuracy": 0.6770214709913203
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 18686,
+            "meanConfidence": 0.7539927554656234,
+            "accuracy": 0.7885582789253986
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 40853,
+            "meanConfidence": 0.8603592618449655,
+            "accuracy": 0.9042420385283823
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 426619,
+            "meanConfidence": 0.9801914900738792,
+            "accuracy": 0.9809338074488009
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid margin@0.5",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.5,
+        "confidence": "margin",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 59.025,
+        "ci95": 3.2237970238922133,
+        "median": 58,
+        "min": 9,
+        "max": 133
+      },
+      "endReasons": {
+        "body": 193,
+        "wall": 7
+      },
+      "gameMetrics": {
+        "length": 62.025,
+        "movesPerFood": 16.499055908885847
+      },
+      "moves": 202656,
+      "costPerMove": 371.45965083688617,
+      "usPerMove": 11.286940440948591,
+      "system2Calls": 12309,
+      "escalationRate": 0.06073839412600663,
+      "escalationByReason": {
+        "confidence": 0.06073839412600663,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9548351169180497,
+      "calibration": {
+        "ece": 0.03171932022973056,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 2354,
+            "meanConfidence": 0.04975329997839316,
+            "accuracy": 0.48300764655904843
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 2361,
+            "meanConfidence": 0.14990916686611425,
+            "accuracy": 0.5328250741211351
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 2335,
+            "meanConfidence": 0.25045688740701694,
+            "accuracy": 0.5764453961456103
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 2357,
+            "meanConfidence": 0.34975462091085413,
+            "accuracy": 0.6313109885447603
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 2902,
+            "meanConfidence": 0.45143191074807426,
+            "accuracy": 0.6681598897312199
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 3432,
+            "meanConfidence": 0.5531093217519335,
+            "accuracy": 0.664918414918415
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 4580,
+            "meanConfidence": 0.6519761164001633,
+            "accuracy": 0.6980349344978166
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 7472,
+            "meanConfidence": 0.7585840503240455,
+            "accuracy": 0.8011241970021413
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 18342,
+            "meanConfidence": 0.8594211342428402,
+            "accuracy": 0.9170210445970995
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 156521,
+            "meanConfidence": 0.9774000068755099,
+            "accuracy": 0.9804754633563547
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid margin@0.7",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.7,
+        "confidence": "margin",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 71.03,
+        "ci95": 3.7322825587422317,
+        "median": 71.5,
+        "min": 13,
+        "max": 149
+      },
+      "endReasons": {
+        "body": 191,
+        "wall": 9
+      },
+      "gameMetrics": {
+        "length": 74.03,
+        "movesPerFood": 17.13281218678172
+      },
+      "moves": 253596,
+      "costPerMove": 566.2693062982066,
+      "usPerMove": 14.110875841979496,
+      "system2Calls": 26037,
+      "escalationRate": 0.10267117777882932,
+      "escalationByReason": {
+        "confidence": 0.10267117777882932,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9679951133552178,
+      "calibration": {
+        "ece": 0.04064540809506171,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 3016,
+            "meanConfidence": 0.05095937330305418,
+            "accuracy": 0.49403183023872677
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 2982,
+            "meanConfidence": 0.14924454677032992,
+            "accuracy": 0.5462776659959758
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 3028,
+            "meanConfidence": 0.2506976922631972,
+            "accuracy": 0.6020475561426685
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 3067,
+            "meanConfidence": 0.3497768872659526,
+            "accuracy": 0.6625366807955657
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 3811,
+            "meanConfidence": 0.45187858253819085,
+            "accuracy": 0.7058514825505117
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 4548,
+            "meanConfidence": 0.5530175700515063,
+            "accuracy": 0.7594547053649956
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 5585,
+            "meanConfidence": 0.6514945254410177,
+            "accuracy": 0.8109221128021487
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 9983,
+            "meanConfidence": 0.757932966417365,
+            "accuracy": 0.8469397976560152
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 24471,
+            "meanConfidence": 0.8595412259362052,
+            "accuracy": 0.9205181643578113
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 193105,
+            "meanConfidence": 0.9772339390491761,
+            "accuracy": 0.9802698014033816
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid margin@0.8",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.8,
+        "confidence": "margin",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 86.41,
+        "ci95": 4.537689564981358,
+        "median": 83,
+        "min": 13,
+        "max": 180
+      },
+      "endReasons": {
+        "body": 186,
+        "wall": 14
+      },
+      "gameMetrics": {
+        "length": 89.41,
+        "movesPerFood": 18.154865497773105
+      },
+      "moves": 329375,
+      "costPerMove": 771.8446117647059,
+      "usPerMove": 17.03699243111391,
+      "system2Calls": 50055,
+      "escalationRate": 0.15196963946869071,
+      "escalationByReason": {
+        "confidence": 0.15196963946869071,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9733531433481312,
+      "calibration": {
+        "ece": 0.04663752939946327,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 4025,
+            "meanConfidence": 0.050296210554075536,
+            "accuracy": 0.4862111801242236
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 4012,
+            "meanConfidence": 0.14937228289760598,
+            "accuracy": 0.5543369890329013
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 4176,
+            "meanConfidence": 0.24941401563270796,
+            "accuracy": 0.6108716475095786
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 4357,
+            "meanConfidence": 0.35025695016932973,
+            "accuracy": 0.6511361028230434
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 5207,
+            "meanConfidence": 0.4513211552220387,
+            "accuracy": 0.7107739581332821
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 6227,
+            "meanConfidence": 0.5520574615848606,
+            "accuracy": 0.7796691825919383
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 8190,
+            "meanConfidence": 0.6524068542989255,
+            "accuracy": 0.8409035409035409
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 13861,
+            "meanConfidence": 0.7577824078779244,
+            "accuracy": 0.8885361806507467
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 34279,
+            "meanConfidence": 0.8591461885616054,
+            "accuracy": 0.927973394789813
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 245041,
+            "meanConfidence": 0.9769353703579361,
+            "accuracy": 0.9797013560995915
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid margin@0.9",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.9,
+        "confidence": "margin",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 111.805,
+        "ci95": 5.944368673833435,
+        "median": 108,
+        "min": 24,
+        "max": 237
+      },
+      "endReasons": {
+        "body": 187,
+        "wall": 13
+      },
+      "gameMetrics": {
+        "length": 114.805,
+        "movesPerFood": 20.24963761254106
+      },
+      "moves": 486152,
+      "costPerMove": 1229.5792406490152,
+      "usPerMove": 23.909431274581202,
+      "system2Calls": 132923,
+      "escalationRate": 0.2734186015896263,
+      "escalationByReason": {
+        "confidence": 0.2734186015896263,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9827958633068067,
+      "calibration": {
+        "ece": 0.05748133864027989,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 6070,
+            "meanConfidence": 0.04975610798626794,
+            "accuracy": 0.5023064250411862
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 5985,
+            "meanConfidence": 0.15045791567118844,
+            "accuracy": 0.5503759398496241
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 6018,
+            "meanConfidence": 0.25021489908198813,
+            "accuracy": 0.6166500498504487
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 6595,
+            "meanConfidence": 0.3510445587060233,
+            "accuracy": 0.6720242608036391
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 7919,
+            "meanConfidence": 0.4521285986934953,
+            "accuracy": 0.7351938376057583
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 9923,
+            "meanConfidence": 0.5525695663581845,
+            "accuracy": 0.7964325304847324
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 13577,
+            "meanConfidence": 0.6527309836613295,
+            "accuracy": 0.8577741769168447
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 23727,
+            "meanConfidence": 0.7579354939885501,
+            "accuracy": 0.9155392590719433
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 53109,
+            "meanConfidence": 0.8584079663762073,
+            "accuracy": 0.9559585004424862
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 353229,
+            "meanConfidence": 0.9768039516345036,
+            "accuracy": 0.9827958633068067
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid margin@0.95",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.95,
+        "confidence": "margin",
+        "level": 1
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 148.54,
+        "ci95": 7.8570924633152535,
+        "median": 142,
+        "min": 30,
+        "max": 295
+      },
+      "endReasons": {
+        "body": 195,
+        "wall": 5
+      },
+      "gameMetrics": {
+        "length": 151.54,
+        "movesPerFood": 23.660802628248835
+      },
+      "moves": 767484,
+      "costPerMove": 1507.8574198289475,
+      "usPerMove": 28.00191623279169,
+      "system2Calls": 306583,
+      "escalationRate": 0.3994650051336575,
+      "escalationByReason": {
+        "confidence": 0.3994650051336575,
+        "guard": 0
+      },
+      "guardCostShare": null,
+      "agreementAboveThreshold": 0.9908917533266363,
+      "calibration": {
+        "ece": 0.0628458948285406,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 8825,
+            "meanConfidence": 0.04968402906112563,
+            "accuracy": 0.5054957507082153
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 8786,
+            "meanConfidence": 0.15011084557339402,
+            "accuracy": 0.5569087184156613
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 9206,
+            "meanConfidence": 0.25029478998753185,
+            "accuracy": 0.618944166847708
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 10356,
+            "meanConfidence": 0.3508070631621081,
+            "accuracy": 0.6868482039397451
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 12131,
+            "meanConfidence": 0.4518166022196654,
+            "accuracy": 0.7433847168411508
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 15524,
+            "meanConfidence": 0.5526549270066042,
+            "accuracy": 0.8014042772481319
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 21602,
+            "meanConfidence": 0.6527324865149046,
+            "accuracy": 0.8617720581427646
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 39093,
+            "meanConfidence": 0.7574414446116335,
+            "accuracy": 0.9217506970557389
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 89421,
+            "meanConfidence": 0.857755203036165,
+            "accuracy": 0.9640129276120821
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 552540,
+            "meanConfidence": 0.9778813446230794,
+            "accuracy": 0.9886017301914793
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard maxProb@0.5",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.5,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 330.445,
+        "ci95": 11.834786352777112,
+        "median": 373,
+        "min": 73,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 156,
+        "body": 30,
+        "win": 13,
+        "wall": 1
+      },
+      "gameMetrics": {
+        "length": 333.445,
+        "movesPerFood": 59.169359839377776
+      },
+      "moves": 4117816,
+      "costPerMove": 59.89376771570172,
+      "usPerMove": 8.166138852725672,
+      "system2Calls": 67153,
+      "escalationRate": 0.016307916623763664,
+      "escalationByReason": {
+        "confidence": 0.002876281990258914,
+        "guard": 0.013431634633504752
+      },
+      "guardCostShare": 0.7101298145129588,
+      "agreementAboveThreshold": 0.9526065239196645,
+      "calibration": {
+        "ece": 0.014110217430344916,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1159,
+            "meanConfidence": 0.37782000759945955,
+            "accuracy": 0.4029335634167386
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 10685,
+            "meanConfidence": 0.4645477844668037,
+            "accuracy": 0.4396817969115583
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 64434,
+            "meanConfidence": 0.5511126676127724,
+            "accuracy": 0.5202532824285315
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 79969,
+            "meanConfidence": 0.6525413703598852,
+            "accuracy": 0.5839637859670622
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 130255,
+            "meanConfidence": 0.755536888433342,
+            "accuracy": 0.6690952362673218
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 320883,
+            "meanConfidence": 0.8593215077960081,
+            "accuracy": 0.8104355793233048
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3510431,
+            "meanConfidence": 0.9841557586944938,
+            "accuracy": 0.9774927921956021
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard maxProb@0.7",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.7,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 375.56,
+        "ci95": 3.4555659465934485,
+        "median": 381,
+        "min": 251,
+        "max": 397
+      },
+      "endReasons": {
+        "body": 43,
+        "starvation": 132,
+        "win": 24,
+        "wall": 1
+      },
+      "gameMetrics": {
+        "length": 378.56,
+        "movesPerFood": 59.54954014378436
+      },
+      "moves": 4488258,
+      "costPerMove": 106.20063975823136,
+      "usPerMove": 8.851131438538804,
+      "system2Calls": 194582,
+      "escalationRate": 0.043353568355473326,
+      "escalationByReason": {
+        "confidence": 0.03508688671640534,
+        "guard": 0.008266681639067986
+      },
+      "guardCostShare": 0.3416423145242241,
+      "agreementAboveThreshold": 0.9728836083579665,
+      "calibration": {
+        "ece": 0.0026398516520427856,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1162,
+            "meanConfidence": 0.3777298859597894,
+            "accuracy": 0.3993115318416523
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 11346,
+            "meanConfidence": 0.46461419355884004,
+            "accuracy": 0.46941653446148424
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 64416,
+            "meanConfidence": 0.5509156311052064,
+            "accuracy": 0.555622826626925
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 80555,
+            "meanConfidence": 0.6526041437642667,
+            "accuracy": 0.6544596859288685
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 133928,
+            "meanConfidence": 0.7559706812124655,
+            "accuracy": 0.7506197359775402
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 349643,
+            "meanConfidence": 0.8592648111922179,
+            "accuracy": 0.8571228367220279
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3847208,
+            "meanConfidence": 0.9843529412459108,
+            "accuracy": 0.9817925103087746
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard maxProb@0.8",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.8,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 378.175,
+        "ci95": 3.3034433618916688,
+        "median": 384,
+        "min": 262,
+        "max": 397
+      },
+      "endReasons": {
+        "body": 43,
+        "starvation": 123,
+        "win": 31,
+        "wall": 3
+      },
+      "gameMetrics": {
+        "length": 381.175,
+        "movesPerFood": 58.02679811713061
+      },
+      "moves": 4403573,
+      "costPerMove": 147.30808800035788,
+      "usPerMove": 9.569962443258898,
+      "system2Calls": 308766,
+      "escalationRate": 0.07011715259404125,
+      "escalationByReason": {
+        "confidence": 0.06455530543038573,
+        "guard": 0.005561847163655514
+      },
+      "guardCostShare": 0.22633124139845187,
+      "agreementAboveThreshold": 0.9814902143129091,
+      "calibration": {
+        "ece": 0.003828115540419342,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1216,
+            "meanConfidence": 0.3779632120001081,
+            "accuracy": 0.38898026315789475
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 11454,
+            "meanConfidence": 0.46447055753413474,
+            "accuracy": 0.4722367731796752
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 63269,
+            "meanConfidence": 0.5509560392759805,
+            "accuracy": 0.563893850068754
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 78479,
+            "meanConfidence": 0.6525888710792165,
+            "accuracy": 0.6773531772830949
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 129856,
+            "meanConfidence": 0.755798753982565,
+            "accuracy": 0.7868100049285363
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 341853,
+            "meanConfidence": 0.85923957952267,
+            "accuracy": 0.8840027731217804
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3777446,
+            "meanConfidence": 0.9843742639615656,
+            "accuracy": 0.9839770045686953
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard maxProb@0.9",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.9,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 377.355,
+        "ci95": 3.90304472719857,
+        "median": 387,
+        "min": 205,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 124,
+        "body": 40,
+        "win": 34,
+        "wall": 2
+      },
+      "gameMetrics": {
+        "length": 380.355,
+        "movesPerFood": 55.20618128383039
+      },
+      "moves": 4186009,
+      "costPerMove": 251.00199521787937,
+      "usPerMove": 11.297112064531095,
+      "system2Calls": 610975,
+      "escalationRate": 0.14595644682082623,
+      "escalationByReason": {
+        "confidence": 0.1434457020995416,
+        "guard": 0.0025107447212846415
+      },
+      "guardCostShare": 0.11943086394898442,
+      "agreementAboveThreshold": 0.9891441591884161,
+      "calibration": {
+        "ece": 0.007950612957314083,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1235,
+            "meanConfidence": 0.3777239177391114,
+            "accuracy": 0.38785425101214577
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 11839,
+            "meanConfidence": 0.4645913149650178,
+            "accuracy": 0.4768139200946026
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 62111,
+            "meanConfidence": 0.5509786242157476,
+            "accuracy": 0.5653426929207387
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 77515,
+            "meanConfidence": 0.6528047234883025,
+            "accuracy": 0.6905631168161002
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 125135,
+            "meanConfidence": 0.7556384720341989,
+            "accuracy": 0.8023894194270188
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 322630,
+            "meanConfidence": 0.8592246542412781,
+            "accuracy": 0.9106313733998698
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3585544,
+            "meanConfidence": 0.9843506076408949,
+            "accuracy": 0.9862665191111865
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard maxProb@0.95",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.95,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 380.885,
+        "ci95": 2.749277550457071,
+        "median": 387,
+        "min": 277,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 119,
+        "win": 32,
+        "body": 48,
+        "wall": 1
+      },
+      "gameMetrics": {
+        "length": 383.885,
+        "movesPerFood": 54.76067206003627
+      },
+      "moves": 4179676,
+      "costPerMove": 399.23781221319547,
+      "usPerMove": 13.534088971698392,
+      "system2Calls": 1047509,
+      "escalationRate": 0.25061966525635,
+      "escalationByReason": {
+        "confidence": 0.2494375162093904,
+        "guard": 0.0011821490469596208
+      },
+      "guardCostShare": 0.061888188868887944,
+      "agreementAboveThreshold": 0.9939141176061175,
+      "calibration": {
+        "ece": 0.011346598719643306,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1302,
+            "meanConfidence": 0.3782168388732934,
+            "accuracy": 0.3847926267281106
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 12308,
+            "meanConfidence": 0.46394062179770607,
+            "accuracy": 0.4807442313942151
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 63620,
+            "meanConfidence": 0.5508226185043965,
+            "accuracy": 0.5637220999685634
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 78660,
+            "meanConfidence": 0.6527713702087514,
+            "accuracy": 0.6902237477752352
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 128521,
+            "meanConfidence": 0.7558845265429167,
+            "accuracy": 0.8086927428202395
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 331080,
+            "meanConfidence": 0.8589630739728048,
+            "accuracy": 0.9169264226168902
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3564185,
+            "meanConfidence": 0.984324162021884,
+            "accuracy": 0.9892244650600348
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard margin@0.5",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.5,
+        "confidence": "margin",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 377.23,
+        "ci95": 3.2824934597599467,
+        "median": 384,
+        "min": 212,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 113,
+        "body": 61,
+        "win": 24,
+        "wall": 2
+      },
+      "gameMetrics": {
+        "length": 380.23,
+        "movesPerFood": 58.52630709315964
+      },
+      "moves": 4428013,
+      "costPerMove": 115.15468450521712,
+      "usPerMove": 8.957015581690602,
+      "system2Calls": 221007,
+      "escalationRate": 0.049911100080329486,
+      "escalationByReason": {
+        "confidence": 0.04268415652799574,
+        "guard": 0.007226943552333744
+      },
+      "guardCostShare": 0.30801118338493627,
+      "agreementAboveThreshold": 0.9749218327713343,
+      "calibration": {
+        "ece": 0.03895353785861047,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 31129,
+            "meanConfidence": 0.05011367680859568,
+            "accuracy": 0.5029072568987119
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 31421,
+            "meanConfidence": 0.15042586766183613,
+            "accuracy": 0.5570160084020241
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 34893,
+            "meanConfidence": 0.2516016455700469,
+            "accuracy": 0.6088613762072622
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 40680,
+            "meanConfidence": 0.3511300653805306,
+            "accuracy": 0.6611602753195673
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 50883,
+            "meanConfidence": 0.4525729358483839,
+            "accuracy": 0.7110626338855807
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 71025,
+            "meanConfidence": 0.553162012580036,
+            "accuracy": 0.7600985568461809
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 114152,
+            "meanConfidence": 0.654446959792714,
+            "accuracy": 0.8113305066928306
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 221109,
+            "meanConfidence": 0.756891267139892,
+            "accuracy": 0.8748626243165136
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 464373,
+            "meanConfidence": 0.8569632110308804,
+            "accuracy": 0.9320632336505352
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3368348,
+            "meanConfidence": 0.9841428268337304,
+            "accuracy": 0.9882458700823075
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard margin@0.7",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.7,
+        "confidence": "margin",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 375.005,
+        "ci95": 4.479206000147664,
+        "median": 383,
+        "min": 59,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 138,
+        "win": 20,
+        "body": 39,
+        "wall": 3
+      },
+      "gameMetrics": {
+        "length": 378.005,
+        "movesPerFood": 56.325914623981724
+      },
+      "moves": 4245806,
+      "costPerMove": 173.91716955508565,
+      "usPerMove": 9.787357621625448,
+      "system2Calls": 380272,
+      "escalationRate": 0.08956414871522628,
+      "escalationByReason": {
+        "confidence": 0.08520667218426843,
+        "guard": 0.004357476530957844
+      },
+      "guardCostShare": 0.187117575465282,
+      "agreementAboveThreshold": 0.9842409871443376,
+      "calibration": {
+        "ece": 0.04560561928845268,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 30613,
+            "meanConfidence": 0.049894495567501154,
+            "accuracy": 0.49720706889230065
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 30959,
+            "meanConfidence": 0.15021950276120002,
+            "accuracy": 0.566781872799509
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 33986,
+            "meanConfidence": 0.25126697106871887,
+            "accuracy": 0.6248161007473666
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 39956,
+            "meanConfidence": 0.35114606257107767,
+            "accuracy": 0.6848533386725398
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 49653,
+            "meanConfidence": 0.4523939542821836,
+            "accuracy": 0.738283688800274
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 67351,
+            "meanConfidence": 0.5531243070075281,
+            "accuracy": 0.8000623598758742
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 109253,
+            "meanConfidence": 0.6545892453906418,
+            "accuracy": 0.8544021674462029
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 214232,
+            "meanConfidence": 0.7569770499978828,
+            "accuracy": 0.9030770379775197
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 443694,
+            "meanConfidence": 0.8570054595199014,
+            "accuracy": 0.9425347198745081
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3226109,
+            "meanConfidence": 0.9838329864510089,
+            "accuracy": 0.9897560807771839
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard margin@0.8",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.8,
+        "confidence": "margin",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 381.295,
+        "ci95": 2.7444852962818977,
+        "median": 387,
+        "min": 269,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 109,
+        "body": 56,
+        "win": 31,
+        "wall": 4
+      },
+      "gameMetrics": {
+        "length": 384.295,
+        "movesPerFood": 56.160653666644514
+      },
+      "moves": 4291508,
+      "costPerMove": 233.51770589732095,
+      "usPerMove": 10.76235650562429,
+      "system2Calls": 599743,
+      "escalationRate": 0.1397511084681655,
+      "escalationByReason": {
+        "confidence": 0.13703947423609603,
+        "guard": 0.002711634232069473
+      },
+      "guardCostShare": 0.12723448239906712,
+      "agreementAboveThreshold": 0.9890778530052698,
+      "calibration": {
+        "ece": 0.04924820317164392,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 31269,
+            "meanConfidence": 0.049972925559503535,
+            "accuracy": 0.5038216764207362
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 31842,
+            "meanConfidence": 0.15023457875679908,
+            "accuracy": 0.5665787324916777
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 34617,
+            "meanConfidence": 0.2514102750954975,
+            "accuracy": 0.6289973134587052
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 41066,
+            "meanConfidence": 0.351215541212176,
+            "accuracy": 0.6907173817756782
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 51344,
+            "meanConfidence": 0.45233051378474953,
+            "accuracy": 0.7547133063259582
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 69832,
+            "meanConfidence": 0.5533487403681887,
+            "accuracy": 0.8093997021422843
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 111657,
+            "meanConfidence": 0.654776512570859,
+            "accuracy": 0.8658749563395041
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 216479,
+            "meanConfidence": 0.7569649805209475,
+            "accuracy": 0.9195118233177352
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 449304,
+            "meanConfidence": 0.8569891265480509,
+            "accuracy": 0.9502764275412638
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3254098,
+            "meanConfidence": 0.9839115262031909,
+            "accuracy": 0.9909206790944833
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard margin@0.9",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.9,
+        "confidence": "margin",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 382.715,
+        "ci95": 2.86512391099,
+        "median": 387.5,
+        "min": 255,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 111,
+        "win": 44,
+        "body": 42,
+        "wall": 3
+      },
+      "gameMetrics": {
+        "length": 385.715,
+        "movesPerFood": 55.10048849491172
+      },
+      "moves": 4224755,
+      "costPerMove": 382.04584123813095,
+      "usPerMove": 13.251803616831557,
+      "system2Calls": 1033468,
+      "escalationRate": 0.24462199583171096,
+      "escalationByReason": {
+        "confidence": 0.24332724619534152,
+        "guard": 0.0012947496363694463
+      },
+      "guardCostShare": 0.06518158292236086,
+      "agreementAboveThreshold": 0.9936326629350478,
+      "calibration": {
+        "ece": 0.0529496288217365,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 31862,
+            "meanConfidence": 0.04974932798194568,
+            "accuracy": 0.5070617035967611
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 31936,
+            "meanConfidence": 0.15041772215225863,
+            "accuracy": 0.5691695891783567
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 34548,
+            "meanConfidence": 0.25132872299079306,
+            "accuracy": 0.6341901123075142
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 40932,
+            "meanConfidence": 0.35131278996043025,
+            "accuracy": 0.6916349066744845
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 50960,
+            "meanConfidence": 0.45233316049827743,
+            "accuracy": 0.7553767660910518
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 69867,
+            "meanConfidence": 0.5530736064395863,
+            "accuracy": 0.8156783603131664
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 112361,
+            "meanConfidence": 0.6548900331962783,
+            "accuracy": 0.8740488247701604
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 217582,
+            "meanConfidence": 0.7566596585151354,
+            "accuracy": 0.9286383983969262
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 437950,
+            "meanConfidence": 0.8568185235442044,
+            "accuracy": 0.964146592076721
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3196757,
+            "meanConfidence": 0.9838934622927438,
+            "accuracy": 0.9919512180625553
+          }
+        ]
+      }
+    },
+    {
+      "name": "hybrid+guard margin@0.95",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0.95,
+        "confidence": "margin",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 377.98,
+        "ci95": 3.6094102577629257,
+        "median": 385,
+        "min": 242,
+        "max": 397
+      },
+      "endReasons": {
+        "win": 37,
+        "starvation": 114,
+        "body": 46,
+        "wall": 3
+      },
+      "gameMetrics": {
+        "length": 380.98,
+        "movesPerFood": 54.62030612622343
+      },
+      "moves": 4143355,
+      "costPerMove": 530.1671150553115,
+      "usPerMove": 17.060044207179708,
+      "system2Calls": 1402137,
+      "escalationRate": 0.3384061949796723,
+      "escalationByReason": {
+        "confidence": 0.3377222082104961,
+        "guard": 0.000683986769176187
+      },
+      "guardCostShare": 0.039151459163698984,
+      "agreementAboveThreshold": 0.9962917943775358,
+      "calibration": {
+        "ece": 0.05466901408840234,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 31575,
+            "meanConfidence": 0.04990846722445031,
+            "accuracy": 0.5059699129057799
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 31898,
+            "meanConfidence": 0.1500521328346252,
+            "accuracy": 0.5721048341588815
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 34960,
+            "meanConfidence": 0.25116648150936144,
+            "accuracy": 0.6346395881006865
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 41109,
+            "meanConfidence": 0.351016917828225,
+            "accuracy": 0.6969033544965823
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 50199,
+            "meanConfidence": 0.4522746328694376,
+            "accuracy": 0.7529233650072711
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 68482,
+            "meanConfidence": 0.5530235744101701,
+            "accuracy": 0.8144329896907216
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 108795,
+            "meanConfidence": 0.6545094345232856,
+            "accuracy": 0.8739556045774163
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 211777,
+            "meanConfidence": 0.7567617650873624,
+            "accuracy": 0.9315270307918235
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 430074,
+            "meanConfidence": 0.8568402790812165,
+            "accuracy": 0.9668057125052898
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3134486,
+            "meanConfidence": 0.9839240623565703,
+            "accuracy": 0.9934477295480024
+          }
+        ]
+      }
+    },
+    {
+      "name": "guard only",
+      "kind": "hybrid",
+      "params": {
+        "threshold": 0,
+        "confidence": "maxProb",
+        "level": 1,
+        "guard": "snake-tail-guard"
+      },
+      "episodes": 200,
+      "score": {
+        "mean": 300.925,
+        "ci95": 13.587946979236875,
+        "median": 355,
+        "min": 73,
+        "max": 397
+      },
+      "endReasons": {
+        "starvation": 157,
+        "body": 28,
+        "win": 12,
+        "wall": 3
+      },
+      "gameMetrics": {
+        "length": 303.925,
+        "movesPerFood": 55.83818748997228
+      },
+      "moves": 3632493,
+      "costPerMove": 54.887156836916134,
+      "usPerMove": 9.088152661002066,
+      "system2Calls": 48371,
+      "escalationRate": 0.013316199095221932,
+      "escalationByReason": {
+        "confidence": 0,
+        "guard": 0.013316199095221932
+      },
+      "guardCostShare": 0.8604204533644474,
+      "agreementAboveThreshold": 0.9434745803853775,
+      "calibration": {
+        "ece": 0.02017863155000921,
+        "bins": [
+          {
+            "lower": 0,
+            "upper": 0.1,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 0,
+            "meanConfidence": 0,
+            "accuracy": 0
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 1160,
+            "meanConfidence": 0.3784775367584722,
+            "accuracy": 0.35172413793103446
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 10823,
+            "meanConfidence": 0.4640573194080257,
+            "accuracy": 0.3978564168899566
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 59578,
+            "meanConfidence": 0.5507914147739096,
+            "accuracy": 0.49837188223841017
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 72987,
+            "meanConfidence": 0.6523048234483729,
+            "accuracy": 0.5678271473002041
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 117777,
+            "meanConfidence": 0.755462659275054,
+            "accuracy": 0.6418400876232202
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 285036,
+            "meanConfidence": 0.8595196533291621,
+            "accuracy": 0.788479349976845
+          },
+          {
+            "lower": 0.9,
+            "upper": 1,
+            "count": 3085132,
+            "meanConfidence": 0.9837929848571144,
+            "accuracy": 0.9741884626006277
+          }
+        ]
+      }
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "statement": "Escalation share decreases during training and settles below 10%",
+      "target": "mean of last 3 iterations < 10.0%",
+      "measured": "16.0% → 14.4%",
+      "confirmed": false,
+      "details": {
+        "first": 0.16037075900664569,
+        "lastThreeMean": 0.14356404138236303
+      }
+    },
+    {
+      "id": "H2",
+      "statement": "The hybrid reaches at least 90% of System Two score with at least 10x lower mean cost per move",
+      "target": "score ≥ 90.0% of System Two and cost ratio ≥ 10x",
+      "measured": "hybrid+guard maxProb@0.7: score 97.8% of System Two, System Two/hybrid cost per move 9.6x",
+      "confirmed": false,
+      "details": {
+        "best": "hybrid+guard maxProb@0.7",
+        "scoreRatio": 0.978262851486696,
+        "costRatio": 9.588469257669319
+      }
+    },
+    {
+      "id": "H3",
+      "statement": "System One alone reaches a measurable share of the teacher score",
+      "target": "≥ 60.0% of System Two",
+      "measured": "9.4%",
+      "confirmed": false,
+      "details": {
+        "scoreRatio": 0.09376017504330499
+      }
+    },
+    {
+      "id": "H4",
+      "statement": "Above the confidence threshold System One agrees with the teacher",
+      "target": "≥ 95.0% at threshold 0.9",
+      "measured": "97.4% (ECE 0.009)",
+      "confirmed": true,
+      "details": {
+        "agreement": 0.9740346926716015,
+        "ece": 0.00875038269362683
+      }
+    }
+  ]
+}

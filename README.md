@@ -29,6 +29,21 @@ pnpm eval:snake      # ~20 min: 200 fixed seeds, writes artifacts/snake/eval-rep
 pnpm bench:teacher   # planner quality and time per decision at lookahead depth 0/1/2
 ```
 
+Browser demo (static site, no backend):
+
+```sh
+pnpm dev             # local dev server
+pnpm build           # static site in dist/ (works from any path)
+pnpm preview         # serve dist/ locally
+pnpm demo:data       # refresh web/public/data/ from artifacts/snake/ after retraining or re-evaluating
+```
+
+The page plays Snake live with the hybrid and colors every move by who decided it: System One,
+the guard stopping System One, or System Two on low confidence. It shows System One's probabilities
+against the confidence threshold. You can load the pretrained weights, or train from scratch in a Web
+Worker in about two minutes, and the live game picks up each new version of the weights as it arrives.
+It also plots the cost–quality frontier of the published evaluation and can record the board as a video.
+
 Useful options:
 
 - `pnpm train:snake --iterations 30 --tau 0.1 --threshold 0.9 --audit 0.02 --depth 1 --seed 1`
@@ -44,6 +59,7 @@ src/hybrid/       confidence measures, System One / System Two / hybrid (with op
 src/training/     replay dataset with dedup, bootstrap → escalation loop → consolidation
 src/eval/         conditions, runner, hypothesis checks, report
 scripts/          Node CLIs (the only place Node APIs are used)
+web/              demo page: game view, bars, charts, frontier, recorder, training worker
 artifacts/        eval-seeds.json (committed); generated weights, logs and reports (ignored)
 ```
 

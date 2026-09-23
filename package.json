@@ -9,7 +9,11 @@
     "typecheck": "tsc --noEmit",
     "train:snake": "tsx scripts/train-snake.ts",
     "eval:snake": "tsx scripts/eval-snake.ts",
-    "bench:teacher": "tsx scripts/bench-teacher.ts"
+    "bench:teacher": "tsx scripts/bench-teacher.ts",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "demo:data": "tsx scripts/copy-demo-data.ts"
   },
   "engines": {
     "node": ">=22"
@@ -18,6 +22,7 @@
     "@types/node": "^26.6.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "vite": "^8.3.0",
     "vitest": "^5.0.1"
   }
 }

@@ -2,3 +2,5 @@ node_modules/
 artifacts/*
 !artifacts/eval-seeds.json
 .DS_Store
+dist/
+.playwright-mcp/

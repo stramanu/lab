@@ -301,6 +301,11 @@ export class TrainingPipeline {
     });
   }
 
+  /** Current weights and calibration temperature, without training (for live hand-off). */
+  snapshot(): SerializedPolicy {
+    return exportPolicy(this.net, this.student.temperature, { game: this.game.name, iteration: this.iteration });
+  }
+
   run(meta: Record<string, unknown> = {}): SerializedPolicy {
     this.bootstrap();
     for (let i = 0; i < this.config.iterations; i++) this.escalationIteration();

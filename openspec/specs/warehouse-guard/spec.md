@@ -6,7 +6,7 @@ Provides the warehouse guard: a near-free check that rejects a robot's proposed 
 ## Requirements
 
 ### Requirement: Conflict rejection
-The guard SHALL reject a proposed action that is blocked by a shelf or the grid edge, targets a claimed cell, targets a cell occupied by a robot that has not yet decided and is not known to move away, swaps with another robot, or enters a dead-end cell whose only exit another robot is about to use. It SHALL accept all other actions, including waiting.
+The guard SHALL reject a proposed action that is blocked by a shelf or the grid edge, targets a claimed cell, targets a cell occupied by a robot that has not yet decided and is not known to move away, or swaps with another robot. It SHALL also reject a move into a dead-end cell (at most one walkable neighbour) that is not the robot's goal. It SHALL accept all other actions, including waiting.
 
 #### Scenario: Claimed cell
 - **WHEN** a robot proposes to move into a cell already claimed for the next timestep
@@ -15,6 +15,10 @@ The guard SHALL reject a proposed action that is blocked by a shelf or the grid 
 #### Scenario: Free cell
 - **WHEN** a robot proposes to move into a free aisle cell that no one has claimed
 - **THEN** the guard accepts the action
+
+#### Scenario: Dead end that is not the goal
+- **WHEN** a robot proposes to move into a free cell with only one walkable neighbour, and that cell is not its goal
+- **THEN** the guard rejects the action
 
 ### Requirement: Guard cost
 The guard cost SHALL be the number of cells it inspects, and its mean MUST be at most one tenth of the teacher's mean cost.

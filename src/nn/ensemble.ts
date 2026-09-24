@@ -106,22 +106,36 @@ export class Ensemble {
     const targets = actions.map((a) => this.normalize(a));
     let total = 0;
     let count = 0;
-    this.members.forEach((m, k) => {
-      const order = Array.from({ length: xs.length }, (_, i) => i);
-      for (let e = 0; e < epochs; e++) {
-        this.rngs[k].shuffle(order);
-        for (let s = 0; s < order.length; s += batch) {
-          const idx = order.slice(s, s + batch);
-          this.grads[k].fill(0);
-          for (const i of idx) {
-            total += m.accumulateMse(xs[i], targets[i], this.grads[k], 1 / idx.length);
-            count++;
-          }
-          this.adams[k].step(m.params, this.grads[k]);
-        }
-      }
+    this.members.forEach((_, k) => {
+      const r = this.trainMember(k, xs, targets, epochs, batch);
+      total += r.total;
+      count += r.count;
     });
     return count ? total / count : NaN;
+  }
+
+  /**
+   * Trains one member on normalized targets. Members are independent (own shuffle stream and
+   * optimizer state), so they can be trained in separate threads with identical results.
+   */
+  trainMember(k: number, xs: Float32Array[], targets: Float32Array[], epochs = 1, batch = 64): { total: number; count: number } {
+    const m = this.members[k];
+    let total = 0;
+    let count = 0;
+    const order = Array.from({ length: xs.length }, (_, i) => i);
+    for (let e = 0; e < epochs; e++) {
+      this.rngs[k].shuffle(order);
+      for (let s = 0; s < order.length; s += batch) {
+        const idx = order.slice(s, s + batch);
+        this.grads[k].fill(0);
+        for (const i of idx) {
+          total += m.accumulateMse(xs[i], targets[i], this.grads[k], 1 / idx.length);
+          count++;
+        }
+        this.adams[k].step(m.params, this.grads[k]);
+      }
+    }
+    return { total, count };
   }
 
   /** Mean squared error of the ensemble mean, in normalized units. */

@@ -7,8 +7,8 @@ See proposal.md. The quadruped is a continuous game: it reuses `ContinuousEnv`, 
 ## Decisions
 
 ### Physics (values from the probe, to be confirmed by the spike)
-- Rapier `@dimforge/rapier3d-deterministic-compat@0.20.0`, pinned exactly. Gravity −9.81 m/s², dt = 5 ms.
-- Robot bodies collide only with the ground (collision groups); self-collisions are disabled. Ground friction 1.0. Bodies never sleep. A sleeping body would change the cost of a step, and it makes speed measurements meaningless.
+- Rapier `@dimforge/rapier3d-deterministic-compat@0.20.0`, pinned exactly. Gravity −9.81 m/s², dt = 5 ms. Solver: 4 iterations × 4 internal PGS iterations (see below).
+- Robot bodies collide only with the ground (collision groups); self-collisions are disabled. Ground friction is drawn per episode from U(0.7, 1.1) with the seed (see below). Bodies never sleep. A sleeping body would change the cost of a step, and it makes speed measurements meaningless.
 - Joints are revolute impulse joints with force-based position motors, configured once per decision. In the probe, the default acceleration-based motor model could not hold the legs against gravity.
 - **Initialisation.** `RAPIER.init()` is asynchronous. The game definition gets an optional `init(): Promise<void>`, which the scripts, the evaluation workers, the training worker and the demo await once, before calling `makeEnv`. The synchronous `Env` contracts are unchanged.
 
@@ -94,6 +94,82 @@ Simulate the proposed action for 0.2 s (hold 1, then a = 0), from a snapshot and
   - a camera following at a fixed offset.
 - Rapier loads only when the quadruped tab is selected.
 - The continuous gauges show the 4 action components.
+
+## Changes made while building the base controller (before any spike measurement)
+
+Development used dev seeds 10001–10006 and the base controller only, without pushes; the planner was not
+measured before the spike. Every change below is logged in EXPERIMENTS.md with its evidence.
+
+- **Solver.** With Rapier's default constraint solver (4 iterations, 1 internal PGS iteration) the standing
+  robot sags 4.8 cm and tilts 7.5°; with 4 internal PGS iterations it stands within 5 mm and 0.4°
+  (`pnpm exp quadruped-solver`). Adopted: 4 × 4. Motor gains: stiffness 300 N·m/rad, damping 8.
+- **Seeded ground friction.** Without pushes every seed played the same episode, so criterion 2 would
+  have been one episode repeated 20 times. Each episode now draws the ground friction from U(0.7, 1.1): a
+  small domain randomisation, as in sim-to-real locomotion (Tan et al., RSS 2018).
+- **Levelling.** Each foot target is taken relative to its own hip in the gravity-aligned frame, so every
+  hip is held at the nominal height above its foot. The first version referenced the targets to the trunk
+  centre, which is neutral to tilt and let the trunk drift to 25–50°.
+- **Stance.** Stance feet are swept backwards relative to their hips at the commanded speed, and Raibert
+  placement sets where swing feet land. A variant with feet held where they landed (Raibert's hopper
+  scheme) is unstable with position-controlled legs: holding the hip at a fixed height above a planted
+  foot lengthens the leg as the body moves away, which pushes the body further (it drifted even while
+  standing). The PD correction of roll and pitch listed above is replaced by the levelling.
+- **Heading.** Shifting touchdown points does not change stride length and did not correct heading. The
+  heading is controlled by a stance-sweep speed difference between the left and right sides,
+  proportional to yaw (gain 1 m/s per rad).
+- **Gait.** 3 Hz trot at a commanded 0.4 m/s, swing height 0.06 m, velocity gain 0.05 s. On dev seeds
+  10001–10005: no falls in 20 s, 0.35 m/s mean (including the standing and ramp time), tilt below 4°,
+  heading within 5°.
+- **Observation, action and candidates** are unchanged.
+
+### Push calibration rule (fixed before running the spike)
+J is the first value of 4, 5, 6, 7, 8, 9, 10, 12 N·s for which the base controller falls on 20–60% of
+20 dev seeds (10001–10020). If none qualifies, the spike stops and reports.
+
+## Revision after spike v1 (declared before spike v2)
+
+Spike v1 (EXPERIMENTS.md, decision 27) passed criteria 1, 2 and 4 and failed 3, 5 and 6: the planner fell
+as often as the base controller (4/20) while covering ×1.79 the distance, agreement was 31% and AUROC
+0.61. The author chose a declared revision with a second spike on the same dev seeds and the same six
+criteria. Two changes to the planner, each fixed by a rule before any v2 measurement:
+
+1. **Stability term.** Candidate score = progress − k · (maximum trunk tilt during the rollout, rad) − the
+   fall penalty. A posture term is standard in MPC costs for legged robots. Rule for k: reaching the fall
+   limit (60°) costs as much as one second of base-controller walking (0.4 m), so k = 0.4 / (π/3) ≈
+   0.38 m/rad.
+2. **Satisficing margin** = the base gait's own variability: the standard deviation of the base
+   controller's progress over 1 s windows, without pushes, on dev seeds 10001–10020 after the ramp
+   (`pnpm exp quadruped-margin`): 5.7 mm. It is smaller than v1's 1 cm, so this change does not make the
+   labels less ambiguous. The differences between candidates are real, not noise, and the stability term
+   is the substantive change.
+
+Everything else is unchanged, including J, which comes from the base controller alone. If v2 fails any
+criterion, the experiment stops and is reported as a negative result.
+
+## Study after the exploratory follow-up (fixed before running it)
+
+Spike v2 stopped the experiment (decision 29). An exploratory follow-up on dev seeds (decision 30) found that
+a 5 × 256×256 ensemble trained on about 98k states drives almost as well as the planner. The author chose
+to run the standard 5-run test study, as for every other game. Its failed spike stays reported as such.
+Fixed now, before any study measurement:
+
+- **Hypotheses and targets**: H1–H4 unchanged from every other game. H1: escalation below 10% (mean of the
+  last 3 iterations). H2: a hybrid at ≥ 90% of the planner's score for ≥ 10× less cost. H3: System One
+  alone ≥ 60% of the planner. H4: ≥ 95% agreement above threshold 0.9.
+- **Split**: test seeds 1–200, 5 training runs (seeds 1–5), J = 8 N·s, planner levels 1/2/3, reference 2.
+- **System One**: an ensemble of 5 × 256×256 (the exploratory follow-up's larger size).
+- **Pipeline** (the standard continuous pipeline with the quadruped's values):
+  - 400 bootstrap episodes, 6 bootstrap epochs;
+  - 5 escalation iterations of at most 4,000 moves, retraining every 2,000 new examples for 2 epochs;
+  - threshold 0.9, audit rate 2%, 5 consolidation epochs, dataset capacity 100,000.
+
+  The default 30 iterations of up to 50,000 moves would take days at 0.18 s per planner label.
+- **Parallel bootstrap**: bootstrap episodes are planner-driven, so they do not depend on the network.
+  They are generated on worker threads and replayed into the pipeline in episode order. A test checks
+  that the result is identical to the sequential pipeline.
+- **Evaluation**: agreement and calibration of System One moves are measured on every 4th decision (the
+  other games label every decision). The subsample is unbiased and cuts the evaluation cost by 4. Scores,
+  costs and escalation shares use every decision.
 
 ## Risks / Trade-offs
 

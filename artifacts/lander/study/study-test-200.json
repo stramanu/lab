@@ -1,6 +1,6 @@
 {
   "game": "lander",
-  "createdAt": "2026-09-23T19:46:43.822Z",
+  "createdAt": "2026-09-24T18:37:53.490Z",
   "split": "test",
   "seeds": {
     "count": 200,
@@ -25,6 +25,7 @@
     "platform": "darwin-arm64",
     "node": "v22.21.1"
   },
+  "evaluationWorkers": 1,
   "runs": 5,
   "conditions": [
     {

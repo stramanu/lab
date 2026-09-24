@@ -48,12 +48,115 @@ export interface RunOptions {
   oracle?: Teacher;
   /** Continuous games: agreement rule between the student's and the planner's continuous actions. */
   agrees?: (student: ArrayLike<number>, planner: ArrayLike<number>) => boolean;
+  /**
+   * Continuous games: agreement and calibration are measured on every `oracleEvery`-th decision of an
+   * episode (default 1: every decision). Applied to all moves alike, so the estimate stays unbiased.
+   */
+  oracleEvery?: number;
   onEpisode?(condition: string, index: number, score: number): void;
 }
 
-export function runCondition(condition: Condition, options: RunOptions): ConditionResult {
-  const player = condition.makePlayer();
-  const scores: number[] = [];
+/** Everything one episode contributes to a condition's result; records are merged in seed order. */
+export interface EpisodeRecord {
+  seed: number;
+  score: number;
+  endReason: string;
+  metrics: Record<string, number>;
+  moves: number;
+  cost: number;
+  timeMs: number;
+  system2Calls: number;
+  escalated: number;
+  byReason: { confidence: number; guard: number };
+  guardCost: number;
+  guardRuns: number;
+  s1Moves: number;
+  s1Agreed: number;
+  confidences: number[];
+  correct: boolean[];
+}
+
+/** Plays one episode with `player` and records it. */
+export function runEpisode(player: Player, seed: number, options: RunOptions): EpisodeRecord {
+  const r: EpisodeRecord = {
+    seed,
+    score: 0,
+    endReason: '',
+    metrics: {},
+    moves: 0,
+    cost: 0,
+    timeMs: 0,
+    system2Calls: 0,
+    escalated: 0,
+    byReason: { confidence: 0, guard: 0 },
+    guardCost: 0,
+    guardRuns: 0,
+    s1Moves: 0,
+    s1Agreed: 0,
+    confidences: [],
+    correct: [],
+  };
+  const env = options.makeEnv();
+  env.reset(seed);
+  player.reset?.(seed);
+  const every = options.oracleEvery ?? 1;
+  for (let step = 0; !env.isDone(); step++) {
+    const t0 = performance.now();
+    const move = player.act(env);
+    r.timeMs += performance.now() - t0;
+    r.moves++;
+    r.cost += move.cost;
+    if (move.teacherScores) r.system2Calls++;
+    if (move.decider === 'system2') r.escalated++;
+    if (move.escalationReason) r.byReason[move.escalationReason]++;
+    if (move.guardCost !== undefined) {
+      r.guardCost += move.guardCost;
+      r.guardRuns++;
+    }
+
+    if (move.continuous && move.confidence !== undefined && options.agrees && step % every === 0) {
+      // Continuous student: agreement comes from the hybrid when the planner ran, otherwise from the oracle.
+      let agreed = move.agreed;
+      if (agreed === undefined && options.oracle && move.decider === 'system1') {
+        agreed = options.agrees(move.continuous, (options.oracle as ContinuousTeacher).targetAction(env).action);
+      }
+      if (agreed !== undefined) {
+        r.confidences.push(move.confidence);
+        r.correct.push(agreed);
+        if (move.decider === 'system1') {
+          r.s1Moves++;
+          if (agreed) r.s1Agreed++;
+        }
+      }
+    } else if (!move.continuous && move.confidence !== undefined && move.probs) {
+      const legal = env.legalActions();
+      const studentChoice = argmax(move.probs, legal);
+      let teacherChoice: number | null = null;
+      if (move.teacherScores) teacherChoice = argmax(move.teacherScores, legal);
+      else if (options.oracle) teacherChoice = argmax(options.oracle.score(env).scores, legal);
+      if (teacherChoice !== null) {
+        r.confidences.push(move.confidence);
+        r.correct.push(studentChoice === teacherChoice);
+        if (move.decider === 'system1') {
+          r.s1Moves++;
+          if (studentChoice === teacherChoice) r.s1Agreed++;
+        }
+      }
+    }
+    if (move.continuous) (env as ContinuousEnv).stepContinuous(move.continuous);
+    else env.step(move.action);
+  }
+  const summary = env.summary();
+  r.score = summary.score;
+  r.endReason = summary.endReason;
+  r.metrics = summary.metrics;
+  (env as { dispose?: () => void }).dispose?.();
+  return r;
+}
+
+/** Aggregates episode records (in seed order) into a condition result. */
+export function summarise(condition: Pick<Condition, 'name' | 'kind' | 'params'>, records: EpisodeRecord[]): ConditionResult {
+  const scores = records.map((r) => r.score);
   const endReasons: Record<string, number> = {};
   const metricSums: Record<string, number> = {};
   let moves = 0;
@@ -68,64 +171,25 @@ export function runCondition(condition: Condition, options: RunOptions): Conditi
   let s1Agreed = 0;
   const confidences: number[] = [];
   const correct: boolean[] = [];
+  for (const r of records) {
+    endReasons[r.endReason] = (endReasons[r.endReason] ?? 0) + 1;
+    for (const [k, v] of Object.entries(r.metrics)) metricSums[k] = (metricSums[k] ?? 0) + v;
+    moves += r.moves;
+    cost += r.cost;
+    timeMs += r.timeMs;
+    system2Calls += r.system2Calls;
+    escalated += r.escalated;
+    byReason.confidence += r.byReason.confidence;
+    byReason.guard += r.byReason.guard;
+    guardCost += r.guardCost;
+    guardRuns += r.guardRuns;
+    s1Moves += r.s1Moves;
+    s1Agreed += r.s1Agreed;
+    confidences.push(...r.confidences);
+    correct.push(...r.correct);
+  }
 
-  options.seeds.forEach((seed, idx) => {
-    const env = options.makeEnv();
-    env.reset(seed);
-    while (!env.isDone()) {
-      const t0 = performance.now();
-      const move = player.act(env);
-      timeMs += performance.now() - t0;
-      moves++;
-      cost += move.cost;
-      if (move.teacherScores) system2Calls++;
-      if (move.decider === 'system2') escalated++;
-      if (move.escalationReason) byReason[move.escalationReason]++;
-      if (move.guardCost !== undefined) {
-        guardCost += move.guardCost;
-        guardRuns++;
-      }
-
-      if (move.continuous && move.confidence !== undefined && options.agrees) {
-        // Continuous student: agreement comes from the hybrid when the planner ran, otherwise from the oracle.
-        let agreed = move.agreed;
-        if (agreed === undefined && options.oracle && move.decider === 'system1') {
-          agreed = options.agrees(move.continuous, (options.oracle as ContinuousTeacher).targetAction(env).action);
-        }
-        if (agreed !== undefined) {
-          confidences.push(move.confidence);
-          correct.push(agreed);
-          if (move.decider === 'system1') {
-            s1Moves++;
-            if (agreed) s1Agreed++;
-          }
-        }
-      } else if (move.confidence !== undefined && move.probs) {
-        const legal = env.legalActions();
-        const studentChoice = argmax(move.probs, legal);
-        let teacherChoice: number | null = null;
-        if (move.teacherScores) teacherChoice = argmax(move.teacherScores, legal);
-        else if (options.oracle) teacherChoice = argmax(options.oracle.score(env).scores, legal);
-        if (teacherChoice !== null) {
-          confidences.push(move.confidence);
-          correct.push(studentChoice === teacherChoice);
-          if (move.decider === 'system1') {
-            s1Moves++;
-            if (studentChoice === teacherChoice) s1Agreed++;
-          }
-        }
-      }
-      if (move.continuous) (env as ContinuousEnv).stepContinuous(move.continuous);
-      else env.step(move.action);
-    }
-    const summary = env.summary();
-    scores.push(summary.score);
-    endReasons[summary.endReason] = (endReasons[summary.endReason] ?? 0) + 1;
-    for (const [k, v] of Object.entries(summary.metrics)) metricSums[k] = (metricSums[k] ?? 0) + v;
-    options.onEpisode?.(condition.name, idx, summary.score);
-  });
-
-  const n = options.seeds.length;
+  const n = records.length;
   const hasStudent = condition.kind === 'system1' || condition.kind === 'hybrid';
   return {
     name: condition.name,
@@ -148,4 +212,14 @@ export function runCondition(condition: Condition, options: RunOptions): Conditi
     agreementAboveThreshold: hasStudent && s1Moves ? s1Agreed / s1Moves : null,
     calibration: hasStudent && confidences.length ? reliability(confidences, correct) : null,
   };
+}
+
+export function runCondition(condition: Condition, options: RunOptions): ConditionResult {
+  const player = condition.makePlayer();
+  const records = options.seeds.map((seed, idx) => {
+    const r = runEpisode(player, seed, options);
+    options.onEpisode?.(condition.name, idx, r.score);
+    return r;
+  });
+  return summarise(condition, records);
 }

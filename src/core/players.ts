@@ -1,13 +1,17 @@
 import { Rng } from './rng';
 import type { Env, MoveRecord, Player } from './types';
 
-/** Experimental floor: picks uniformly among legal actions. */
+/** Experimental floor: picks uniformly among legal actions, from a stream seeded per episode. */
 export class RandomPlayer implements Player {
   readonly name = 'random';
   private rng: Rng;
 
-  constructor(seed = 0) {
+  constructor(private readonly seed = 0) {
     this.rng = Rng.stream(seed, 'random-player');
+  }
+
+  reset(episodeSeed: number): void {
+    this.rng = Rng.stream(episodeSeed, `random-player:${this.seed}`);
   }
 
   act(env: Env): MoveRecord {

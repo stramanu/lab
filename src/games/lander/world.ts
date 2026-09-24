@@ -44,7 +44,7 @@ export function terrainHeight(w: World, x: number): number {
 }
 
 export function windAt(w: World, t: number, cfg: LanderConfig): number {
-  return w.wind0 + 0.15 * cfg.windScale * Math.sin((2 * Math.PI * t) / 6 + w.windPhase);
+  return w.wind0 + cfg.windOffset + 0.15 * cfg.windScale * Math.sin((2 * Math.PI * t) / 6 + w.windPhase);
 }
 
 export function padCenter(w: World): number {

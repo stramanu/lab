@@ -1,0 +1,54 @@
+{
+  "name": "quadruped-solver",
+  "createdAt": "2026-09-24T09:21:22.260Z",
+  "claim": "Rapier's default solver lets the standing quadruped sag and tilt; 4 × 4 PGS iterations hold it (design.md).",
+  "split": "dev",
+  "seeds": [],
+  "config": {
+    "stiffness": 300,
+    "damping": 8,
+    "friction": 0.9,
+    "seconds": 2,
+    "buildHeight": 0.292
+  },
+  "results": {
+    "settings": [
+      {
+        "iterations": 4,
+        "pgs": 1,
+        "height": 0.24440991878509521,
+        "tiltDeg": 7.521872573822913,
+        "stepsPerSecond": 10092
+      },
+      {
+        "iterations": 8,
+        "pgs": 1,
+        "height": 0.2859751880168915,
+        "tiltDeg": 0.519168073020346,
+        "stepsPerSecond": 16579
+      },
+      {
+        "iterations": 16,
+        "pgs": 1,
+        "height": 0.28871771693229675,
+        "tiltDeg": 0.23059385900128254,
+        "stepsPerSecond": 10816
+      },
+      {
+        "iterations": 4,
+        "pgs": 4,
+        "height": 0.2871304452419281,
+        "tiltDeg": 0.4006788131810641,
+        "stepsPerSecond": 24801
+      },
+      {
+        "iterations": 8,
+        "pgs": 4,
+        "height": 0.2891588807106018,
+        "tiltDeg": 0.18580594010977677,
+        "stepsPerSecond": 13618
+      }
+    ],
+    "note": "stepsPerSecond is wall-clock and machine-dependent; heights and tilts are deterministic."
+  }
+}

@@ -1,6 +1,6 @@
 {
   "game": "warehouse",
-  "createdAt": "2026-09-24T06:53:49.127Z",
+  "createdAt": "2026-09-24T18:37:53.777Z",
   "split": "test",
   "seeds": {
     "count": 200,
@@ -25,6 +25,7 @@
     "platform": "darwin-arm64",
     "node": "v22.21.1"
   },
+  "evaluationWorkers": 1,
   "runs": 5,
   "conditions": [
     {
@@ -33,14 +34,14 @@
       "params": {},
       "shared": true,
       "score": {
-        "mean": 1.655,
+        "mean": 1.725,
         "ci95": 0,
         "values": [
-          1.655,
-          1.655,
-          1.655,
-          1.655,
-          1.655
+          1.725,
+          1.725,
+          1.725,
+          1.725,
+          1.725
         ]
       },
       "costPerMove": {

@@ -3,6 +3,7 @@ import type { AgreementRule } from '../hybrid/continuous';
 import type { ContinuousPipelineConfig } from '../training/continuous-pipeline';
 import type { PipelineConfig } from '../training/pipeline';
 import { LanderEnv, LanderGuard, LanderTeacher, pilotAction } from './lander';
+import { ACTION_LABELS, initQuadrupedPhysics, QuadrupedEnv, QuadrupedGuard, QuadrupedTeacher } from './quadruped';
 import { RacingEnv, RacingGuard, RacingTeacher, controllerAction, racingAgrees } from './racing';
 import { SnakeEnv, SnakeGuard, SnakeTeacher } from './snake';
 import { WarehouseEnv, WarehouseGuard, WarehouseTeacher, greedyAction } from './warehouse';
@@ -30,6 +31,8 @@ export interface GameDefinition {
   baselines: Baseline[];
   /** Present for continuous-control games: System One is a regression ensemble. */
   continuous?: ContinuousSpec;
+  /** One-time asynchronous setup (e.g. a WebAssembly physics engine), awaited before `makeEnv`. */
+  init?: () => Promise<unknown>;
 }
 
 export interface ContinuousSpec {
@@ -40,6 +43,10 @@ export interface ContinuousSpec {
   /** Names of the continuous action dimensions. */
   actionLabels: string[];
   pipeline: Partial<ContinuousPipelineConfig>;
+  /** Generate bootstrap episodes on worker threads (identical result; for slow planners). */
+  parallelBootstrap?: boolean;
+  /** Label every n-th decision for agreement and calibration in evaluations (default 1). */
+  oracleEvery?: number;
 }
 
 /** The lander's hand-written autopilot as a player (one unit per decision, like a forward pass). */
@@ -67,6 +74,20 @@ class GreedyPlayer implements Player {
     return { action: greedyAction(env as WarehouseEnv), decider: 'baseline', cost: 1 };
   }
 }
+
+/** The quadruped's base controller (the zero action) as a player (one unit per decision). */
+class QuadrupedBasePlayer implements Player {
+  readonly name = 'base controller';
+  act(): MoveRecord {
+    return { action: 0, decider: 'baseline', cost: 1 };
+  }
+}
+
+/** Quadruped planner knob: rollout horizon of 5 · 2^(level − 1) decisions (0.5 / 1 / 2 s). */
+const quadrupedTeacher = (level: number) => new QuadrupedTeacher({ horizon: 5 * 2 ** (level - 1) });
+
+/** Declared agreement rule for the quadruped: every action component within 0.25 (half the candidate grid's spacing). */
+export const quadrupedAgrees = (a: ArrayLike<number>, b: ArrayLike<number>) => Array.from(a).every((v, i) => Math.abs(v - b[i]) <= 0.25);
 
 /** Racing planner knob: rollout horizon of 20 decisions per level (2 / 4 / 8 s). */
 const racingTeacher = (level: number) => new RacingTeacher({ horizon: 20 * level });
@@ -122,6 +143,30 @@ export const GAMES: Record<string, GameDefinition> = {
       agrees: racingAgrees,
       actionLabels: ['steering', 'pedal'],
       pipeline: {},
+    },
+  },
+  quadruped: {
+    name: 'quadruped',
+    title: 'Quadruped',
+    init: initQuadrupedPhysics,
+    makeEnv: () => new QuadrupedEnv(),
+    makeTeacher: quadrupedTeacher,
+    levels: [1, 2, 3],
+    referenceLevel: 2,
+    makeGuard: () => new QuadrupedGuard(),
+    pipeline: {},
+    baselines: [{ name: 'base controller', makePlayer: () => new QuadrupedBasePlayer() }],
+    continuous: {
+      makeEnv: () => new QuadrupedEnv(),
+      makeTeacher: quadrupedTeacher,
+      makeGuard: () => new QuadrupedGuard(),
+      agrees: quadrupedAgrees,
+      actionLabels: [...ACTION_LABELS],
+      // Fixed before the study (design.md, "Study after the exploratory follow-up"): the planner takes
+      // 0.18 s per label, so the pipeline is sized in hundreds of episodes, not tens of thousands of moves.
+      pipeline: { hidden: [256, 256], bootstrapEpisodes: 400, bootstrapEpochs: 6, iterations: 5, maxMovesPerIteration: 4000, retrainEvery: 2000, retrainEpochs: 2 },
+      parallelBootstrap: true,
+      oracleEvery: 4,
     },
   },
 };

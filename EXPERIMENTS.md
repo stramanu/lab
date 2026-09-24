@@ -42,6 +42,15 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 21 | Integrate the warehouse (spike passed) | 5-run test study: System One alone 36.8% of the planner; best hybrid + guard 88% at 4.1× lower cost; H4 holds in 5/5 runs (97.4%, ECE 0.018); H1, H2 and H3 fail. Closed-loop agreement 76.2% vs 93.9% offline in the spike | test (final) | – | `add-warehouse-mapf` |
 | 22 | Handwriting: raster encoding (16×16) rather than trajectory, by the rule fixed in the design (higher mean dev top-1) | `pnpm exp handwriting-encoding`: raster 88.7% vs trajectory 88.7% (0.07 points apart, within noise); raster ECE at T = 1 0.032 vs 0.051. $P on dev: 87.3% at 57.7M operations per recognition | dev writers | – | `add-handwriting-pad` |
 | 23 | Handwriting final study (targets fixed in the proposal) | `pnpm hw:study`, 5 runs: MLP top-1 83.9% ± 0.8 (top-3 92.7%), $P 83.2% (top-3 94.6%) at 1,302× the MLP's cost; ECE 0.054 → 0.019 after temperature scaling. R1 (≥ 90%) not confirmed, 0/5 runs; R2 and R3 confirmed, 5/5 runs | test writers (final) | – | `add-handwriting-pad` |
+| 24 | Quadruped physics: Rapier solver with 4 internal PGS iterations; motor stiffness 300 N·m/rad, damping 8 | `pnpm exp quadruped-solver`: standing robot sags 4.8 cm and tilts 7.5° with the default solver, 0.5 cm and 0.4° with 4 × 4 | – (no seed: build pose) | No | `add-quadruped-locomotion` design |
+| 25 | Quadruped: ground friction drawn per seed from U(0.7, 1.1) | Without it every seed replays the same push-free episode, so criterion 2 would test one episode 20 times | – | No | `add-quadruped-locomotion` spec |
+| 26 | Quadruped base controller: levelling per hip; stance feet swept at the commanded speed (not held where they landed); heading by a left/right sweep-speed difference; 3 Hz trot at 0.4 m/s | Base controller only, no pushes, dev 10001–10006 (probe scripts, then `pnpm exp quadruped-feasibility` criterion 2 on 20 dev seeds). Trunk-centre levelling tilted 25–50°; planted stance feet drifted while standing (a fixed hip height over a planted foot lengthens the leg as the body moves away); touchdown shifts did not steer | dev | No | `add-quadruped-locomotion` design ("Changes made while building the base controller") |
+| 27 | Quadruped feasibility spike v1 (criteria fixed in the proposal) | `pnpm exp quadruped-feasibility`: determinism ✓; base controller 0/20 falls at 0.35 m/s ✓; J = 8 N·s (base falls on 20%); planner falls 4/20 like the base (✗) while covering ×1.79 the distance; 178 ms per decision ✓; agreement 31.2% (✗); AUROC 0.61 (✗). The base action is only 34% of the planner's labels | dev | No | Stopped and reported to the author |
+| 28 | Quadruped: declared planner revision before spike v2 (author's choice after v1). Stability term, k = 0.4 m / (π/3) rad (reaching the fall limit costs one second of base walking); satisficing margin = the base gait's 1 s variability | `pnpm exp quadruped-margin`: 5.7 mm (smaller than v1's 1 cm, so candidate differences are real, not noise). Rules fixed in design.md before any v2 measurement | dev | No | `add-quadruped-locomotion` design ("Revision after spike v1") |
+| 29 | Quadruped feasibility spike v2 (revised planner, same criteria and seeds) | `pnpm exp quadruped-feasibility`: criteria 1, 2 ✓; planner falls 1/20 vs 4/20 for the base controller, ×1.63 distance ✓; 185 ms ✓; agreement 60.2% (✗, v1 31.2%); AUROC 0.65 (✗, v1 0.61). The base action is now 56% of the labels (v1 34%) | dev | No | Stopped, as fixed before v2: no System One study |
+| 30 | Quadruped: EXPLORATORY follow-up (post hoc, not pre-registered; the spike verdict stands). Does System One drive well although it imitates poorly? 10× the spike data on all cores, two sizes (5 × 64×64, 5 × 256×256), the ensemble driving alone with pushes on 20 dev seeds | Author's question after spike v2; designed before any full-scale measurement (a 4-seed smoke test only checked the pipeline) | dev | No | `pnpm exp quadruped-exploratory` |
+| 31 | Quadruped: run the standard 5-run test study (author's choice after decision 30), with H1–H4 unchanged; a 5 × 256×256 ensemble; pipeline sized for a 0.18 s planner (400 bootstrap episodes, 5 escalation iterations of ≤ 4,000 moves); parallel bootstrap, identical to sequential; agreement and calibration on every 4th decision | Fixed in design.md ("Study after the exploratory follow-up") before any study measurement | test (final) | No | `add-quadruped-locomotion` |
+| 32 | Random baseline seeded per episode (found by an external code review): the random player drew from one stream across all episodes, so its row depended on episode order and on how seeds were split across workers | `scripts/rerun-random.ts` then re-aggregation from cached files: only the random rows change (snake 0.18 → 0.14, lander 0 → 0, warehouse 1.66 → 1.73, racing 20.6 → 20.9); every other number is bitwise identical. `check-parallel` now includes the random condition | test (final; baseline row only) | No | `tests: parallel-eval`; quadruped study re-aggregated the same way |
 
 ## Re-validation on the dev split
 
@@ -197,4 +206,68 @@ each encoding and 3 run seeds (101–103), and measured on the 520 samples of th
 The two encodings are tied; the rule fixed before measuring picks the higher mean, raster. $P is about
 1,300× more expensive per recognition (74 ms in Node on the reference machine, after replacing
 `Math.hypot` with `Math.sqrt(dx² + dy²)` as in the paper's pseudocode, which left every result unchanged).
+
+### `quadruped-feasibility` (decision 27)
+
+Planner: rollout algorithm over the base controller, 21 candidates, horizon 1 s (level 2). Dev seeds
+10001–10020 for criteria 1–4; imitation: 40 planner-driven training episodes, 2 DAgger rounds of 10,
+confidence map fitted on 5 further episodes, then 10 planner-driven dev episodes (1,521 states).
+
+| Criterion | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| 1. Determinism (repeat, snapshot) | identical, identical | bitwise | pass |
+| 2. Base controller without pushes | 0/20 falls, 0.349 m/s | 0/20, ≥ 0.3 m/s | pass |
+| Push calibration (base-controller fall rate) | 5%, 0%, 10%, 15%, 20% for J = 4, 5, 6, 7, 8 | first J in 20–60% | J = 8 N·s |
+| 3. Planner vs base controller, with pushes | 4 vs 4 falls; 9.94 vs 5.57 m (×1.79) | ≤ half the falls, ≥ ×1.2 | fail |
+| 4. Planner decision time | 178 ms | ≤ 250 ms | pass |
+| 5. Agreement (every component within 0.25) | 31.2% | ≥ 85% | fail |
+| 6. Error detection, AUROC | 0.61 | ≥ 0.75 | fail |
+
+The planner maximises progress over the next second without seeing pushes. It finds faster gaits (×1.79
+distance), and so does not fall less. Its labels are dense and ambiguous: only 34% are the base action,
+and the rest spread over the 20 other modulations. The regression ensemble averages between them and
+lands within 0.25 of the chosen one in only 31% of states.
+
+### `quadruped-feasibility` v2 (decision 29)
+
+Same protocol, seeds and thresholds as v1; the planner revised as in decision 28. v1's JSON is kept as
+`quadruped-feasibility-v1.json`.
+
+| Criterion | v1 | v2 | Threshold | v2 result |
+| --- | --- | --- | --- | --- |
+| 1. Determinism | identical | identical | bitwise | pass |
+| 2. Base controller without pushes | 0/20, 0.349 m/s | 0/20, 0.349 m/s | 0/20, ≥ 0.3 m/s | pass |
+| 3. Falls (planner vs base), distance | 4 vs 4, ×1.79 | 1 vs 4, ×1.63 | ≤ half, ≥ ×1.2 | pass |
+| 4. Planner decision time | 178 ms | 185 ms | ≤ 250 ms | pass |
+| 5. Agreement | 31.2% | 60.2% | ≥ 85% | fail |
+| 6. Error detection, AUROC | 0.61 | 0.65 | ≥ 0.75 | fail |
+
+The stability term made the planner robust: it falls on 1 seed instead of 4, and still covers 63% more
+distance than the base controller. Its labels became more decisive (the base action rose from 34% to
+56%), and agreement doubled, but a 5 × 64 × 64 regression ensemble still matches the planner on only 60%
+of planner-visited states. Its disagreement barely signals its errors (AUROC 0.65). As fixed in
+design.md before v2, the experiment stops here: there is no System One study for the quadruped.
+
+### `quadruped-exploratory` (decision 30, EXPLORATORY: post hoc, not pre-registered)
+
+After spike v2 stopped the experiment, the author asked whether System One drives well even though it
+imitates the planner poorly. The spike's verdict is unchanged; this measures what the spike did not. Data:
+400 planner-driven training episodes (79k states), then per network size 2 DAgger rounds of 50 episodes
+(about 98k states in total), collected on 14 threads (38 min). Evaluation on dev seeds 10001–10020 with
+pushes (J = 8 N·s); agreement and AUROC on the 1,969 planner-visited states of 10 dev episodes, as in the
+spike. One training run per size.
+
+| Driver | Falls / 20 | Mean distance | vs planner | Agreement | AUROC | Compute per move |
+| --- | --- | --- | --- | --- | --- | --- |
+| Base controller (hand-written) | 4 | 5.57 m | 61% | – | – | 1 |
+| Planner (level 2) | 1 | 9.10 m | 100% | – | – | ~4,100 |
+| Ensemble 5 × 64×64 (37,140 parameters) | 2 | 7.93 m | 87% | 64.2% | 0.75 | 5 |
+| Ensemble 5 × 256×256 (394,260 parameters) | 1 | 8.44 m | 93% | 65.9% | 0.81 | 5 |
+
+With about 8× the spike's data, System One drives almost as well as the planner. The larger ensemble alone
+covers 93% of the planner's distance and falls as rarely (1/20), for about 800× less compute. It still
+agrees with the planner on only two thirds of states: the same pattern as racing, where several
+modulations are equally good. Its disagreement now separates its errors much better (AUROC 0.81, above
+the spike's 0.75 threshold). Caveats: dev seeds, one training run per size, 20 episodes (falls of 1 vs 1
+are small counts). A test-split study with pre-registered targets would be needed before any claim.
 

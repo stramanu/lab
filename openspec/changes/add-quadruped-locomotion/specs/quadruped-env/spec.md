@@ -25,7 +25,7 @@ The game definition SHALL expose a one-time asynchronous initialisation of the p
 - **THEN** it fails with an error that names the missing initialisation
 
 ### Requirement: Episode, pushes, falls and score
-An episode SHALL last 20 s of simulated time with one decision every 100 ms (200 decisions). Horizontal pushes SHALL be applied to the trunk at seeded times and directions. The episode SHALL end early when the trunk centre falls below 0.12 m, or when the trunk's up axis tilts more than 60° from vertical. The score SHALL be the trunk's forward displacement along +x in metres.
+An episode SHALL last 20 s of simulated time with one decision every 100 ms (200 decisions). The seed SHALL set the ground friction, drawn from [0.7, 1.1]. Horizontal pushes SHALL be applied to the trunk at seeded times and directions. The episode SHALL end early when the trunk centre falls below 0.12 m, or when the trunk's up axis tilts more than 60° from vertical. The score SHALL be the trunk's forward displacement along +x in metres.
 
 #### Scenario: Fall ends the episode
 - **WHEN** the trunk tilts beyond 60°

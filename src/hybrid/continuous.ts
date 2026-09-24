@@ -24,6 +24,15 @@ export class ContinuousStudentPlayer implements Player {
   }
 }
 
+/** An escalated decision waiting for the planner's answer. */
+export interface Escalation {
+  reason: 'confidence' | 'guard';
+  studentAction: Float64Array;
+  ensembleCost: number;
+  guardCost: number;
+  base: Partial<MoveRecord>;
+}
+
 export interface ContinuousHybridConfig {
   threshold: number;
   auditRate: number;
@@ -52,46 +61,61 @@ export class ContinuousHybridPlayer implements Player {
   }
 
   act(env: Env): MoveRecord {
+    const p = this.propose(env);
+    return 'move' in p ? p.move : this.resolve(p.escalation, this.teacher.targetAction(env));
+  }
+
+  /**
+   * First half of a decision: System One proposes and the guard checks. Returns the move, or the
+   * escalation to complete with the planner's answer (`resolve`). Lets a caller run the planner
+   * elsewhere (the browser demo runs it in a worker); `act` does both halves in place.
+   */
+  propose(env: Env): { move: MoveRecord } | { escalation: Escalation } {
     const state = env.encode();
     const d = this.ensemble.decide(state);
     const base = { confidence: d.confidence, state };
-    if (d.confidence < this.config.threshold) return this.escalate(env, d.action, d.cost, 0, 'confidence', base);
+    const escalate = (reason: 'confidence' | 'guard', guardCost: number, extra: Partial<MoveRecord> = {}) => ({
+      escalation: { reason, studentAction: d.action, ensembleCost: d.cost, guardCost, base: { ...base, ...extra } },
+    });
+    if (d.confidence < this.config.threshold) return escalate('confidence', 0);
     let guardCost = 0;
     if (this.guard) {
       const g = this.guard.checkContinuous(env, d.action);
       guardCost = g.cost;
-      if (!g.ok) return this.escalate(env, d.action, d.cost, guardCost, 'guard', { ...base, guardCost });
+      if (!g.ok) return escalate('guard', guardCost, { guardCost });
     }
     const guarded = this.guard ? { guardCost } : {};
     const audit = this.config.auditRate > 0 && this.rng.next() < this.config.auditRate;
-    if (!audit) return { ...base, ...guarded, action: -1, continuous: d.action, decider: 'system1', cost: d.cost + guardCost };
+    if (!audit) return { move: { ...base, ...guarded, action: -1, continuous: d.action, decider: 'system1', cost: d.cost + guardCost } };
     const t = this.teacher.targetAction(env);
     return {
-      ...base,
-      ...guarded,
-      action: -1,
-      continuous: d.action,
-      decider: 'system1',
-      cost: d.cost + guardCost + t.cost,
-      teacherScores: t.scores,
-      teacherAction: t.action,
-      agreed: this.agrees(d.action, t.action),
-      audited: true,
+      move: {
+        ...base,
+        ...guarded,
+        action: -1,
+        continuous: d.action,
+        decider: 'system1',
+        cost: d.cost + guardCost + t.cost,
+        teacherScores: t.scores,
+        teacherAction: t.action,
+        agreed: this.agrees(d.action, t.action),
+        audited: true,
+      },
     };
   }
 
-  private escalate(env: Env, studentAction: Float64Array, ensembleCost: number, guardCost: number, reason: 'confidence' | 'guard', base: Partial<MoveRecord>): MoveRecord {
-    const t = this.teacher.targetAction(env);
+  /** Second half of an escalated decision: the planner's answer becomes the move. */
+  resolve(e: Escalation, t: { action: Float64Array; cost: number; scores: Float64Array }): MoveRecord {
     return {
-      ...base,
+      ...e.base,
       action: argmaxScores(t.scores),
       continuous: t.action,
       decider: 'system2',
-      escalationReason: reason,
-      cost: ensembleCost + guardCost + t.cost,
+      escalationReason: e.reason,
+      cost: e.ensembleCost + e.guardCost + t.cost,
       teacherScores: t.scores,
       teacherAction: t.action,
-      agreed: this.agrees(studentAction, t.action),
+      agreed: this.agrees(e.studentAction, t.action),
     };
   }
 }

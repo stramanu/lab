@@ -1,0 +1,39 @@
+{
+  "name": "quadruped-margin",
+  "createdAt": "2026-09-24T10:14:49.934Z",
+  "claim": "The quadruped planner's satisficing margin is the base gait's own variability over 1 s.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "pushImpulse": 0,
+    "window": "1 s (10 decisions)",
+    "from": "2 s"
+  },
+  "results": {
+    "windows": 360,
+    "meanProgress": 0.36696268378032576,
+    "stdProgress": 0.0056576769866006,
+    "margin": 0.0056576769866006
+  }
+}

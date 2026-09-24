@@ -1,0 +1,138 @@
+{
+  "name": "quadruped-feasibility",
+  "createdAt": "2026-09-24T11:16:20.893Z",
+  "claim": "Feasibility of the quadruped experiment (pre-registered go/no-go criteria).",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "pushCandidates": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12
+    ],
+    "pushImpulse": 8,
+    "teacher": "quadruped-rollout-h10",
+    "members": 5,
+    "hidden": [
+      64,
+      64
+    ],
+    "bootstrapEpisodes": 40,
+    "daggerRounds": 2,
+    "episodesPerRound": 10,
+    "trainingStates": 11905
+  },
+  "results": {
+    "criterion1_determinism": {
+      "repeat": true,
+      "snapshot": true,
+      "pass": true
+    },
+    "criterion2_baseWalks": {
+      "falls": 0,
+      "meanSpeed": 0.34867460250853965,
+      "threshold": "0/20 falls and ≥ 0.3 m/s",
+      "pass": true
+    },
+    "calibration": [
+      {
+        "impulse": 4,
+        "fallRate": 0.05
+      },
+      {
+        "impulse": 5,
+        "fallRate": 0
+      },
+      {
+        "impulse": 6,
+        "fallRate": 0.1
+      },
+      {
+        "impulse": 7,
+        "fallRate": 0.15
+      },
+      {
+        "impulse": 8,
+        "fallRate": 0.2
+      }
+    ],
+    "criterion3_plannerHelps": {
+      "baseFalls": 4,
+      "plannerFalls": 1,
+      "baseMeanDistance": 5.566792261600495,
+      "plannerMeanDistance": 9.10033140182495,
+      "distanceRatio": 1.6347531889412623,
+      "threshold": "planner falls ≤ base falls / 2 and distance ratio ≥ 1.2",
+      "pass": true
+    },
+    "criterion4_decisionTime": {
+      "msPerDecision": 184.93161190879283,
+      "threshold": "≤ 250 ms",
+      "pass": true
+    },
+    "criterion5_agreement": {
+      "value": 0.6023362112747588,
+      "threshold": "≥ 0.85",
+      "pass": false,
+      "states": 1969
+    },
+    "criterion6_errorDetectionAUROC": {
+      "value": 0.6527301273477932,
+      "threshold": "≥ 0.75",
+      "pass": false
+    },
+    "baseActionShareOfLabels": 0.559344813103738,
+    "confidenceMap": {
+      "edges": [
+        0.013518316697088084,
+        0.015435704616044498,
+        0.017301358001802963,
+        0.01888987824187449,
+        0.020236165021106582,
+        0.022052551492840265,
+        0.02529517737410074,
+        0.029299640560602455,
+        0.03790266823800324,
+        null
+      ],
+      "values": [
+        0.66,
+        0.66,
+        0.66,
+        0.64,
+        0.63,
+        0.63,
+        0.61,
+        0.56,
+        0.56,
+        0.32
+      ]
+    }
+  }
+}

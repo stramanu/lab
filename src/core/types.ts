@@ -139,6 +139,11 @@ export interface ContinuousGuard extends Guard {
 export interface Player {
   readonly name: string;
   act(env: Env): MoveRecord;
+  /**
+   * Called before each evaluation episode with its seed. Players with their own randomness reseed
+   * here, so results do not depend on the order of episodes or on how seeds are split across workers.
+   */
+  reset?(episodeSeed: number): void;
 }
 
 /** Index of the maximum among legal actions (first one on ties). */

@@ -1,9 +1,9 @@
 {
-  "name": "systemoneweb",
+  "name": "lab",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "System One in the browser: a vertical micro-model trained by an algorithmic System Two",
+  "description": "Lab: small, reproducible experiments in machine learning, planning and control, written from scratch and running in the browser",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -39,6 +39,10 @@
     "wrangler": "^4.137.0"
   },
   "dependencies": {
+    "@dimforge/rapier3d-deterministic-compat": "0.20.0",
     "three": "^0.186.0"
-  }
+  },
+  "license": "MIT",
+  "author": "Emanuele Strazzullo",
+  "homepage": "https://lab.emanuelestrazzullo.dev"
 }

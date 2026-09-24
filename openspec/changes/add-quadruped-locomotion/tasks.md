@@ -2,13 +2,13 @@
 
 ## 1. Physics and environment
 
-- [ ] 1.1 Add the pinned Rapier dependency, the game `init` hook (scripts, worker, demo), and `src/games/quadruped/` (world, robot, pushes, falls, score, snapshot/restore, 46-value observation); verify with tests: bitwise determinism, snapshot continuation, init guard, seeded pushes, fall ends the episode, observation size
-- [ ] 1.2 Add the base controller (trot generator, inverse kinematics, Raibert foot placement, attitude correction) and the 4-D action mapping; verify with tests: zero action equals the base controller, walks without pushes
+- [x] 1.1 Add the pinned Rapier dependency, the game `init` hook (scripts, worker, demo), and `src/games/quadruped/` (world, robot, pushes, falls, score, snapshot/restore, 46-value observation); verify with tests: bitwise determinism, snapshot continuation, init guard, seeded pushes, fall ends the episode, observation size
+- [x] 1.2 Add the base controller (trot generator, inverse kinematics, Raibert foot placement, attitude correction) and the 4-D action mapping; verify with tests: zero action equals the base controller, walks without pushes
 
 ## 2. Planner, guard, parallel evaluation
 
-- [ ] 2.1 Add the rollout planner (21 candidates, hold 1, no pushes, satisficing, levels 0.5/1/2 s, cost) and the guard; verify with tests: same state same answer, no worse than base, cost increasing with the horizon, live state untouched, guard reject/accept, guard ≤ 1/10 of the planner's cost
-- [ ] 2.2 Add parallel evaluation with worker threads; verify identical results to the sequential run on Snake and on the quadruped
+- [x] 2.1 Add the rollout planner (21 candidates, hold 1, no pushes, satisficing, levels 0.5/1/2 s, cost) and the guard; verify with tests: same state same answer, no worse than base, cost increasing with the horizon, live state untouched, guard reject/accept, guard ≤ 1/10 of the planner's cost
+- [x] 2.2 Add parallel evaluation with worker threads; verify identical results to the sequential run on Snake and on the quadruped
 
 ## 3. Feasibility spike (go/no-go)
 

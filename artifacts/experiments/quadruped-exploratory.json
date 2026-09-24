@@ -1,0 +1,85 @@
+{
+  "name": "quadruped-exploratory",
+  "createdAt": "2026-09-24T13:11:35.850Z",
+  "claim": "Exploratory (post hoc): the quadruped System One driving alone, with 10× the spike data and two network sizes.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "exploratory": true,
+    "J": 8,
+    "bootstrapEpisodes": 400,
+    "daggerRounds": 2,
+    "daggerEpisodes": 50,
+    "calibrationEpisodes": 20,
+    "epochs": {
+      "bootstrap": 6,
+      "dagger": 2
+    },
+    "sizes": [
+      [
+        64,
+        64
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "workers": 14
+  },
+  "results": {
+    "base": {
+      "falls": 4,
+      "meanDistance": 5.566792261600495
+    },
+    "planner": {
+      "falls": 1,
+      "meanDistance": 9.10033140182495
+    },
+    "64x64": {
+      "params": 37140,
+      "trainingStates": 98188,
+      "agreement": 0.6419502285424074,
+      "auroc": 0.7456358290690367,
+      "alone": {
+        "falls": 2,
+        "meanDistance": 7.92837780714035
+      },
+      "aloneDistanceVsPlanner": 0.8712185806277801,
+      "aloneDistanceVsBase": 1.424227352946144
+    },
+    "256x256": {
+      "params": 394260,
+      "trainingStates": 97484,
+      "agreement": 0.6587100050787201,
+      "auroc": 0.8055391104012923,
+      "alone": {
+        "falls": 1,
+        "meanDistance": 8.443964290618897
+      },
+      "aloneDistanceVsPlanner": 0.9278743726767547,
+      "aloneDistanceVsBase": 1.516845589670198
+    }
+  }
+}

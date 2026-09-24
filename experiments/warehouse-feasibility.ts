@@ -10,28 +10,10 @@ import { seedsFor, TRAIN_SEED_START } from '../src/eval';
 import { argmax } from '../src/core/types';
 import { WarehouseEnv, WarehouseTeacher, greedyAction } from '../src/games/warehouse';
 import { ArrayTrainData, Mlp, Trainer, softLabels } from '../src/nn';
-import type { ExperimentResult } from './common';
+import { auroc, type ExperimentResult } from './common';
 
 const TAU = 0.02 / 3;
 const SUBSAMPLE = 6;
-
-function auroc(scores: number[], positive: boolean[]): number {
-  const rows = scores.map((s, i) => ({ s, p: positive[i] })).sort((a, b) => a.s - b.s);
-  let sumPos = 0;
-  let nPos = 0;
-  for (let i = 0; i < rows.length; ) {
-    let j = i;
-    while (j < rows.length && rows[j].s === rows[i].s) j++;
-    const avgRank = (i + 1 + j) / 2;
-    for (let k = i; k < j; k++) if (rows[k].p) {
-      sumPos += avgRank;
-      nPos++;
-    }
-    i = j;
-  }
-  const nNeg = rows.length - nPos;
-  return nPos && nNeg ? (sumPos - (nPos * (nPos + 1)) / 2) / (nPos * nNeg) : NaN;
-}
 
 export function run(): ExperimentResult {
   const teacher = new WarehouseTeacher();

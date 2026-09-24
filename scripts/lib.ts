@@ -6,7 +6,8 @@ import { continuousConditions, runCondition, standardConditions, type Condition,
 import type { GameDefinition } from '../src/games/registry';
 import type { ConfidenceMeasure } from '../src/hybrid';
 import { importEnsemble, importPolicy, type Ensemble, type Mlp, type SerializedEnsemble, type SerializedPolicy } from '../src/nn';
-import { ContinuousPipeline, TrainingPipeline, type ContinuousPipelineConfig, type LogEntry, type PipelineConfig } from '../src/training';
+import { ContinuousPipeline, TrainingPipeline, type ContinuousPipelineConfig, type LogEntry, type PipelineConfig, type PlannerEpisode } from '../src/training';
+import type { EvalPool } from './eval-pool';
 
 export function hardware(): Record<string, string | number> {
   const cpu = cpus();
@@ -37,6 +38,8 @@ export function trainGame(
   outDir: string,
   level: number,
   quiet = false,
+  /** Continuous games: pre-generated planner episodes for the bootstrap (identical result, e.g. from worker threads). */
+  bootstrapEpisodes?: PlannerEpisode[],
 ): { policy: SerializedPolicy | SerializedEnsemble; seconds: number; numParams: number; json: string } {
   mkdirSync(outDir, { recursive: true });
   const logPath = join(outDir, 'train-log.jsonl');
@@ -53,7 +56,7 @@ export function trainGame(
       onLog,
     );
     const t0 = performance.now();
-    const policy = pipeline.run({ teacherLevel: level });
+    const policy = pipeline.run({ teacherLevel: level, parallelBootstrap: Boolean(bootstrapEpisodes) }, bootstrapEpisodes);
     const seconds = (performance.now() - t0) / 1000;
     policy.meta = { ...policy.meta, trainingSeconds: Number(seconds.toFixed(1)) };
     const json = JSON.stringify(policy);
@@ -149,12 +152,31 @@ export function gameConditions(game: GameDefinition, model: LoadedModel, o: Cond
 /** Conditions whose results do not depend on the trained weights. */
 export const isWeightIndependent = (c: Condition) => c.kind === 'random' || c.kind === 'system2' || c.kind === 'baseline';
 
-export function runConditions(game: GameDefinition, conditions: Condition[], seeds: number[], referenceLevel: number, quiet = false): ConditionResult[] {
+/** Parallel evaluation context: the pool, and how its workers rebuild the same conditions. */
+export interface ParallelContext {
+  pool: EvalPool;
+  modelDir: string;
+  options: ConditionOptions;
+}
+
+/** Evaluates conditions sequentially, or across a worker pool with identical results. */
+export async function runConditions(
+  game: GameDefinition,
+  conditions: Condition[],
+  seeds: number[],
+  referenceLevel: number,
+  quiet = false,
+  parallel?: ParallelContext,
+): Promise<ConditionResult[]> {
   const oracle = game.continuous ? game.continuous.makeTeacher(referenceLevel) : game.makeTeacher(referenceLevel);
-  return conditions.map((c) => {
+  const results: ConditionResult[] = [];
+  for (const c of conditions) {
     const t0 = performance.now();
-    const r = runCondition(c, { makeEnv: game.makeEnv, seeds, oracle, agrees: game.continuous?.agrees });
+    const r = parallel
+      ? await parallel.pool.runCondition(game.name, parallel.modelDir, parallel.options, c, seeds, referenceLevel)
+      : runCondition(c, { makeEnv: game.makeEnv, seeds, oracle, agrees: game.continuous?.agrees, oracleEvery: game.continuous?.oracleEvery });
     if (!quiet) console.log(`${c.name.padEnd(28)} score=${r.score.mean.toFixed(1)} (${((performance.now() - t0) / 1000).toFixed(1)}s)`);
-    return r;
-  });
+    results.push(r);
+  }
+  return results;
 }

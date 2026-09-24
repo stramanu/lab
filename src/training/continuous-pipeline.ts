@@ -56,6 +56,32 @@ export interface ContinuousGameSpec {
   agrees: AgreementRule;
 }
 
+/** One planner-driven episode: every state and its label, in order, and the final score. */
+export interface PlannerEpisode {
+  states: Float32Array[];
+  labels: Float64Array[];
+  score: number;
+}
+
+/**
+ * Plays one planner-driven episode, exactly as the bootstrap does. Bootstrap episodes do not depend on
+ * the network, so they can be generated anywhere (e.g. worker threads) and replayed with `bootstrapFrom`.
+ */
+export function plannerEpisode(makeEnv: () => ContinuousEnv, teacher: ContinuousTeacher, seed: number): PlannerEpisode {
+  const env = makeEnv();
+  env.reset(seed);
+  const ep: PlannerEpisode = { states: [], labels: [], score: 0 };
+  while (!env.isDone()) {
+    const t = teacher.targetAction(env);
+    ep.states.push(env.encode());
+    ep.labels.push(t.action);
+    env.stepContinuous(t.action);
+  }
+  ep.score = env.score();
+  (env as { dispose?: () => void }).dispose?.();
+  return ep;
+}
+
 /** Planner-driven player used for bootstrap: plays and labels every state. */
 class PlannerPlayer implements Player {
   readonly name = 'planner';
@@ -171,6 +197,7 @@ export class ContinuousPipeline {
       this.episodeStep++;
       if (env.isDone() || this.episodeStep >= this.config.maxEpisodeSteps) {
         s.scores.push(env.score());
+        (env as { dispose?: () => void }).dispose?.(); // frees WebAssembly worlds (quadruped)
         this.env = null;
       }
     }
@@ -214,6 +241,35 @@ export class ContinuousPipeline {
     return entry;
   }
 
+  /** Training seeds of the bootstrap episodes, in the order the sequential bootstrap plays them. */
+  bootstrapSeeds(): number[] {
+    return Array.from({ length: this.config.bootstrapEpisodes }, (_, i) => this.config.trainSeedStart + this.episodeCounter + i);
+  }
+
+  /**
+   * Bootstrap from pre-generated planner episodes (one per `bootstrapSeeds()` seed, in order): the same
+   * recording, split and training as `bootstrap()`, so the result is identical.
+   */
+  bootstrapFrom(episodes: PlannerEpisode[]): LogEntry {
+    if (this.config.maxEpisodeSteps !== Infinity) throw new Error('bootstrapFrom needs whole episodes (maxEpisodeSteps = Infinity)');
+    if (episodes.length !== this.config.bootstrapEpisodes) throw new Error(`bootstrapFrom expects ${this.config.bootstrapEpisodes} episodes (one per bootstrapSeeds() seed), got ${episodes.length}`);
+    const s: Stats = { moves: 0, escalated: 0, guardEscalated: 0, queried: 0, agreed: 0, audited: 0, auditAgreed: 0, scores: [], newExamples: 0 };
+    for (const ep of episodes) {
+      this.episodeCounter++;
+      this.episodeStep = 0;
+      ep.states.forEach((state, i) => {
+        if (this.record({ action: -1, decider: 'system2', cost: 0, state, teacherAction: ep.labels[i] })) s.newExamples++;
+        s.moves++;
+        this.episodeStep++;
+      });
+      s.scores.push(ep.score);
+    }
+    this.env = null;
+    this.lastLoss = this.ensemble.train(this.xs, this.ys, this.config.bootstrapEpochs);
+    this.calibrate();
+    return this.emit('bootstrap', { ...s, escalated: s.moves });
+  }
+
   bootstrap(): LogEntry {
     const s = this.play(new PlannerPlayer(this.game.teacher), (st) => st.scores.length >= this.config.bootstrapEpisodes);
     this.lastLoss = this.ensemble.train(this.xs, this.ys, this.config.bootstrapEpochs);
@@ -253,8 +309,10 @@ export class ContinuousPipeline {
     });
   }
 
-  run(meta: Record<string, unknown> = {}): SerializedEnsemble {
-    this.bootstrap();
+  /** The whole training; `episodes` replaces the bootstrap's own play with pre-generated planner episodes. */
+  run(meta: Record<string, unknown> = {}, episodes?: PlannerEpisode[]): SerializedEnsemble {
+    if (episodes) this.bootstrapFrom(episodes);
+    else this.bootstrap();
     for (let i = 0; i < this.config.iterations; i++) this.escalationIteration();
     return this.consolidate(meta);
   }

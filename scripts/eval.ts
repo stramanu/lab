@@ -1,7 +1,7 @@
 /**
  * Evaluates trained weights of any registered game on a seed split (dev by default).
  * Usage: pnpm eval --game snake|lander [--split dev|test] [--dir artifacts/<game>] [--seeds N]
- *        [--levels a,b,c] [--measures maxProb,margin] [--no-guard]
+ *        [--levels a,b,c] [--measures maxProb,margin] [--no-guard] [--workers N]
  * Package aliases: pnpm eval:snake, pnpm eval:lander.
  */
 import { writeFileSync } from 'node:fs';
@@ -10,10 +10,12 @@ import { checkHypotheses, formatReport, parseSplit, seedsFor, type EvalReport } 
 import { getGame } from '../src/games/registry';
 import type { ConfidenceMeasure } from '../src/hybrid';
 import { num, parseArgs } from './cli';
+import { defaultWorkers, EvalPool } from './eval-pool';
 import { gameConditions, hardware, loadModel, runConditions, trainingEscalation } from './lib';
 
 const args = parseArgs(process.argv.slice(2));
 const game = getGame(args.game ?? 'snake');
+await game.init?.();
 const dir = args.dir ?? `artifacts/${game.name}`;
 const model = loadModel(dir);
 if (!model) {
@@ -27,13 +29,17 @@ const split = parseSplit(args.split);
 if (split === 'test') console.log('Evaluating on the TEST split: use it only for final, published numbers.\n');
 const seeds = seedsFor(split, num(args, 'seeds'));
 
-const conditions = gameConditions(game, model, {
+const options = {
   levels: args.levels ? args.levels.split(',').map(Number) : game.levels,
   referenceLevel,
   measures,
   guard: !args['no-guard'],
-});
-const results = runConditions(game, conditions, seeds, referenceLevel);
+};
+const conditions = gameConditions(game, model, options);
+const workers = num(args, 'workers') ?? defaultWorkers();
+const pool = workers > 1 ? new EvalPool(workers) : null;
+const results = await runConditions(game, conditions, seeds, referenceLevel, false, pool ? { pool, modelDir: dir, options } : undefined);
+await pool?.close();
 
 const report: EvalReport = {
   game: game.name,

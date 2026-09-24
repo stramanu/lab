@@ -10,32 +10,9 @@ import { seedsFor, TRAIN_SEED_START } from '../src/eval';
 import { mean } from '../src/core/stats';
 import { RacingEnv, RacingTeacher, STEER_TOLERANCE, controllerAction, racingAgrees } from '../src/games/racing';
 import { Ensemble } from '../src/nn';
-import type { ExperimentResult } from './common';
+import { auroc, type ExperimentResult } from './common';
 
 const agrees = racingAgrees;
-
-/** Probability that a random positive scores higher than a random negative (ties count half). */
-function auroc(scores: number[], positive: boolean[]): number {
-  const rows = scores.map((s, i) => ({ s, p: positive[i] })).sort((a, b) => a.s - b.s);
-  let rank = 0;
-  let sumPos = 0;
-  let nPos = 0;
-  for (let i = 0; i < rows.length; ) {
-    let j = i;
-    while (j < rows.length && rows[j].s === rows[i].s) j++;
-    const avgRank = (i + 1 + j) / 2;
-    for (let k = i; k < j; k++) if (rows[k].p) {
-      sumPos += avgRank;
-      nPos++;
-    }
-    rank = j;
-    i = j;
-  }
-  const nNeg = rows.length - nPos;
-  if (!nPos || !nNeg) return NaN;
-  void rank;
-  return (sumPos - (nPos * (nPos + 1)) / 2) / (nPos * nNeg);
-}
 
 export function run(): ExperimentResult {
   const teacher = new RacingTeacher();

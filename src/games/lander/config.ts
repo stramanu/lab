@@ -23,6 +23,8 @@ export interface LanderConfig {
   padWidth: number;
   /** Scales the seeded wind (0 disables it). */
   windScale: number;
+  /** Extra constant wind (m/s²) added to the seeded wind; 0 in every experiment, set live by the demo. */
+  windOffset: number;
 }
 
 export const DEFAULT_LANDER_CONFIG: LanderConfig = {
@@ -42,6 +44,7 @@ export const DEFAULT_LANDER_CONFIG: LanderConfig = {
   maxLandingAngle: 0.25,
   padWidth: 12,
   windScale: 1,
+  windOffset: 0,
 };
 
 export const NONE = 0;

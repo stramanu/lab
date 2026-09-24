@@ -14,6 +14,7 @@ import { trainGame } from './lib';
 
 const args = parseArgs(process.argv.slice(2));
 const game = getGame(args.game ?? 'snake');
+await game.init?.();
 const outDir = args.out ?? `artifacts/${game.name}`;
 const level = num(args, 'level') ?? game.referenceLevel;
 

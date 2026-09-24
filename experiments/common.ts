@@ -41,3 +41,22 @@ export function referenceModel(gameName: string): LoadedModel {
   trainGame(game, { seed: 1 }, dir, game.referenceLevel, true);
   return loadModel(dir)!;
 }
+
+/** AUROC: probability that a random positive scores higher than a random negative (ties count half; Mann–Whitney U). */
+export function auroc(scores: number[], positive: boolean[]): number {
+  const rows = scores.map((s, i) => ({ s, p: positive[i] })).sort((a, b) => a.s - b.s);
+  let sumPos = 0;
+  let nPos = 0;
+  for (let i = 0; i < rows.length; ) {
+    let j = i;
+    while (j < rows.length && rows[j].s === rows[i].s) j++;
+    const avgRank = (i + 1 + j) / 2;
+    for (let k = i; k < j; k++) if (rows[k].p) {
+      sumPos += avgRank;
+      nPos++;
+    }
+    i = j;
+  }
+  const nNeg = rows.length - nPos;
+  return nPos && nNeg ? (sumPos - (nPos * (nPos + 1)) / 2) / (nPos * nNeg) : NaN;
+}

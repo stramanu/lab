@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Handwriting pad · System One</title>
+    <meta
+      name="description"
+      content="Write a letter with your finger: a 22k-parameter network reads it in your browser, next to a classic recogniser that does 1,300× more work."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Ccircle cx=%278%27 cy=%278%27 r=%277%27 fill=%27%23121417%27/%3E%3Cpath d=%27M5 11 8 4.5 11 11M6.2 8.6h3.6%27 stroke=%27%23fff4e6%27 stroke-width=%271.3%27 fill=%27none%27 stroke-linecap=%27round%27/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="./handwriting.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead-top">
+        <span class="kicker">Experiment · Handwriting</span>
+        <span class="masthead-actions">
+          <a class="crosslink" href="../">← The games</a>
+          <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
+        </span>
+      </div>
+      <h1>Write <em>one</em> letter</h1>
+      <p class="lede">
+        Like the touchpad on a car's rotary controller: draw an uppercase letter with your finger, and a network
+        with 22,298 parameters reads it. A classic recogniser that compares your letter with 1,560 stored examples
+        reads it too, for about 1,300 times the arithmetic.
+      </p>
+    </header>
+
+    <main class="hw-layout">
+      <section class="panel device-panel" aria-labelledby="device-title">
+        <h2 id="device-title" class="visually-hidden">Touchpad</h2>
+        <div class="display" aria-live="polite">
+          <span class="display-label">Input</span>
+          <div class="display-text"><span id="text"></span><span class="caret" aria-hidden="true"></span></div>
+          <div class="chips" id="chips" role="group" aria-label="Alternatives for the last letter"></div>
+        </div>
+        <div class="knob">
+          <div class="bezel">
+            <div class="glass" id="glass">
+              <canvas id="pad" aria-label="Touchpad: draw one uppercase letter" role="img"></canvas>
+              <span class="pad-hint" id="pad-hint">write A–Z here</span>
+            </div>
+          </div>
+        </div>
+        <div class="keys">
+          <button type="button" id="k-space">Space</button>
+          <button type="button" id="k-back" aria-label="Delete the last character">⌫ Delete</button>
+          <button type="button" id="k-clear" class="ghost">Clear</button>
+        </div>
+        <p class="hint">Multistroke letters are fine: the letter is read 0.6 s after you lift your finger.</p>
+      </section>
+
+      <section class="panel reading-panel" aria-labelledby="reading-title">
+        <h2 id="reading-title">What each one read</h2>
+        <div class="reader">
+          <h3>The network <small id="mlp-meta">loading…</small></h3>
+          <ol class="prob-list" id="mlp-list"></ol>
+          <p class="cost-line" id="mlp-cost"></p>
+        </div>
+        <div class="reader">
+          <h3>$P, the classic recogniser <small id="pd-meta">loading templates…</small></h3>
+          <ol class="dist-list" id="pd-list"></ol>
+          <p class="cost-line" id="pd-cost"></p>
+        </div>
+        <p class="verdict" id="verdict" hidden></p>
+        <div class="work" id="work" hidden>
+          <h3>Arithmetic for this letter <small>log scale</small></h3>
+          <div class="work-row"><span>network</span><span class="work-bar"><i id="w-mlp"></i></span><span id="w-mlp-v"></span></div>
+          <div class="work-row"><span>$P</span><span class="work-bar"><i id="w-pd" class="pd"></i></span><span id="w-pd-v"></span></div>
+        </div>
+      </section>
+
+      <section class="panel network-panel" aria-labelledby="network-title">
+        <h2 id="network-title">Inside the network</h2>
+        <p class="sub">
+          The real forward pass for your last letter. Left: the 16×16 grid the letter is drawn on, lit by the ink.
+          Middle: two layers of 64 units. Right: the 26 letters, sized by probability. Only the connections that
+          contribute most are drawn (<span class="warm">positive</span>, <span class="cool">negative</span>).
+          Drag to orbit.
+        </p>
+        <div class="network-wrap" id="network"></div>
+      </section>
+
+      <section class="panel study-panel" aria-labelledby="study-title">
+        <h2 id="study-title">Measured, not demoed</h2>
+        <p class="sub" id="study-sub">Loading the published results…</p>
+        <table class="study-table" id="study-table" hidden>
+          <thead>
+            <tr><th>Recogniser</th><th>Right first time</th><th>In the top 3</th><th>Operations per letter</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <ul class="targets" id="targets"></ul>
+        <p class="sub" id="confusions"></p>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>
+        Your ink never leaves this page: both recognisers run in your browser. The network (an MLP written from
+        scratch) was trained on 30 writers of the UJI Pen Characters v2 database (Llorens et al., LREC 2008; UCI
+        Machine Learning Repository, CC BY 4.0), who wrote with a stylus; a finger writes differently, so treat this
+        page as a demo, and the table above as the measurement. $P: Vatavu, Anthony &amp; Wobbrock, ICMI 2012.
+        Method and references are in the repository README.
+      </p>
+    </footer>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

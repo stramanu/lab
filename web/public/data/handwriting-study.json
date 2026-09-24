@@ -1,0 +1,301 @@
+{
+  "game": "handwriting",
+  "createdAt": "2026-09-24T08:06:21.978Z",
+  "split": "test",
+  "data": {
+    "source": "UJI Pen Characters v2 (uppercase)",
+    "trainWriters": 30,
+    "devWriters": 10,
+    "testWriters": 20,
+    "testSamples": 1040
+  },
+  "model": {
+    "encoding": "raster",
+    "epochs": 60,
+    "hidden": [
+      64,
+      64
+    ],
+    "params": 22298
+  },
+  "hardware": {
+    "cpu": "Apple M4 Max",
+    "cores": 16,
+    "memoryGB": 48,
+    "platform": "darwin-arm64",
+    "node": "v22.21.1"
+  },
+  "runs": [
+    {
+      "seed": 1,
+      "top1": 0.8461538461538461,
+      "top3": 0.9211538461538461,
+      "cost": 44288,
+      "eceBefore": 0.04985629780074728,
+      "eceAfter": 0.014188129497835291,
+      "temperature": 1.2986930197671638,
+      "trainingSeconds": 6.335599333,
+      "msPerRecognition": 0.048040705769230606
+    },
+    {
+      "seed": 2,
+      "top1": 0.8394230769230769,
+      "top3": 0.9336538461538462,
+      "cost": 44288,
+      "eceBefore": 0.05071228080644058,
+      "eceAfter": 0.01642885759759406,
+      "temperature": 1.2986930197671638,
+      "trainingSeconds": 6.391561916999999,
+      "msPerRecognition": 0.047359134615383554
+    },
+    {
+      "seed": 3,
+      "top1": 0.8442307692307692,
+      "top3": 0.9307692307692308,
+      "cost": 44288,
+      "eceBefore": 0.052562061267403495,
+      "eceAfter": 0.014250305753487805,
+      "temperature": 1.2986930197671638,
+      "trainingSeconds": 6.383176667000002,
+      "msPerRecognition": 0.04843589711538418
+    },
+    {
+      "seed": 4,
+      "top1": 0.8288461538461539,
+      "top3": 0.925,
+      "cost": 44288,
+      "eceBefore": 0.06153328574907324,
+      "eceAfter": 0.02661852525690429,
+      "temperature": 1.2986930197671638,
+      "trainingSeconds": 6.456426958,
+      "msPerRecognition": 0.04874995961538214
+    },
+    {
+      "seed": 5,
+      "top1": 0.8375,
+      "top3": 0.9221153846153847,
+      "cost": 44288,
+      "eceBefore": 0.054748360784007966,
+      "eceAfter": 0.022934159908730278,
+      "temperature": 1.2986930197671638,
+      "trainingSeconds": 6.439451833999996,
+      "msPerRecognition": 0.04955889423077119
+    }
+  ],
+  "mlp": {
+    "top1": {
+      "mean": 0.8392307692307692,
+      "ci95": 0.00841548818667805,
+      "values": [
+        0.8461538461538461,
+        0.8394230769230769,
+        0.8442307692307692,
+        0.8288461538461539,
+        0.8375
+      ]
+    },
+    "top3": {
+      "mean": 0.9265384615384615,
+      "ci95": 0.006784258406795664,
+      "values": [
+        0.9211538461538461,
+        0.9336538461538462,
+        0.9307692307692308,
+        0.925,
+        0.9221153846153847
+      ]
+    },
+    "eceBefore": {
+      "mean": 0.05388245728153451,
+      "ci95": 0.005799395203533651,
+      "values": [
+        0.04985629780074728,
+        0.05071228080644058,
+        0.052562061267403495,
+        0.06153328574907324,
+        0.054748360784007966
+      ]
+    },
+    "eceAfter": {
+      "mean": 0.018883995602910344,
+      "ci95": 0.00696152842780246,
+      "values": [
+        0.014188129497835291,
+        0.01642885759759406,
+        0.014250305753487805,
+        0.02661852525690429,
+        0.022934159908730278
+      ]
+    },
+    "cost": 44288,
+    "msPerRecognition": {
+      "mean": 0.048428918269230334,
+      "ci95": 0.0010152549573081108,
+      "values": [
+        0.048040705769230606,
+        0.047359134615383554,
+        0.04843589711538418,
+        0.04874995961538214,
+        0.04955889423077119
+      ]
+    },
+    "topConfusions": [
+      {
+        "truth": "I",
+        "predicted": "J",
+        "count": 30,
+        "share": 0.0057692307692307696
+      },
+      {
+        "truth": "H",
+        "predicted": "M",
+        "count": 16,
+        "share": 0.003076923076923077
+      },
+      {
+        "truth": "R",
+        "predicted": "K",
+        "count": 16,
+        "share": 0.003076923076923077
+      },
+      {
+        "truth": "A",
+        "predicted": "Q",
+        "count": 15,
+        "share": 0.0028846153846153848
+      },
+      {
+        "truth": "D",
+        "predicted": "O",
+        "count": 14,
+        "share": 0.002692307692307692
+      },
+      {
+        "truth": "N",
+        "predicted": "X",
+        "count": 13,
+        "share": 0.0025
+      },
+      {
+        "truth": "S",
+        "predicted": "D",
+        "count": 12,
+        "share": 0.002307692307692308
+      },
+      {
+        "truth": "H",
+        "predicted": "N",
+        "count": 11,
+        "share": 0.0021153846153846153
+      },
+      {
+        "truth": "K",
+        "predicted": "H",
+        "count": 11,
+        "share": 0.0021153846153846153
+      },
+      {
+        "truth": "M",
+        "predicted": "H",
+        "count": 11,
+        "share": 0.0021153846153846153
+      }
+    ]
+  },
+  "pdollar": {
+    "top1": 0.8317307692307693,
+    "top3": 0.9461538461538461,
+    "cost": 57657600,
+    "msPerRecognition": 73.38819158653847,
+    "templates": 1560,
+    "topConfusions": [
+      {
+        "truth": "V",
+        "predicted": "U",
+        "count": 7,
+        "share": 0.006730769230769231
+      },
+      {
+        "truth": "B",
+        "predicted": "D",
+        "count": 4,
+        "share": 0.0038461538461538464
+      },
+      {
+        "truth": "E",
+        "predicted": "G",
+        "count": 4,
+        "share": 0.0038461538461538464
+      },
+      {
+        "truth": "H",
+        "predicted": "M",
+        "count": 4,
+        "share": 0.0038461538461538464
+      },
+      {
+        "truth": "U",
+        "predicted": "V",
+        "count": 4,
+        "share": 0.0038461538461538464
+      },
+      {
+        "truth": "D",
+        "predicted": "A",
+        "count": 3,
+        "share": 0.0028846153846153848
+      },
+      {
+        "truth": "D",
+        "predicted": "O",
+        "count": 3,
+        "share": 0.0028846153846153848
+      },
+      {
+        "truth": "F",
+        "predicted": "P",
+        "count": 3,
+        "share": 0.0028846153846153848
+      },
+      {
+        "truth": "G",
+        "predicted": "Q",
+        "count": 3,
+        "share": 0.0028846153846153848
+      },
+      {
+        "truth": "G",
+        "predicted": "S",
+        "count": 3,
+        "share": 0.0028846153846153848
+      }
+    ]
+  },
+  "costRatio": 1301.878612716763,
+  "targets": [
+    {
+      "id": "R1",
+      "statement": "MLP top-1 accuracy on test writers",
+      "target": "≥ 90.0%",
+      "measured": "83.9%",
+      "confirmed": false,
+      "runsConfirmed": "0/5"
+    },
+    {
+      "id": "R2",
+      "statement": "MLP top-1 at least $P's minus 3 points, at ≥ 100× lower cost",
+      "target": "≥ 80.2% and cost ratio ≥ 100×",
+      "measured": "83.9% vs $P 83.2%, cost ratio 1302×",
+      "confirmed": true,
+      "runsConfirmed": "5/5"
+    },
+    {
+      "id": "R3",
+      "statement": "MLP ECE after temperature scaling (15 bins)",
+      "target": "≤ 0.05",
+      "measured": "0.019",
+      "confirmed": true,
+      "runsConfirmed": "5/5"
+    }
+  ]
+}

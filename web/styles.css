@@ -140,6 +140,27 @@ h1 em {
   color: var(--ink-2);
 }
 
+/* ——— Links between the lab's pages ——— */
+
+.masthead-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.crosslink {
+  font: 500 12px/1 var(--mono);
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid var(--panel-edge);
+  padding-bottom: 3px;
+}
+
+.crosslink:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 /* ——— Game selector ——— */
 
 .game-tabs {

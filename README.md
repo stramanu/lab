@@ -14,6 +14,10 @@ in TypeScript, and everything runs in Node or in a browser tab.
 - **Hybrid**: System One decides first. When its confidence is low, or when the guard rejects its
   move, the planner decides, and the escalated state becomes a new training example.
 
+A side experiment asks the same question outside games: a ~22k-parameter MLP that reads a letter written
+with a finger, as on a car's touchpad, against a classic recogniser that compares the letter with every
+stored example ([Handwriting](#handwriting-a-tiny-network-against-a-classic-recogniser)).
+
 ## Background
 
 The fast/slow framing comes from dual-process theory [1]. In machine learning it maps onto
@@ -228,6 +232,44 @@ actions are equally good. The cheap guard is the most consistently useful compon
 confidence works as intended only where labels are unambiguous (Snake and the warehouse, both with
 tie-broken planners).
 
+### Handwriting: a tiny network against a classic recogniser
+
+Writing one character at a time with a finger, as on the touchpad of a car's rotary controller, is **online
+handwriting recognition**: the input is the pen trajectory [34, 35]. A small network reading characters on a
+touch terminal is one of the oldest applications of neural networks [36]. Here there is no planner to
+imitate: the MLP is trained on the true labels, and its reference is **$P** [38], a training-free
+recogniser that is invariant to stroke order and direction and compares the input with every stored example.
+
+- **Data**: the 26 uppercase letters of UJI Pen Characters v2 [37] (60 writers, 2 samples per letter,
+  stylus on a tablet PC; CC BY 4.0), 3,120 samples. The split is by writer and follows the database's own:
+  its 20 "tst" writers are the test set (1,040 letters); of its 40 "trn" writers, 10 are dev and 30 train.
+- **System One**: the same from-scratch MLP (256 → 64 → 64 → 26, 22,298 parameters) on a 16×16 raster of
+  the ink, trained for 60 epochs with train-only affine distortions and jitter [39], temperature-scaled on
+  dev writers [8]. The raster encoding was chosen over a trajectory encoding on dev by a rule fixed in
+  advance; the two were tied (88.7% each, `pnpm exp handwriting-encoding`).
+- **$P** uses all 1,560 training letters as templates, the strongest configuration the same data allows.
+- **Cost**: 2 operations per multiply–accumulate for the MLP, and 5 per point-to-point distance for $P (its
+  square root is not counted, which favours $P).
+
+Test writers, 5 training runs (`pnpm hw:study`, about 1 minute; times are wall-clock on the reference machine, including preprocessing):
+
+| Recogniser | Top-1 | Top-3 | Operations per letter | Time per letter (Node) |
+| --- | --- | --- | --- | --- |
+| **MLP** | **83.9% ± 0.8** | **92.7%** | **44,288** | 0.05 ms |
+| $P, 1,560 templates | 83.2% | 94.6% | 57,657,600 | 73 ms |
+
+| | Measured | Outcome | Holds in |
+| --- | --- | --- | --- |
+| R1: MLP top-1 ≥ 90% | 83.9% | not confirmed | 0/5 runs |
+| R2: MLP top-1 ≥ $P's − 3 points, at ≥ 100× lower cost | 83.9% vs 83.2%, 1,302× cheaper | **confirmed** | 5/5 runs |
+| R3: ECE after temperature scaling ≤ 0.05 | 0.054 → 0.019 | **confirmed** | 5/5 runs |
+
+The network matches the classic recogniser's first answer for 1/1,300 of its arithmetic, and its confidence is
+well calibrated, but neither reaches 90% on writers they have never seen. Test writers are harder than dev
+writers (88.7% on dev). The network's most frequent mistakes are I read as J (15% of the I's), H as M, R as K,
+A as Q and D as O (7–8% each); $P is better in the top 3 (94.6% vs 92.7%). The in-browser pad adds a
+third caveat: the data was written with a stylus, and a finger writes differently.
+
 ### Limitations
 
 - **Development-time contamination, now re-validated.** Before the splits existed, a few design
@@ -272,6 +314,11 @@ pnpm exp racing-feasibility                    # discrete spike (v3)
 pnpm exp racing-continuous-feasibility         # continuous spike
 pnpm exp warehouse-feasibility
 
+# Handwriting (downloads and verifies UJI Pen Characters v2, then the dev experiment and the final study)
+pnpm hw:data
+pnpm exp handwriting-encoding
+pnpm hw:study
+
 # Single model, day-to-day (dev split by default)
 pnpm train:snake  && pnpm eval:snake
 pnpm train:lander && pnpm eval:lander
@@ -287,7 +334,7 @@ options such as `--seeds 30`, `--levels 1,2`, `--threshold 0.9`, `--tau 0.1` and
 pnpm dev            # local dev server
 pnpm build          # static site in dist/ (works from any path)
 pnpm preview        # serve dist/
-pnpm demo:data      # publish <game>-weights.json (study run 1) and <game>-study.json to web/public/data/
+pnpm demo:data      # publish <game>-weights.json (study run 1), <game>-study.json and the $P templates to web/public/data/
 ```
 
 One static page, with no backend, for every game in the registry (Snake, lander, warehouse and racing):
@@ -296,15 +343,21 @@ One static page, with no backend, for every game in the registry (Snake, lander,
 - System One's probabilities against the confidence threshold;
 - **Inside System One**, a 3D view (three.js) of the real forward pass behind the displayed decision.
   Inputs are laid out per game (Snake's 7×7 window, the warehouse's 9×9 window, the lander's and the car's
-  labeled values), hidden units are lit by
-  their activations, and only the connections with the largest |weight × activation| are drawn;
+  labeled values), hidden units are lit by their activations, and only the connections with the largest
+  |weight × activation| are drawn;
 - in-tab training in a Web Worker, where the game picks up each new version of the weights;
 - the cost–quality frontier from the 5-run test study, with 95% intervals;
 - video recording of the board.
 
+A second page, `/handwriting/`, is the handwriting pad: a round touchpad for finger, pen or mouse, the
+network's top-5 letters with tap-to-correct alternatives, $P running in a Web Worker on the same templates as
+the study, the cost of both per letter, the 3D forward pass, and the published results. The ink never
+leaves the browser.
+
 The pretrained weights are run 1 of each study, a choice fixed in advance rather than the best run.
 
-**Live:** <https://lab.emanuelestrazzullo.dev/systemone/>
+**Live:** <https://lab.emanuelestrazzullo.dev/systemone/> and
+<https://lab.emanuelestrazzullo.dev/systemone/handwriting/>
 
 ### Deployment
 
@@ -327,9 +380,11 @@ src/nn/           MLP, backprop (cross-entropy and MSE), Adam, soft labels, temp
 src/hybrid/       confidence measures and System One / System Two / hybrid players
 src/training/     replay dataset, bootstrap → DAgger-style escalation loop → consolidation, worker session
 src/eval/         seed splits, conditions, runner, hypothesis checks, multi-run aggregation, report
+src/handwriting/  UJI parsing and writer split, preprocessing and augmentation, encodings, MLP recogniser, $P
+data/             derived handwriting dataset (uppercase UJI Pen Characters v2) and its licence notice
 scripts/          Node CLIs (train, eval, study, benchmarks)
 experiments/      one reproducible script per supporting claim (dev seeds only)
-web/              browser demo: game views, 3D network view, charts, training worker
+web/              browser demo: game views, 3D network view, charts, training worker; handwriting/ (the pad page)
 openspec/         specs (openspec/specs) and the history of every change, with design notes (openspec/changes/archive)
 ```
 
@@ -370,3 +425,9 @@ Specifications and design decisions are tracked with [OpenSpec](https://github.c
 31. Li, J., Tinka, A., Kiesel, S., Durham, J. W., Kumar, T. K. S., & Koenig, S. (2021). Lifelong Multi-Agent Path Finding in Large-Scale Warehouses. *AAAI 2021*.
 32. Sartoretti, G., Kerr, J., Shi, Y., Wagner, G., Kumar, T. K. S., Koenig, S., & Choset, H. (2019). PRIMAL: Pathfinding via Reinforcement and Imitation Multi-Agent Learning. *IEEE Robotics and Automation Letters*, 4(3), 2378–2385.
 33. Ma, Z., Luo, Y., & Ma, H. (2021). Distributed Heuristic Multi-Agent Path Finding with Communication. *ICRA 2021*.
+34. Tappert, C. C., Suen, C. Y., & Wakahara, T. (1990). The State of the Art in On-Line Handwriting Recognition. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 12(8), 787–808.
+35. Plamondon, R., & Srihari, S. N. (2000). On-Line and Off-Line Handwriting Recognition: A Comprehensive Survey. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 22(1), 63–84.
+36. Guyon, I., Albrecht, P., Le Cun, Y., Denker, J., & Hubbard, W. (1991). Design of a Neural Network Character Recognizer for a Touch Terminal. *Pattern Recognition*, 24(2), 105–119.
+37. Llorens, D., Prat, F., Marzal, A., Vilar, J. M., Castro, M. J., et al. (2008). The UJIpenchars Database: a Pen-Based Database of Isolated Handwritten Characters. *LREC 2008*. Data: UCI Machine Learning Repository, https://doi.org/10.24432/C5FG8S (CC BY 4.0).
+38. Vatavu, R.-D., Anthony, L., & Wobbrock, J. O. (2012). Gestures as Point Clouds: A $P Recognizer for User Interface Prototypes. *ICMI 2012*.
+39. Simard, P. Y., Steinkraus, D., & Platt, J. C. (2003). Best Practices for Convolutional Neural Networks Applied to Visual Document Analysis. *ICDAR 2003*.

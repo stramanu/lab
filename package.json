@@ -22,7 +22,9 @@
     "study": "tsx scripts/study.ts",
     "exp": "tsx experiments/run.ts",
     "site:build": "tsx scripts/build-site.ts",
-    "site:deploy": "pnpm site:build && wrangler deploy"
+    "site:deploy": "pnpm site:build && wrangler deploy",
+    "hw:data": "tsx scripts/handwriting-data.ts",
+    "hw:study": "tsx scripts/handwriting-study.ts"
   },
   "engines": {
     "node": ">=22"

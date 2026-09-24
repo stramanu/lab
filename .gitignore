@@ -26,6 +26,11 @@ artifacts/warehouse/*
 !artifacts/warehouse/study/
 artifacts/warehouse/study/*
 !artifacts/warehouse/study/study-test-200.json
+!artifacts/handwriting/
+artifacts/handwriting/*
+!artifacts/handwriting/study/
+artifacts/handwriting/study/*
+!artifacts/handwriting/study/study-test.json
 .DS_Store
 dist/
 .playwright-mcp/

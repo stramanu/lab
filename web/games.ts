@@ -8,7 +8,16 @@ import { WarehouseView } from './warehouse-view';
 /** How the input layer is laid out in the 3D network view. */
 export type InputLayout =
   /** A square egocentric window: `side × side` cells with `channels` one-hot values each, then `extras` scalars. */
-  | { kind: 'window'; side: number; channels: number; extras: number; channelVars: string[]; emptyVar?: string }
+  | {
+      kind: 'window';
+      side: number;
+      channels: number;
+      extras: number;
+      channelVars: string[];
+      emptyVar?: string;
+      /** Continuous cell values in [0, 1] (e.g. ink coverage), shaded from emptyVar to the channel colour. */
+      graded?: boolean;
+    }
   /** A labeled column of scalars. */
   | { kind: 'list'; labels: string[] };
 

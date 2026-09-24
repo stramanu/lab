@@ -1,0 +1,77 @@
+{
+  "name": "handwriting-encoding",
+  "createdAt": "2026-09-24T07:53:24.004Z",
+  "claim": "The encoding used by the handwriting study is the one with the higher mean dev top-1 accuracy.",
+  "split": "dev",
+  "seeds": [],
+  "config": {
+    "trainWriters": 30,
+    "devWriters": 10,
+    "runSeeds": [
+      101,
+      102,
+      103
+    ],
+    "epochs": 60,
+    "hidden": [
+      64,
+      64
+    ]
+  },
+  "results": {
+    "trajectory": {
+      "runs": [
+        {
+          "seed": 101,
+          "devTop1": 0.8980769230769231,
+          "devEceAtT1": 0.03930344077257009,
+          "cost": 32000
+        },
+        {
+          "seed": 102,
+          "devTop1": 0.875,
+          "devEceAtT1": 0.061858413712336496,
+          "cost": 32000
+        },
+        {
+          "seed": 103,
+          "devTop1": 0.8865384615384615,
+          "devEceAtT1": 0.05304763408807607,
+          "cost": 32000
+        }
+      ],
+      "meanDevTop1": 0.8865384615384615,
+      "meanDevEceAtT1": 0.05140316285766089
+    },
+    "raster": {
+      "runs": [
+        {
+          "seed": 101,
+          "devTop1": 0.9038461538461539,
+          "devEceAtT1": 0.03375049554384667,
+          "cost": 44288
+        },
+        {
+          "seed": 102,
+          "devTop1": 0.8730769230769231,
+          "devEceAtT1": 0.03598972048897009,
+          "cost": 44288
+        },
+        {
+          "seed": 103,
+          "devTop1": 0.8846153846153846,
+          "devEceAtT1": 0.02715144300690059,
+          "cost": 44288
+        }
+      ],
+      "meanDevTop1": 0.8871794871794871,
+      "meanDevEceAtT1": 0.03229721967990578
+    },
+    "pdollar": {
+      "devTop1": 0.8730769230769231,
+      "costPerRecognition": 57657600,
+      "msPerRecognition": 74.44420192307692
+    },
+    "chosen": "raster"
+  }
+}

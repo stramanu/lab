@@ -1,4 +1,7 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+
+const page = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
   root: 'web',
@@ -8,6 +11,12 @@ export default defineConfig({
     emptyOutDir: true,
     // three.js (~740 kB, 187 kB gzipped) is its own lazily loaded chunk for the 3D view.
     chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      input: {
+        games: page('./web/index.html'),
+        handwriting: page('./web/handwriting/index.html'),
+      },
+    },
   },
   worker: { format: 'es' },
 });

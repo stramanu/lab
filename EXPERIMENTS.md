@@ -4,6 +4,10 @@ Every design decision that affects the reported results, in chronological order.
 the evidence the decision rested on, the seeds it was measured on, whether that evidence touched the
 test split, and where the decision is recorded.
 
+For the handwriting experiment (no seeds), the split is by **writer** (UJI Pen Characters v2): the
+database's 20 "tst" writers are test (final numbers only); of its 40 "trn" writers, every 4th by ID
+is dev (10) and the rest train (30).
+
 Seed splits: **test** 1–200 (final numbers only), **dev** 10,001–10,200 (decisions, ablations,
 experiments), **train** ≥ 1,000,000. Other ranges below (5000+, 6000+, 7000+, 8000+, 9000+) are ad-hoc
 benchmark seeds that belong to neither dev nor test. The splits were formalised in change
@@ -36,6 +40,8 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 19 | Warehouse planner: stateless cooperative space-time search (predicted trajectories) instead of stateful WHCA* | Determinism requirement (same state, same answer); decided before any measurement | – | No | `add-warehouse-mapf` design |
 | 20 | Warehouse feasibility spike (criteria fixed in the proposal) | `pnpm exp warehouse-feasibility`: 0 collisions and 4.58× greedy deliveries ✓, exact ties 0% ✓, imitation agreement 93.9% ✓, error-detection AUROC 0.877 ✓ | dev (+ train) | No | **Passed**; integrated |
 | 21 | Integrate the warehouse (spike passed) | 5-run test study: System One alone 36.8% of the planner; best hybrid + guard 88% at 4.1× lower cost; H4 holds in 5/5 runs (97.4%, ECE 0.018); H1, H2 and H3 fail. Closed-loop agreement 76.2% vs 93.9% offline in the spike | test (final) | – | `add-warehouse-mapf` |
+| 22 | Handwriting: raster encoding (16×16) rather than trajectory, by the rule fixed in the design (higher mean dev top-1) | `pnpm exp handwriting-encoding`: raster 88.7% vs trajectory 88.7% (0.07 points apart, within noise); raster ECE at T = 1 0.032 vs 0.051. $P on dev: 87.3% at 57.7M operations per recognition | dev writers | – | `add-handwriting-pad` |
+| 23 | Handwriting final study (targets fixed in the proposal) | `pnpm hw:study`, 5 runs: MLP top-1 83.9% ± 0.8 (top-3 92.7%), $P 83.2% (top-3 94.6%) at 1,302× the MLP's cost; ECE 0.054 → 0.019 after temperature scaling. R1 (≥ 90%) not confirmed, 0/5 runs; R2 and R3 confirmed, 5/5 runs | test writers (final) | – | `add-handwriting-pad` |
 
 ## Re-validation on the dev split
 
@@ -176,3 +182,19 @@ hand-written reference. Criteria 1–2 on 20 dev seeds. Criteria 3–4: 40 train
 | 2. Exact ties | 0% | < 20% | pass |
 | 3. Imitation agreement (dev) | 93.9% | ≥ 85% | pass |
 | 4. Error detection, AUROC of 1 − confidence | 0.877 | ≥ 0.75 | pass |
+
+### `handwriting-encoding` (decision 22)
+
+The MLP (input → 64 → 64 → 26, 60 epochs, train-only augmentation) is trained on the 30 train writers with
+each encoding and 3 run seeds (101–103), and measured on the 520 samples of the 10 dev writers.
+
+| Recogniser | Dev top-1 (mean of 3) | ECE at T = 1 | Operations per recognition |
+| --- | --- | --- | --- |
+| MLP, trajectory (160 inputs) | 88.65% | 0.051 | 32,000 |
+| **MLP, raster (256 inputs)** | **88.72%** | **0.032** | **44,288** |
+| $P, 1,560 templates | 87.31% | – | 57,657,600 |
+
+The two encodings are tied; the rule fixed before measuring picks the higher mean, raster. $P is about
+1,300× more expensive per recognition (74 ms in Node on the reference machine, after replacing
+`Math.hypot` with `Math.sqrt(dx² + dy²)` as in the paper's pseudocode, which left every result unchanged).
+

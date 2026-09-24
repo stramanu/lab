@@ -48,6 +48,8 @@ export class NetworkView {
   private visible = true;
   private running = false;
   private runningMax = [1, 1];
+  /** Largest |y| or |z| of any node: tall networks (26 outputs, a 16×16 input) need a farther camera. */
+  private extent = 0;
   private net: Mlp | null = null;
   private actionNames: readonly string[] = [];
 
@@ -131,9 +133,11 @@ export class NetworkView {
       inputs,
       grid(hidden[0], Math.ceil(Math.sqrt(hidden[0])), LAYER_X[1], 0.34),
       grid(hidden[1], Math.ceil(Math.sqrt(hidden[1])), LAYER_X[2], 0.34),
-      Array.from({ length: outputSize }, (_, k) => new T.Vector3(LAYER_X[3], ((outputSize - 1) / 2 - k) * 0.9, 0)),
+      // Few actions sit 0.9 apart; many classes (26 letters) are packed into the same height.
+      Array.from({ length: outputSize }, (_, k) => new T.Vector3(LAYER_X[3], ((outputSize - 1) / 2 - k) * Math.min(0.9, 9 / outputSize), 0)),
     ];
-    const sizes = [0.09, 0.07, 0.07, 0.16];
+    this.extent = Math.max(...this.positions.flat().map((p) => Math.max(Math.abs(p.y), Math.abs(p.z))));
+    const sizes = [0.09, 0.07, 0.07, outputSize > 8 ? 0.09 : 0.16];
     this.positions.forEach((pos, l) => {
       const mesh = new T.InstancedMesh(new T.SphereGeometry(sizes[l], 14, 10), new T.MeshStandardMaterial({ roughness: 0.6, metalness: 0.05 }), pos.length);
       const m = new T.Matrix4();
@@ -160,6 +164,7 @@ export class NetworkView {
       this.container.append(div);
       this.labels.push(div);
     }
+    this.resize();
   }
 
   /** Updates colors, sizes and edges for one decision. */
@@ -180,6 +185,11 @@ export class NetworkView {
       const cells = layout.side * layout.side;
       const channelColors = layout.channelVars.map(color);
       for (let k = 0; k < cells; k++) {
+        if (layout.graded) {
+          const v = Math.min(1, Math.max(0, input[k * layout.channels]));
+          inMesh.setColorAt(k, color(layout.emptyVar ?? '--panel-edge').lerp(channelColors[0], v));
+          continue;
+        }
         let ch = -1;
         for (let q = 0; q < layout.channels; q++) if (input[k * layout.channels + q] > 0.5) ch = q;
         // Windows without an explicit "empty" channel colour inactive cells with emptyVar.
@@ -212,7 +222,7 @@ export class NetworkView {
     const decider = color(frame.deciderVar);
     for (let k = 0; k < out.count; k++) {
       const p = this.positions[3][k];
-      const s = 0.6 + 1.6 * frame.probs[k];
+      const s = out.count > 8 ? 0.7 + 2.2 * frame.probs[k] : 0.6 + 1.6 * frame.probs[k];
       out.setMatrixAt(k, m.makeScale(s, s, s).setPosition(p));
       out.setColorAt(k, k === frame.chosen || frame.chosen < 0 ? decider.clone() : dim.clone());
     }
@@ -221,9 +231,17 @@ export class NetworkView {
     this.ring.visible = frame.chosen >= 0;
     if (frame.chosen >= 0) this.ring.position.copy(this.positions[3][frame.chosen]);
     (this.ring.material as THREE.MeshBasicMaterial).color = decider;
+    // With many outputs, only the three most probable are labelled, so labels never overlap.
+    const labelled = new Set(
+      Array.from(frame.probs, (p, k) => [p, k] as const)
+        .sort((a, b) => b[0] - a[0])
+        .slice(0, this.labels.length > 8 ? 3 : this.labels.length)
+        .map(([, k]) => k),
+    );
     this.labels.forEach((div, k) => {
       div.textContent = frame.outputLabels?.[k] ?? `${this.actionNames[k]} ${Number(frame.probs[k]).toFixed(2)}`;
       div.dataset.chosen = String(k === frame.chosen);
+      div.hidden = !labelled.has(k);
     });
 
     // Strongest contributions for each transition.
@@ -265,7 +283,8 @@ export class NetworkView {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     // The network is wider than tall: step back on narrow panels so it stays in frame.
-    this.camera.position.setLength(8.6 * Math.max(1, 1.9 / this.camera.aspect));
+    // The games' networks fit within |y|, |z| ≤ 2.9 at the default distance; taller ones step back further.
+    this.camera.position.setLength(8.6 * Math.max(1, 1.9 / this.camera.aspect) * Math.max(1, this.extent / 2.9));
     this.loop();
   }
 

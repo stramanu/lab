@@ -123,14 +123,22 @@ body {
   color: var(--ink-3);
 }
 
+/* Headline: a condensed grotesk set tight, like the title block of a lab report. */
 h1 {
-  font: 400 clamp(56px, 11vw, 132px) / 0.9 var(--serif);
-  letter-spacing: -0.02em;
-  margin: 10px 0 14px;
+  font-family: var(--sans);
+  font-weight: 640;
+  font-stretch: 75%;
+  font-size: clamp(44px, 7.4vw, 92px);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  margin: 14px 0 16px;
+  max-width: 14ch;
 }
 
+/* The title's second part reads as a subtitle: same cut, quieter ink. */
 h1 em {
-  color: var(--s1);
+  font-style: normal;
+  color: var(--ink-3);
 }
 
 .lede {
@@ -140,25 +148,311 @@ h1 em {
   color: var(--ink-2);
 }
 
-/* ——— Links between the lab's pages ——— */
+/* ——— Lab navigation (every page) ——— */
 
-.masthead-actions {
+.labnav {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px 24px 12px;
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid var(--panel-edge);
+  font: 500 12px/1 var(--mono);
 }
 
-.crosslink {
-  font: 500 12px/1 var(--mono);
+.labnav a {
   color: var(--ink-2);
   text-decoration: none;
-  border-bottom: 1px solid var(--panel-edge);
-  padding-bottom: 3px;
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
 }
 
-.crosslink:hover {
+.labnav a:hover {
   color: var(--ink);
-  border-color: var(--ink);
+}
+
+.labnav a[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.labnav-home {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.labnav-home span {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.labnav-links {
+  display: flex;
+  gap: 18px;
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .labnav {
+    padding-left: 16px;
+    padding-right: 16px;
+    gap: 12px;
+  }
+  .labnav-home span {
+    display: none;
+  }
+}
+
+/* ——— How it works: a small button in the masthead that opens a panel ——— */
+
+.howto {
+  margin-top: 14px;
+}
+
+.howto summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 999px;
+  background: var(--panel);
+  font: 500 12px/1 var(--mono);
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.howto summary::-webkit-details-marker {
+  display: none;
+}
+
+.howto summary::before {
+  content: '?';
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--panel);
+  font: 600 10px/1 var(--mono);
+}
+
+.howto summary:hover,
+.howto[open] summary {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.howto summary h2 {
+  font: inherit;
+  margin: 0;
+}
+
+.howto-hint {
+  display: none;
+}
+
+.howto[open] .howto-body {
+  margin-top: 12px;
+  padding: 18px 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 var(--panel-edge), 0 18px 40px -28px rgba(0, 0, 0, 0.35);
+  animation: rise 0.3s ease-out both;
+}
+
+.howto-body {
+  display: grid;
+  gap: 16px;
+}
+
+/* On narrow screens the diagram keeps a readable size and scrolls sideways inside its panel. */
+.flow-wrap {
+  overflow-x: auto;
+}
+
+.flow {
+  width: 100%;
+  min-width: 620px;
+  max-width: 900px;
+  height: auto;
+  font: 500 13px/1 var(--sans);
+}
+
+.flow path {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+  marker-end: url(#arr);
+}
+
+.flow path.dashed {
+  stroke-dasharray: 5 4;
+}
+
+.flow .flow-head {
+  fill: var(--ink-3);
+  stroke: none;
+}
+
+.flow text {
+  fill: var(--ink);
+  text-anchor: middle;
+}
+
+.flow text.small {
+  font: 400 11px/1 var(--mono);
+  fill: var(--ink-3);
+}
+
+.flow text.label {
+  font: 400 11px/1 var(--mono);
+  fill: var(--ink-3);
+  text-anchor: start;
+}
+
+.flow-box rect {
+  fill: var(--board);
+  stroke: var(--ink-3);
+  stroke-width: 1.2;
+}
+
+.flow-box.s1 rect {
+  stroke: var(--s1);
+  stroke-width: 2;
+}
+
+.flow-box.s2 rect {
+  stroke: var(--s2);
+  stroke-width: 2;
+}
+
+.flow-box.guard rect {
+  stroke: var(--guard);
+  stroke-width: 2;
+}
+
+.flow-box.act rect {
+  fill: color-mix(in srgb, var(--s1) 10%, var(--board));
+}
+
+.howto-text {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 28px;
+  max-width: 1100px;
+}
+
+.howto-text p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.howto-text b {
+  color: var(--ink);
+}
+
+@media (max-width: 860px) {
+  .howto-text {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ——— This game ——— */
+
+.about-panel {
+  grid-area: about;
+  animation-delay: 0.22s;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.about-grid h3 {
+  margin-top: 14px;
+}
+
+.about-grid h3:first-child {
+  margin-top: 0;
+}
+
+.about-grid p {
+  margin: 6px 0 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.about-inputs {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.about-inputs td {
+  vertical-align: top;
+  padding: 6px 8px 6px 0;
+  border-top: 1px dashed var(--panel-edge);
+  color: var(--ink-2);
+}
+
+.about-inputs td.n {
+  font: 500 13px/1.3 var(--mono);
+  color: var(--s1);
+  text-align: right;
+  width: 3.2em;
+}
+
+.about-inputs b {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 1080px) {
+  .about-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .about-grid > div:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .about-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ——— Preview games (network not published yet) ——— */
+
+.preview-note {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--guard);
+  background: color-mix(in srgb, var(--guard) 10%, transparent);
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-2);
+}
+
+.preview-note[hidden] {
+  display: none;
+}
+
+.tab-preview {
+  font: 500 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--guard);
+  vertical-align: super;
 }
 
 /* ——— Game selector ——— */
@@ -201,6 +495,7 @@ h1 em {
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 0.9fr);
   grid-template-areas:
     'board decision controls'
+    'about about about'
     'network network network'
     'training training frontier';
   align-items: start;
@@ -231,6 +526,7 @@ h1 em {
     grid-template-areas:
       'board board'
       'decision controls'
+      'about about'
       'network network'
       'training training'
       'frontier frontier';
@@ -245,7 +541,7 @@ h1 em {
   }
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'board' 'decision' 'controls' 'network' 'training' 'frontier';
+    grid-template-areas: 'board' 'decision' 'controls' 'about' 'network' 'training' 'frontier';
   }
 }
 
@@ -316,6 +612,28 @@ h3 small {
   position: relative;
   aspect-ratio: var(--board-aspect, 1 / 1);
   width: 100%;
+}
+
+/* WebGL board of 3D games, laid over the 2D board canvas. */
+.board-3d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 3px;
+}
+
+.board-hud {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font: 500 12px/1.4 var(--mono);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+  padding: 4px 8px;
+  border-radius: 3px;
+  pointer-events: none;
 }
 
 #board {
@@ -852,8 +1170,22 @@ input[type='number'] {
 }
 
 #racing-controls[hidden],
+#lander-controls[hidden],
 #telemetry-block[hidden] {
   display: none;
+}
+
+#lander-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 4px 12px;
+  margin-top: 12px;
+}
+
+#lander-controls .hint {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .segmented {

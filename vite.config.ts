@@ -13,7 +13,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
-        games: page('./web/index.html'),
+        lab: page('./web/index.html'),
+        systemone: page('./web/systemone/index.html'),
         handwriting: page('./web/handwriting/index.html'),
       },
     },

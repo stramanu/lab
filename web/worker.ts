@@ -20,6 +20,7 @@ self.onmessage = async (ev: MessageEvent<ToWorker>) => {
   stopRequested = false;
   try {
     const game = getGame(msg.game);
+    await game.init?.();
     const c = game.continuous;
     const pipeline = c
       ? new ContinuousPipeline({ name: game.name, makeEnv: c.makeEnv, teacher: c.makeTeacher(game.referenceLevel), guard: c.makeGuard(), agrees: c.agrees }, { ...c.pipeline })

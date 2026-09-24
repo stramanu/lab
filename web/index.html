@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lab · Emanuele Strazzullo</title>
+    <meta
+      name="description"
+      content="Small, reproducible experiments in machine learning, planning and control. Written from scratch, running in the browser, with their protocol and their negative results."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%23f2ede2%27/%3E%3Crect x=%272%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%276%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%2710%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%231f8a5b%27/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body>
+    <nav class="labnav" aria-label="Lab">
+      <a class="labnav-home" href="./" aria-current="page">lab<span>.emanuelestrazzullo.dev</span></a>
+      <div class="labnav-links">
+        <a href="./systemone/">System One</a>
+        <a href="./handwriting/">Handwriting</a>
+      </div>
+      <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
+    </nav>
+
+    <header class="masthead">
+      <div class="masthead-top"><span class="kicker">Emanuele Strazzullo · research notebook</span></div>
+      <h1>The <em>lab</em></h1>
+      <p class="lede">
+        Small, reproducible experiments in machine learning, planning and control. Every model, planner and
+        simulation is written from scratch and runs in your browser. Every result comes with the protocol that
+        produced it, and the negative results are published too.
+      </p>
+    </header>
+
+    <main class="lab">
+      <h2 class="lab-heading">Experiments</h2>
+
+      <article class="panel experiment">
+        <div class="experiment-meta">
+          <span class="experiment-number">01</span>
+          <span class="experiment-status">5 environments · ongoing</span>
+        </div>
+        <h3>System One / System Two</h3>
+        <p class="question">
+          Can a tiny network, trained by a slow planner, make most decisions at a fraction of the planner's cost,
+          and know when to hand control back?
+        </p>
+        <p>
+          A fast network (System One) proposes every move with a confidence. When it is unsure, or when a cheap
+          safety check rejects its move, a slow planner (System Two) decides instead, and that decision becomes a
+          new training example. The same pipeline runs on five very different problems.
+        </p>
+        <ul class="findings">
+          <li><b>Snake</b> With a cheap safety check, the hybrid reaches 93–98% of the planner's score for 9–18× less compute.</li>
+          <li><b>Lander</b> A hand-written autopilot beats the network at the same cost: sometimes a rule is enough.</li>
+          <li><b>Warehouse</b> 16 robots: at the same compute, the hybrid delivers 93.6 loads where the planner delivers 60.1; the 10× target is missed.</li>
+          <li><b>Racing</b> The network alone drives 99.9% as far as the planner, for 1,164× less compute.</li>
+          <li><b>Quadruped</b> Preview: a 3D walking robot you can push. Its feasibility test stopped the experiment (the network matched the planner on 60% of states, the target was 85%); with more data, a larger network drove it almost as well as the planner. The network is now in training for the final study.</li>
+        </ul>
+        <a class="experiment-link" href="./systemone/">Open the experiment →</a>
+      </article>
+
+      <article class="panel experiment">
+        <div class="experiment-meta">
+          <span class="experiment-number">02</span>
+          <span class="experiment-status">complete</span>
+        </div>
+        <h3>Handwriting pad</h3>
+        <p class="question">
+          Can a network with 22,298 parameters read handwritten letters as well as a classic recogniser that compares
+          your letter with every stored example?
+        </p>
+        <p>
+          Write one uppercase letter at a time with your finger, like on a car's touchpad. Both recognisers read it in
+          your browser, and the page shows how much arithmetic each one spent.
+        </p>
+        <ul class="findings">
+          <li><b>Result</b> On 20 writers it never saw, the network reads 83.9% of letters right, the classic recogniser 83.2%, for 1,302× less arithmetic. The 90% target is missed.</li>
+        </ul>
+        <a class="experiment-link" href="./handwriting/">Open the experiment →</a>
+      </article>
+
+      <section class="panel method" aria-labelledby="method-title">
+        <h2 id="method-title">How experiments are run</h2>
+        <ol>
+          <li><b>Targets first.</b> What would count as success is written down before measuring, and never changed afterwards.</li>
+          <li><b>Separate data.</b> Design decisions use development seeds or writers; final numbers use held-out test ones, touched once.</li>
+          <li><b>Repeated runs.</b> Every final result is the mean of 5 independent training runs, with 95% intervals.</li>
+          <li><b>Feasibility first.</b> Before a long study, a short test with go/no-go criteria decides whether it is worth running.</li>
+          <li><b>Everything logged.</b> Every design decision is recorded with its evidence, and negative results are reported like positive ones.</li>
+          <li><b>From scratch.</b> No machine-learning libraries: networks, backpropagation, planners and environments are written in TypeScript.</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>
+        By Emanuele Strazzullo. Method, full results and references for each experiment are in its repository
+        write-up. Nothing you do on these pages leaves your browser.
+      </p>
+    </footer>
+
+    <script type="module" src="./lab.ts"></script>
+  </body>
+</html>

@@ -36,3 +36,6 @@ dist/
 .playwright-mcp/
 site/
 .wrangler/
+
+# Local Claude Code commands and skills (OpenSpec workflow); not part of the published lab.
+.claude/

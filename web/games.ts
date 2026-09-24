@@ -3,6 +3,7 @@ import { getGame, type GameDefinition } from '../src/games/registry';
 import { SnakeView, type BoardView } from './game-view';
 import { LanderView } from './lander-view';
 import { RacingView } from './racing-view';
+import { QuadrupedView } from './quadruped-view';
 import { WarehouseView } from './warehouse-view';
 
 /** How the input layer is laid out in the 3D network view. */
@@ -33,6 +34,8 @@ export interface DemoGame {
   /** Upper bound of the score axis for the training curve. */
   scoreMax: number;
   scoreLabel(env: Env): string;
+  /** Shown while the game's network is not published yet: the page marks the game as a preview. */
+  preview?: string;
 }
 
 export const DEMO_GAMES: DemoGame[] = [
@@ -79,6 +82,31 @@ export const DEMO_GAMES: DemoGame[] = [
     },
     scoreMax: 1600,
     scoreLabel: (env) => `${env.score().toFixed(0)} m`,
+  },
+  {
+    def: getGame('quadruped'),
+    blurb:
+      'A 12-joint quadruped in 3D rigid-body physics (Rapier) trots forward while pushes hit it. The network modulates a hand-written trot (step placement, height, frequency); the planner simulates 21 modulations 1 s ahead.',
+    createView: (c) => new QuadrupedView(c),
+    aspect: '4 / 3',
+    input: {
+      kind: 'list',
+      labels: [
+        'height',
+        'gravity x', 'gravity y', 'gravity z',
+        'sin yaw', 'cos yaw',
+        'vel x', 'vel y', 'vel z',
+        'ang x', 'ang y', 'ang z',
+        ...['FR', 'FL', 'HR', 'HL'].flatMap((l) => [`${l} abd`, `${l} hip`, `${l} knee`]),
+        ...['FR', 'FL', 'HR', 'HL'].flatMap((l) => [`${l} abd′`, `${l} hip′`, `${l} knee′`]),
+        'FR contact', 'FL contact', 'HR contact', 'HL contact',
+        'sin phase', 'cos phase',
+        'last fwd', 'last lat', 'last height', 'last freq',
+      ],
+    },
+    scoreMax: 14,
+    scoreLabel: (env) => `${env.score().toFixed(1)} m`,
+    preview: 'Preview: the neural network is still in training (5-run study in progress). Until it is published, the planner decides every move. You can already push the robot.',
   },
 ];
 

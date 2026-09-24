@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>System One · live</title>
+    <title>System One / System Two · Lab</title>
     <meta
       name="description"
       content="Tiny networks learn games from a slow planner in your browser tab, and know when to ask for help."
@@ -12,32 +12,68 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="../styles.css" />
   </head>
   <body>
+    <nav class="labnav" aria-label="Lab">
+      <a class="labnav-home" href="../">lab<span>.emanuelestrazzullo.dev</span></a>
+      <div class="labnav-links">
+        <a href="../systemone/" aria-current="page">System One</a>
+        <a href="../handwriting/">Handwriting</a>
+      </div>
+      <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
+    </nav>
     <header class="masthead">
       <div class="masthead-top">
-        <span class="kicker">Experiment · System One / System Two</span>
-        <span class="masthead-actions">
-          <a class="crosslink" href="./handwriting/">Handwriting pad →</a>
-          <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
-        </span>
+        <span class="kicker">Lab · Experiment 1 · System One / System Two</span>
       </div>
-      <h1>System <em>One</em></h1>
+      <h1>System One <em>/ System Two</em></h1>
       <p class="lede">
         A tiny network learns a game from a slow planner, inside this tab. It plays on intuition, a cheap check
         catches its dangerous moves, and it asks the planner only when it is unsure.
       </p>
       <nav class="game-tabs" aria-label="Game" id="game-tabs"></nav>
       <p class="blurb" id="game-blurb"></p>
+      <details class="howto" id="howto">
+        <summary><h2>How it works</h2><span class="howto-hint">System One, System Two, the guard, and what the percentages mean</span></summary>
+        <div class="howto-body">
+          <div class="flow-wrap"><svg class="flow" viewBox="0 0 760 186" role="img" aria-label="Flow of one decision: System One proposes; if it is confident and the guard accepts, its move is played; otherwise System Two decides, and that state becomes a training example.">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="flow-head" /></marker>
+            </defs>
+            <g class="flow-box"><rect x="6" y="20" width="92" height="46" rx="6" /><text x="52" y="40">game</text><text x="52" y="56">state</text></g>
+            <g class="flow-box s1"><rect x="132" y="12" width="130" height="62" rx="6" /><text x="197" y="37">System One</text><text x="197" y="55" class="small">network · 1 unit</text></g>
+            <g class="flow-box"><rect x="298" y="20" width="112" height="46" rx="23" /><text x="354" y="40">confident?</text><text x="354" y="56" class="small">≥ threshold</text></g>
+            <g class="flow-box guard"><rect x="452" y="20" width="112" height="46" rx="6" /><text x="508" y="40">guard</text><text x="508" y="56" class="small">safe? · cheap</text></g>
+            <g class="flow-box act"><rect x="606" y="20" width="148" height="46" rx="6" /><text x="680" y="48">play the move</text></g>
+            <g class="flow-box s2"><rect x="440" y="120" width="150" height="46" rx="6" /><text x="515" y="140">System Two</text><text x="515" y="156" class="small">planner · slow</text></g>
+            <path d="M98 43 H130" /><path d="M262 43 H296" /><path d="M410 43 H450" /><path d="M564 43 H604" />
+            <text x="418" y="34" class="label">yes</text><text x="572" y="34" class="label">yes</text>
+            <path d="M354 66 V143 H438" /><text x="361" y="104" class="label">no</text>
+            <path d="M508 66 V118" /><text x="515" y="98" class="label">no</text>
+            <path d="M590 143 H680 V68" />
+            <path d="M440 160 H197 V76" class="dashed" /><text x="206" y="178" class="label">the planner's answer becomes a training example</text>
+          </svg></div>
+          <div class="howto-text">
+            <p><b>System Two</b> is a planner. Before every move it simulates what happens next for each possible action and picks the best. It is strong but slow; its work is counted in <em>compute units</em>: the positions it explores or the physics steps it simulates.</p>
+            <p><b>System One</b> is a small neural network. From the game's state (its inputs are listed under “This game”), it proposes a move in a single pass, 1 unit (5 for an ensemble of five networks), together with a <em>confidence</em>.</p>
+            <p><b>The threshold and the guard.</b> If the confidence is below the threshold (the slider), the planner decides instead. If it is above, a cheap <em>guard</em> checks the move for immediate danger; if the move fails, the planner decides too.</p>
+            <p><b>How System One learns.</b> It first imitates the planner on games the planner plays. Then the hybrid plays, and every state where it had to ask the planner is labelled by the planner and added to its training data. The network learns exactly where it was weak.</p>
+            <p><b>The percentages.</b> “Who decided” counts the last 1,000 moves. With untrained (random) weights the confidence is low, so the planner decides almost everything: System Two near 100%, System One near 0%. As the network trains, its confidence grows, and the shares cross: System One rises, System Two falls (watch it with “Train in this tab”, and in the “Share of moves” chart). Moving the threshold down gives more moves to System One: cheaper, but riskier.</p>
+            <p><b>The cost.</b> The large number is the mean compute per move over the same 1,000 moves. The “Cost vs quality” chart compares it with the planner alone, from the published study.</p>
+          </div>
+        </div>
+      </details>
     </header>
+
 
     <main class="layout">
       <section class="panel board-panel" aria-labelledby="board-title">
         <h2 id="board-title" class="visually-hidden">Live game</h2>
+        <p class="preview-note" id="preview-note" hidden></p>
         <div class="board-wrap" id="board-wrap">
           <canvas id="board" aria-label="Game board" role="img"></canvas>
           <div id="rec-badge" class="rec-badge" hidden>● REC</div>
@@ -52,6 +88,14 @@
             <button type="button" data-trail="speed" aria-pressed="false">Speed</button>
           </div>
           <label class="check"><input id="ghost" type="checkbox" checked /> Planner ghost</label>
+        </div>
+        <div class="racing-only" id="lander-controls" hidden>
+          <label class="field">
+            <span>Your wind <span><output id="o-wind">0.00</output> m/s²</span></span>
+            <input id="wind" type="range" min="-0.8" max="0.8" step="0.02" value="0" aria-describedby="wind-hint" />
+          </label>
+          <button type="button" id="wind-calm" class="ghost">Calm</button>
+          <p class="hint" id="wind-hint">Added to the seeded wind, live: watch who has to react.</p>
         </div>
         <div class="racing-only" id="telemetry-block" hidden>
           <h3>Telemetry <small>last 20 s · red bands: decided by the planner</small></h3>
@@ -126,6 +170,32 @@
         <p class="hint" id="rec-hint"></p>
       </section>
 
+      <section class="panel about-panel" aria-labelledby="about-title">
+        <h2 id="about-title">This game</h2>
+        <div class="about-grid">
+          <div>
+            <h3>What happens</h3>
+            <p id="about-what"></p>
+            <h3>The network</h3>
+            <p id="about-network"></p>
+            <h3>Outputs</h3>
+            <p id="about-outputs"></p>
+          </div>
+          <div>
+            <h3>Inputs <small id="about-inputs-count"></small></h3>
+            <table class="about-inputs"><tbody id="about-inputs"></tbody></table>
+          </div>
+          <div>
+            <h3>The planner (System Two)</h3>
+            <p id="about-planner"></p>
+            <h3>The guard</h3>
+            <p id="about-guard"></p>
+            <h3>Published result</h3>
+            <p id="about-result"></p>
+          </div>
+        </div>
+      </section>
+
       <section class="panel network-panel" aria-labelledby="network-title">
         <h2 id="network-title">Inside System One</h2>
         <p class="sub">
@@ -179,10 +249,10 @@
         Everything runs in your browser: the environments, the planners, the network and its backprop, written from
         scratch in TypeScript. Cost is counted in compute units: nodes expanded or physics steps simulated by the
         planner or the guard, and one unit per network forward pass. Method, protocol, results and references are in
-        the repository README.
+        the experiment's write-up in the lab repository (docs/systemone.md).
       </p>
     </footer>
 
-    <script type="module" src="./main.ts"></script>
+    <script type="module" src="../main.ts"></script>
   </body>
 </html>

@@ -1,35 +1,38 @@
-import { argmax, type ContinuousEnv, type Env, type Player, type Teacher } from '../src/core/types';
-import { RacingEnv } from '../src/games/racing/env';
+/**
+ * The System One page: the live game (who decided each move, what it cost), System One's output and
+ * its 3D forward pass, the controls, and the panels (in-tab training, the published frontier, "This
+ * game"). Game-specific extras live in their own modules.
+ */
+import { argmax, type ContinuousEnv, type Env, type MoveRecord, type Player } from '../src/core/types';
+import { QuadrupedEnv } from '../src/games/quadruped';
 import { ContinuousHybridPlayer, HybridPlayer, NetStudent } from '../src/hybrid';
 import { Ensemble, Mlp, importEnsemble, importPolicy } from '../src/nn';
-import type { LogEntry } from '../src/training/pipeline';
+import { DEFAULT_CONTINUOUS_PIPELINE, DEFAULT_PIPELINE } from '../src/training';
 import { drawBars, drawGauges } from './bars';
-import { cssVar, drawLines, drawScatter, formatTick, type ScatterLayout, type ScatterPoint } from './charts';
-import { costDomain, frontierPoints, referencePoint, scoreDomain, type FrontierPoint, type StudyFile } from './frontier';
+import { cssVar } from './charts';
+import { DecisionWindow } from './decision-window';
+import { $ } from './dom';
+import { hiddenOf, networkLegend, renderExplainer } from './explainer-panel';
+import type { FrontierPoint } from './frontier';
+import { FrontierPanel } from './frontier-panel';
 import { STATE_VAR, decisionState, type BoardView, type DecisionState } from './game-view';
 import { DEMO_GAMES, demoGame, type DemoGame } from './games';
+import { LanderWind } from './lander-wind';
 import type { NetworkView } from './network-view';
-import type { FromWorker, ToWorker, Weights } from './protocol';
-import { RacingView } from './racing-view';
+import { PlannerWorkerClient } from './planner-worker-client';
+import type { Weights } from './protocol';
+import { RacingExtras } from './racing-extras';
 import { CanvasRecorder, download } from './recorder';
-import { Telemetry, drawTelemetry } from './telemetry';
+import { TrainingPanel } from './training-panel';
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = document.documentElement;
-
-// ——— Elements ———
 const boardCanvas = $<HTMLCanvasElement>('board');
 const barsCanvas = $<HTMLCanvasElement>('bars');
-const shareCanvas = $<HTMLCanvasElement>('chart-share');
-const scoreCanvas = $<HTMLCanvasElement>('chart-score');
-const frontierCanvas = $<HTMLCanvasElement>('frontier');
-const tip = $<HTMLDivElement>('tip');
 const thresholdInput = $<HTMLInputElement>('threshold');
 const speedInput = $<HTMLInputElement>('speed');
 const guardInput = $<HTMLInputElement>('guard');
 const seedInput = $<HTMLInputElement>('seed');
 const btnPretrained = $<HTMLButtonElement>('btn-pretrained');
-const btnTrain = $<HTMLButtonElement>('btn-train');
 const btnRecord = $<HTMLButtonElement>('btn-record');
 const btnPause = $<HTMLButtonElement>('btn-pause');
 
@@ -42,35 +45,60 @@ let student: NetStudent | null = null;
 let ensemble: Ensemble | null = null;
 let hybrid!: Player;
 let threshold = Number(thresholdInput.value);
-
-// ——— Racing extras: planner ghost, telemetry, camera and trail modes ———
-const telemetry = new Telemetry(200);
-const telemetryCanvas = $<HTMLCanvasElement>('telemetry');
-let ghostEnv: RacingEnv | null = null;
-let ghostTeacher: Teacher | null = null;
-let ghostOn = true;
-let racingCamera: 'chase' | 'track' = 'chase';
-let racingTrail: 'decider' | 'speed' = 'decider';
-
-function configureRacing(): void {
-  const racing = view instanceof RacingView;
-  $('racing-controls').hidden = !racing;
-  $('telemetry-block').hidden = !racing;
-  ghostEnv = racing && ghostOn ? new RacingEnv() : null;
-  ghostTeacher = ghostEnv ? game.def.makeTeacher(game.def.referenceLevel) : null;
-  if (view instanceof RacingView) {
-    view.camera = racingCamera;
-    view.trailMode = racingTrail;
-    view.ghost = ghostEnv;
-  }
-}
-
-function resetGhost(episodeSeed: number): void {
-  ghostEnv?.reset(episodeSeed);
-  telemetry.clear();
-}
 let guardOn = guardInput.checked;
 
+// ——— Live play ———
+let seed = Number(seedInput.value) || 1;
+let episode = 1;
+const episodeScores: number[] = [];
+const decisions = new DecisionWindow(1000);
+let lastState: DecisionState = 'system1';
+let lastProbs: Float32Array | null = null;
+let lastChoice = 0;
+let lastPlayed = 0;
+let lastEncoding: Float32Array | null = null;
+let lastConfidence: number | null = null;
+let lastTeacherAction: Float64Array | null = null;
+
+/**
+ * The decision shown by the bars and the 3D view. It is refreshed at most every
+ * 80 ms from the latest move, so both panels always show the same decision.
+ */
+let shown: {
+  probs: Float32Array | null;
+  encoding: Float32Array;
+  chosen: number;
+  played: number;
+  state: DecisionState;
+  confidence: number | null;
+  teacherAction: Float64Array | null;
+} | null = null;
+let lastShown = 0;
+
+// ——— Modules ———
+const racing = new RacingExtras(() => resetGame(seed));
+const wind = new LanderWind();
+const planner = new PlannerWorkerClient();
+const training = new TrainingPanel(
+  {
+    onPolicy: (policy, source) => applyPolicy(policy, source),
+    onRunning: (on) => {
+      btnPretrained.disabled = on || Boolean(game.preview);
+      for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.disabled = on;
+    },
+  },
+  () => game.def.name,
+  () => (game.def.continuous ? { ...DEFAULT_CONTINUOUS_PIPELINE, ...game.def.continuous.pipeline } : { ...DEFAULT_PIPELINE, ...game.def.pipeline }).iterations,
+);
+const frontier = new FrontierPanel(livePoint);
+
+function livePoint(): FrontierPoint | null {
+  if (episodeScores.length < 3 || !decisions.count) return null;
+  const recent = episodeScores.slice(-10);
+  return { label: `live game (last ${recent.length} episodes)`, kind: 'other', cost: decisions.meanCost(), score: recent.reduce((a, b) => a + b, 0) / recent.length, ci95: 0, zeroCost: false };
+}
+
+// ——— Models ———
 function rebuildHybrid(): void {
   const c = game.def.continuous;
   if (c && ensemble) {
@@ -84,11 +112,12 @@ function rebuildHybrid(): void {
 const shownNet = (): Mlp => (ensemble ? ensemble.members[0] : student!.net);
 
 function setUntrained(): void {
+  const hidden = hiddenOf(game);
   if (game.def.continuous) {
     const ce = env as ContinuousEnv;
-    setEnsemble(new Ensemble({ inputSize: env.encodingSize, hidden: [64, 64], low: [...ce.actionLow], high: [...ce.actionHigh], members: 5, seed: 20260923 }), 'Model: untrained (5 random networks)');
+    setEnsemble(new Ensemble({ inputSize: env.encodingSize, hidden, low: [...ce.actionLow], high: [...ce.actionHigh], members: 5, seed: 20260923 }), 'Model: untrained (5 random networks)');
   } else {
-    setModel(new Mlp({ inputSize: env.encodingSize, hidden: [64, 64], outputSize: env.numActions, seed: 20260923 }), 1, 'Model: untrained (random weights)');
+    setModel(new Mlp({ inputSize: env.encodingSize, hidden, outputSize: env.numActions, seed: 20260923 }), 1, 'Model: untrained (random weights)');
   }
 }
 
@@ -119,63 +148,41 @@ function applyPolicy(policy: Weights, source: string): void {
   setModel(net, calibrationT, `Model: ${source} · ${net.numParams.toLocaleString('en-US')} params · ${kb} KB · T=${calibrationT.toFixed(2)}`);
 }
 
-// ——— Live play ———
-let seed = Number(seedInput.value) || 1;
-let episode = 1;
-const episodeScores: number[] = [];
-let lastState: DecisionState = 'system1';
-let lastProbs: Float32Array | null = null;
-let lastChoice = 0;
-let lastPlayed = 0;
-let lastEncoding: Float32Array | null = null;
-let lastConfidence: number | null = null;
-let lastTeacherAction: Float64Array | null = null;
-
-/**
- * The decision shown by the bars and the 3D view. It is refreshed at most every
- * 80 ms from the latest move, so both panels always show the same decision.
- */
-let shown: {
-  probs: Float32Array | null;
-  encoding: Float32Array;
-  chosen: number;
-  played: number;
-  state: DecisionState;
-  confidence: number | null;
-  teacherAction: Float64Array | null;
-} | null = null;
-let lastShown = 0;
-
-const WINDOW = 1000;
-const winState = new Uint8Array(WINDOW); // 0 system1, 1 guard, 2 system2
-const winCost = new Float64Array(WINDOW);
-let winCount = 0;
-let winPtr = 0;
-const STATE_CODE: Record<DecisionState, number> = { system1: 0, guard: 1, system2: 2 };
-
+// ——— Moves ———
 function resetGame(newSeed: number): void {
+  planner.cancel();
   seed = newSeed;
   episode = 1;
   episodeScores.length = 0;
-  winCount = 0;
-  winPtr = 0;
+  decisions.clear();
   env.reset(seed);
   view.reset();
-  resetGhost(seed);
+  racing.reset(seed);
   lastProbs = null;
   shown = null;
 }
 
 function playMove(): void {
+  if (planner.busy) return; // waiting for the planner's answer
   if (env.isDone()) {
     episodeScores.push(env.score());
     if (episodeScores.length > 50) episodeScores.shift();
     episode++;
     env.reset(seed + episode - 1);
     view.reset();
-    resetGhost(seed + episode - 1);
+    racing.reset(seed + episode - 1);
   }
-  const m = hybrid.act(env);
+  // The quadruped's planner runs in a worker; System One and the guard decide here.
+  if (env instanceof QuadrupedEnv && hybrid instanceof ContinuousHybridPlayer) {
+    const p = hybrid.propose(env);
+    if ('move' in p) applyMove(p.move);
+    else planner.request(env, hybrid, p.escalation, applyMove);
+    return;
+  }
+  applyMove(hybrid.act(env));
+}
+
+function applyMove(m: MoveRecord): void {
   lastState = decisionState(m.decider, m.escalationReason);
   lastProbs = m.probs ?? null;
   lastEncoding = m.state ?? null;
@@ -183,17 +190,10 @@ function playMove(): void {
   lastTeacherAction = m.teacherAction ?? null;
   lastChoice = lastProbs ? argmax(lastProbs) : m.action;
   lastPlayed = m.action;
-  winState[winPtr] = STATE_CODE[lastState];
-  winCost[winPtr] = m.cost;
-  winPtr = (winPtr + 1) % WINDOW;
-  winCount = Math.min(winCount + 1, WINDOW);
+  decisions.push(lastState, m.cost);
   if (m.continuous) (env as ContinuousEnv).stepContinuous(m.continuous);
   else env.step(m.action);
-  // The ghost is display only: its planner compute is not added to the live cost.
-  if (ghostEnv && ghostTeacher && !ghostEnv.isDone()) ghostEnv.step(argmax(ghostTeacher.score(ghostEnv).scores));
-  if (env instanceof RacingEnv) {
-    telemetry.push({ speed: env.car.speed, steer: env.car.steer, pedal: m.continuous ? m.continuous[1] : m.action % 2 === 0 ? 1 : -1, escalated: m.decider === 'system2' });
-  }
+  racing.afterMove(env, m);
   view.record(env, lastState, m.action);
   movesThisSecond++;
 }
@@ -215,7 +215,7 @@ function frame(now: number): void {
   if (!paused) {
     acc += (dt * speedFromSlider(Number(speedInput.value))) / 1000;
     const budgetEnd = now + 10; // at most ~10 ms of moves per frame, so rendering stays smooth
-    while (acc >= 1 && performance.now() < budgetEnd) {
+    while (acc >= 1 && performance.now() < budgetEnd && !planner.busy) {
       playMove();
       acc -= 1;
     }
@@ -242,7 +242,7 @@ function frame(now: number): void {
   }
   if (now - lastDomUpdate > 120) {
     updateReadouts();
-    if (view instanceof RacingView) drawTelemetry(telemetryCanvas, telemetry);
+    racing.draw();
     lastDomUpdate = now;
   }
   requestAnimationFrame(frame);
@@ -291,18 +291,13 @@ function updateReadouts(): void {
   $('r-speed').textContent = paused ? 'paused' : actualSpeed ? actualSpeed.toFixed(0) : '–';
   $('now-label').textContent = STATE_LABEL[lastState];
   $('now-dot').style.background = cssVar(root, STATE_VAR[lastState]);
-  if (!winCount) return;
-  const counts = [0, 0, 0];
-  let cost = 0;
-  for (let i = 0; i < winCount; i++) {
-    counts[winState[i]]++;
-    cost += winCost[i];
-  }
-  const pct = (c: number) => `${((100 * c) / winCount).toFixed(winCount >= 100 ? 1 : 0)}%`;
-  $('t-system1').textContent = pct(counts[0]);
-  $('t-guard').textContent = pct(counts[1]);
-  $('t-system2').textContent = pct(counts[2]);
-  const perMove = cost / winCount;
+  if (!decisions.count) return;
+  const shares = decisions.shares();
+  const pct = (v: number) => `${(100 * v).toFixed(decisions.count >= 100 ? 1 : 0)}%`;
+  $('t-system1').textContent = pct(shares.system1);
+  $('t-guard').textContent = pct(shares.guard);
+  $('t-system2').textContent = pct(shares.system2);
+  const perMove = decisions.meanCost();
   $('cost-value').textContent = perMove >= 100 ? perMove.toFixed(0) : perMove.toFixed(1);
 }
 
@@ -330,104 +325,14 @@ btnPause.addEventListener('click', () => {
 btnPretrained.addEventListener('click', async () => {
   btnPretrained.disabled = true;
   try {
-    const res = await fetch(`./data/${game.def.name}-weights.json`);
+    const res = await fetch(`../data/${game.def.name}-weights.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     applyPolicy((await res.json()) as Weights, 'pretrained (run 1 of the 5-run study)');
   } catch (err) {
     $('model-info').textContent = `Could not load the pretrained weights: ${String(err)}`;
   } finally {
-    btnPretrained.disabled = training;
+    btnPretrained.disabled = training.running || Boolean(game.preview);
   }
-});
-
-// ——— Training worker ———
-let worker: Worker | null = null;
-let training = false;
-const log: LogEntry[] = [];
-
-function setTraining(on: boolean): void {
-  training = on;
-  btnTrain.textContent = on ? 'Stop training' : 'Train in this tab';
-  btnTrain.setAttribute('aria-pressed', String(on));
-  btnTrain.disabled = false;
-  btnPretrained.disabled = on;
-  for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.disabled = on;
-}
-
-function describe(e: LogEntry): string {
-  const it = e.phase === 'escalation' ? `iteration ${e.iteration}/30` : e.phase;
-  const score = e.meanScore === null ? '' : ` · mean score ${e.meanScore.toFixed(0)}`;
-  return `${it} · escalated ${(e.escalationRate * 100).toFixed(1)}% (guard ${(e.guardEscalationRate * 100).toFixed(1)}%) · agreement ${(e.valAgreement * 100).toFixed(1)}%${score} · ${e.datasetSize.toLocaleString('en-US')} examples · ${(e.elapsedMs / 1000).toFixed(0)} s`;
-}
-
-btnTrain.addEventListener('click', () => {
-  if (training) {
-    worker?.postMessage({ type: 'stop' } satisfies ToWorker);
-    btnTrain.textContent = 'Stopping…';
-    btnTrain.disabled = true;
-    return;
-  }
-  worker ??= new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-  worker.onmessage = (ev: MessageEvent<FromWorker>) => {
-    const msg = ev.data;
-    if (msg.type === 'progress') {
-      log.push(msg.entry);
-      applyPolicy(msg.policy, `trained in this tab · ${msg.entry.phase} ${msg.entry.iteration}`);
-      $('train-status').textContent = describe(msg.entry);
-      drawCurves();
-    } else if (msg.type === 'done') {
-      applyPolicy(msg.policy, msg.completed ? 'trained in this tab · final' : 'trained in this tab · stopped early');
-      $('train-status').textContent = `${msg.completed ? 'Done' : 'Stopped'} · ${log.length ? describe(log[log.length - 1]) : ''}`;
-      setTraining(false);
-    } else {
-      $('train-status').textContent = `Training failed: ${msg.message}`;
-      setTraining(false);
-    }
-  };
-  worker.onerror = (e) => {
-    $('train-status').textContent = `Worker error: ${e.message}`;
-    setTraining(false);
-  };
-  log.length = 0;
-  drawCurves();
-  $('train-status').textContent = 'Bootstrap: the planner plays the first games to create labels…';
-  worker.postMessage({ type: 'start', game: game.def.name, config: {} } satisfies ToWorker);
-  setTraining(true);
-});
-
-function drawCurves(): void {
-  drawLines(
-    shareCanvas,
-    [
-      { label: 'escalated', color: cssVar(root, '--s2'), values: log.map((e) => e.escalationRate) },
-      { label: 'guard', color: cssVar(root, '--guard'), values: log.map((e) => e.guardEscalationRate), dashed: true },
-      { label: 'agreement', color: cssVar(root, '--ink-2'), values: log.map((e) => e.valAgreement) },
-    ],
-    1,
-    (v) => `${Math.round(v * 100)}%`,
-  );
-  drawLines(scoreCanvas, [{ label: 'score', color: cssVar(root, '--s1'), values: log.map((e) => e.meanScore) }], game.scoreMax, (v) => String(v));
-}
-
-for (const b of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
-  b.addEventListener('click', () => {
-    racingCamera = b.dataset.camera as 'chase' | 'track';
-    for (const o of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) o.setAttribute('aria-pressed', String(o === b));
-    if (view instanceof RacingView) view.camera = racingCamera;
-  });
-}
-for (const b of document.querySelectorAll<HTMLButtonElement>('[data-trail]')) {
-  b.addEventListener('click', () => {
-    racingTrail = b.dataset.trail as 'decider' | 'speed';
-    for (const o of document.querySelectorAll<HTMLButtonElement>('[data-trail]')) o.setAttribute('aria-pressed', String(o === b));
-    if (view instanceof RacingView) view.trailMode = racingTrail;
-  });
-}
-$<HTMLInputElement>('ghost').addEventListener('change', (e) => {
-  ghostOn = (e.target as HTMLInputElement).checked;
-  configureRacing();
-  // Restart the episode so the ghost starts level with the live car.
-  resetGame(seed);
 });
 
 // ——— Recorder ———
@@ -452,133 +357,44 @@ btnRecord.addEventListener('click', async () => {
   $('rec-hint').textContent = `Saved ${filename} (${(blob.size / 1024).toFixed(0)} KB).`;
 });
 
-// ——— Frontier (published multi-run study) ———
-let study: StudyFile | null = null;
-let frontier: FrontierPoint[] = [];
-let layout: ScatterLayout | null = null;
-
-function livePoint(): FrontierPoint | null {
-  if (episodeScores.length < 3 || !winCount) return null;
-  let cost = 0;
-  for (let i = 0; i < winCount; i++) cost += winCost[i];
-  const recent = episodeScores.slice(-10);
-  return { label: `live game (last ${recent.length} episodes)`, kind: 'other', cost: cost / winCount, score: recent.reduce((a, b) => a + b, 0) / recent.length, ci95: 0, zeroCost: false };
-}
-
-function pointLabel(p: FrontierPoint): string {
-  const cost = p.zeroCost ? '0' : formatTick(Number(p.cost.toFixed(1)));
-  return `${p.label} · score ${p.score.toFixed(1)}${p.ci95 ? ` ±${p.ci95.toFixed(1)}` : ''} · ${cost} units/move`;
-}
-
-function drawFrontier(): void {
-  if (!frontier.length) return;
-  const color = { system2: cssVar(root, '--s2'), hybrid: cssVar(root, '--ink-3'), 'hybrid+guard': cssVar(root, '--s1'), baseline: cssVar(root, '--ink-2'), other: cssVar(root, '--ink-3') };
-  const shape = { system2: 'square', hybrid: 'ring', 'hybrid+guard': 'circle', baseline: 'diamond', other: 'diamond' } as const;
-  const xDomain = costDomain(frontier);
-  const yDomain = scoreDomain(frontier);
-  const points: ScatterPoint[] = frontier.map((p) => ({ x: p.zeroCost ? xDomain[0] : p.cost, y: p.score, yErr: p.ci95, shape: shape[p.kind], color: color[p.kind], label: pointLabel(p) }));
-  const live = livePoint();
-  if (live) points.push({ x: Math.min(Math.max(live.cost, xDomain[0]), xDomain[1]), y: live.score, shape: 'ring', color: cssVar(root, '--here'), label: pointLabel(live), highlight: true });
-  const reference = referencePoint(frontier, game.def.referenceLevel);
-  layout = drawScatter(frontierCanvas, points, xDomain, yDomain, 'compute units per move (log)', 'mean score', (ctx, x, y) => {
-    if (!reference) return;
-    // H2 target region: at least 90% of the planner's score for at most a tenth of its cost.
-    const x0 = x(xDomain[0]);
-    const x1 = x(reference.cost / 10);
-    const y0 = y(yDomain[1]);
-    const y1 = y(reference.score * 0.9);
-    ctx.fillStyle = cssVar(root, '--s1');
-    ctx.globalAlpha = 0.09;
-    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = cssVar(root, '--ink-3');
-    ctx.font = '10px "JetBrains Mono", ui-monospace, monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText('target', x0 + 4, y0 + 4);
-  });
-}
-
-function showTip(clientX: number, clientY: number): void {
-  if (!layout) return;
-  const rect = frontierCanvas.getBoundingClientRect();
-  const mx = clientX - rect.left;
-  const my = clientY - rect.top;
-  let best: ScatterLayout['positions'][number] | null = null;
-  let bestD = 14 * 14;
-  for (const pos of layout.positions) {
-    const d = (pos.px - mx) ** 2 + (pos.py - my) ** 2;
-    if (d < bestD) {
-      bestD = d;
-      best = pos;
-    }
-  }
-  if (!best) {
-    tip.hidden = true;
-    return;
-  }
-  tip.textContent = best.point.label;
-  tip.hidden = false;
-  tip.style.left = `${Math.min(Math.max(best.px, 90), rect.width - 90)}px`;
-  tip.style.top = `${best.py}px`;
-}
-frontierCanvas.addEventListener('pointermove', (e) => showTip(e.clientX, e.clientY));
-frontierCanvas.addEventListener('pointerdown', (e) => showTip(e.clientX, e.clientY));
-frontierCanvas.addEventListener('pointerleave', () => (tip.hidden = true));
-
-async function loadStudy(name: string): Promise<void> {
-  study = null;
-  frontier = [];
-  const ctx = frontierCanvas.getContext('2d');
-  ctx?.clearRect(0, 0, frontierCanvas.width, frontierCanvas.height);
-  try {
-    const res = await fetch(`./data/${name}-study.json`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as StudyFile;
-    if (name !== game.def.name) return; // the visitor switched game meanwhile
-    study = data;
-    frontier = frontierPoints(study);
-    const ref = referencePoint(frontier, game.def.referenceLevel);
-    const guard07 = frontier.find((p) => p.label.startsWith('hybrid+guard') && p.label.endsWith('@0.7'));
-    $('frontier-sub').textContent =
-      `Mean of ${study.runs} training runs on ${study.seeds.count} held-out ${study.split} seeds, with 95% intervals. ` +
-      'Up is better, left is cheaper. The shaded target: at least 90% of the planner’s score for a tenth of its cost.';
-    $('cost-context').textContent = ref
-      ? `whole-game averages: planner ${ref.cost.toFixed(0)}${guard07 ? ` · hybrid + guard @0.7 ${guard07.cost.toFixed(0)}` : ''}`
-      : '';
-    drawFrontier();
-  } catch (err) {
-    $('frontier-sub').textContent = `Could not load the published results: ${String(err)}`;
-  }
-}
-setInterval(drawFrontier, 1000);
-
 // ——— Game selector ———
-function selectGame(name: string): void {
-  if (training) return;
-  game = demoGame(name);
+async function selectGame(name: string): Promise<void> {
+  if (training.running) return;
+  const next = demoGame(name);
+  if (next.def.init) {
+    $('game-blurb').textContent = `${next.def.title} — loading the physics engine…`;
+    await next.def.init();
+  }
+  game = next;
+  planner.cancel();
+  (env as { dispose?: () => void }).dispose?.(); // frees the previous game's WebAssembly world (quadruped)
   env = game.def.makeEnv();
+  (view as { dispose?: () => void }).dispose?.();
   view = game.createView(boardCanvas);
-  configureRacing();
+  racing.configure(view, game.def);
+  wind.attach(env);
   root.style.setProperty('--board-aspect', game.aspect);
   for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.setAttribute('aria-current', String(b.dataset.game === name));
   $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;
-  $('network-legend').textContent =
-    game.input.kind === 'window'
-      ? game.def.name === 'warehouse'
-        ? 'Inputs: the 9×9 window around the deciding robot (shelves, other robots, its goal), then goal direction, distance-map hints for the four neighbours, local density and time. Hidden layers: 64 + 64 ReLU units. Outputs: wait, north, east, south, west.'
-        : 'Inputs: the 7×7 window around the head (colored by what each cell holds), then food direction and length. Hidden layers: 64 + 64 ReLU units. Outputs: straight, left, right.'
-      : game.def.continuous
-        ? `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${game.def.continuous.actionLabels.join(', ')}. Shown: member 1 of the 5-network ensemble; the car follows the ensemble mean.`
-        : `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${env.actionNames.join(', ')}.`;
-  log.length = 0;
-  drawCurves();
-  $('train-status').textContent = 'Idle. Training takes one to two minutes on a laptop and runs in a background worker.';
+  // Games whose network is not published yet are marked as previews.
+  $('preview-note').hidden = !game.preview;
+  $('preview-note').textContent = game.preview ?? '';
+  btnPretrained.disabled = Boolean(game.preview);
+  renderExplainer(game, env);
+  $('network-legend').textContent = networkLegend(game, env);
+  // The quadruped's planner needs ~0.2 s per decision: training takes hours, so it is done offline.
+  training.reset(
+    game.scoreMax,
+    game.def.name === 'quadruped'
+      ? 'Training this game takes hours (every planner decision simulates 21 futures in the physics engine), so it is done offline; load the pretrained model instead.'
+      : null,
+  );
   setUntrained();
+  if (game.preview) $('model-info').textContent = 'Model: not published yet (the network is in training)';
   $('policy-title').textContent = game.def.continuous ? "System One's action" : "System One's policy";
   $('s1-cost').textContent = game.def.continuous ? 'ensemble of 5 · 5 units' : 'network alone · 1 unit';
   resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1));
-  void loadStudy(name);
+  void frontier.load(name, game.def.referenceLevel, () => game.def.name);
   history.replaceState(null, '', `#${name}`);
 }
 
@@ -588,7 +404,8 @@ for (const g of DEMO_GAMES) {
   b.type = 'button';
   b.dataset.game = g.def.name;
   b.textContent = g.def.title;
-  b.addEventListener('click', () => selectGame(g.def.name));
+  if (g.preview) b.insertAdjacentHTML('beforeend', ' <small class="tab-preview">preview</small>');
+  b.addEventListener('click', () => void selectGame(g.def.name));
   tabs.append(b);
 }
 
@@ -606,14 +423,14 @@ void import('./network-view').then(async ({ NetworkView }) => {
 $('theme').addEventListener('click', () => {
   const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.theme = dark ? 'light' : 'dark';
-  drawCurves();
-  drawFrontier();
+  training.draw();
+  frontier.draw();
 });
 new ResizeObserver(() => {
-  drawCurves();
-  drawFrontier();
+  training.draw();
+  frontier.draw();
 }).observe(document.body);
 
 syncOutputs();
-selectGame(location.hash.slice(1) || DEMO_GAMES[0].def.name);
-requestAnimationFrame(frame);
+// The first game may need an asynchronous setup (the quadruped's physics engine): start the loop after it.
+void selectGame(location.hash.slice(1) || DEMO_GAMES[0].def.name).then(() => requestAnimationFrame(frame));

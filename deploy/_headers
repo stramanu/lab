@@ -3,8 +3,8 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 
-/systemone/assets/*
+/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-/systemone/data/*
+/data/*
   Cache-Control: public, max-age=300

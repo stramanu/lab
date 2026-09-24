@@ -3,11 +3,11 @@ import { MlpRecognizer, type Candidate } from '../../src/handwriting/recognizer'
 import type { SerializedPolicy } from '../../src/nn/serialize';
 import type { InputLayout } from '../games';
 import { NetworkView } from '../network-view';
+import { initTheme } from '../theme';
 import { Pad } from './pad';
 import type { PDollarRequest, PDollarResponse } from './pdollar-worker';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-const root = document.documentElement;
 const data = (file: string) => new URL(`../data/${file}`, location.href).href;
 const fmtInt = (n: number) => Math.round(n).toLocaleString('en');
 const fmtOps = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : fmtInt(n));
@@ -25,10 +25,7 @@ let requestId = 0;
 let mlpOps = 0;
 
 // ——— Theme ———
-$('theme').addEventListener('click', () => {
-  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  root.dataset.theme = dark ? 'light' : 'dark';
-});
+initTheme();
 
 // ——— Display ———
 function renderText(): void {

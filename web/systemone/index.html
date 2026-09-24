@@ -9,6 +9,13 @@
       content="Tiny networks learn games from a slow planner in your browser tab, and know when to ask for help."
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%23f2ede2%27/%3E%3Crect x=%272%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%276%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%2710%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%231f8a5b%27/%3E%3C/svg%3E" />
+    <script>
+      // Apply the stored light/dark choice before the first paint (see web/theme.ts).
+      try {
+        const t = localStorage.getItem('lab-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -96,6 +103,10 @@
           </label>
           <button type="button" id="wind-calm" class="ghost">Calm</button>
           <p class="hint" id="wind-hint">Added to the seeded wind, live: watch who has to react.</p>
+        </div>
+        <div class="racing-only" id="quadruped-controls" hidden>
+          <label class="check"><input id="random-pushes" type="checkbox" checked /> Random pushes</label>
+          <p class="hint">Seeded pushes every 1.5–3 s, as in the experiment. Drag on the robot to push it yourself.</p>
         </div>
         <div class="racing-only" id="telemetry-block" hidden>
           <h3>Telemetry <small>last 20 s · red bands: decided by the planner</small></h3>

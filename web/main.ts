@@ -20,9 +20,11 @@ import { DEMO_GAMES, demoGame, type DemoGame } from './games';
 import { LanderWind } from './lander-wind';
 import type { NetworkView } from './network-view';
 import { PlannerWorkerClient } from './planner-worker-client';
+import { QuadrupedControls } from './quadruped-controls';
 import type { Weights } from './protocol';
 import { RacingExtras } from './racing-extras';
 import { CanvasRecorder, download } from './recorder';
+import { initTheme } from './theme';
 import { TrainingPanel } from './training-panel';
 
 const root = document.documentElement;
@@ -78,6 +80,7 @@ let lastShown = 0;
 // ——— Modules ———
 const racing = new RacingExtras(() => resetGame(seed));
 const wind = new LanderWind();
+const quadruped = new QuadrupedControls();
 const planner = new PlannerWorkerClient();
 const training = new TrainingPanel(
   {
@@ -373,6 +376,7 @@ async function selectGame(name: string): Promise<void> {
   view = game.createView(boardCanvas);
   racing.configure(view, game.def);
   wind.attach(env);
+  quadruped.attach(env, () => seed + episode - 1);
   root.style.setProperty('--board-aspect', game.aspect);
   for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.setAttribute('aria-current', String(b.dataset.game === name));
   $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;
@@ -420,9 +424,7 @@ void import('./network-view').then(async ({ NetworkView }) => {
 });
 
 // ——— Theme and resize ———
-$('theme').addEventListener('click', () => {
-  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  root.dataset.theme = dark ? 'light' : 'dark';
+initTheme(() => {
   training.draw();
   frontier.draw();
 });

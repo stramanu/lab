@@ -25,3 +25,10 @@ Every page SHALL show the same navigation bar, with a link home, a link to each 
 #### Scenario: Current page marked
 - **WHEN** a visitor is on the handwriting page
 - **THEN** the handwriting link in the navigation is marked as the current page
+
+### Requirement: Persistent theme
+The visitor's light/dark choice SHALL be stored in the browser and applied on every page of the lab before the first paint. When storage is unavailable, the page SHALL follow the system theme and keep working.
+
+#### Scenario: Choice remembered across pages
+- **WHEN** a visitor switches to the dark theme on the lab home and then opens the handwriting page
+- **THEN** the handwriting page opens in the dark theme, without first showing the light one

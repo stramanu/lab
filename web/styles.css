@@ -1171,6 +1171,7 @@ input[type='number'] {
 
 #racing-controls[hidden],
 #lander-controls[hidden],
+#quadruped-controls[hidden],
 #telemetry-block[hidden] {
   display: none;
 }
@@ -1181,6 +1182,18 @@ input[type='number'] {
   align-items: end;
   gap: 4px 12px;
   margin-top: 12px;
+}
+
+#quadruped-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-top: 12px;
+}
+
+#quadruped-controls .hint {
+  margin: 0;
 }
 
 #lander-controls .hint {

@@ -1,0 +1,63 @@
+{
+  "name": "warehouse-feasibility",
+  "createdAt": "2026-09-24T05:54:04.263Z",
+  "claim": "Feasibility of the warehouse (lifelong MAPF) for the System One / System Two method (pre-registered go/no-go criteria).",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "teacher": "warehouse-coop-w8",
+    "tau": 0.006666666666666667,
+    "subsample": 6,
+    "imitationTrainEpisodes": 40,
+    "imitationDevEpisodes": 10,
+    "epochs": 30
+  },
+  "results": {
+    "criterion1_collisionFreeAndGain": {
+      "collisions": 0,
+      "ratio": 4.584199584199585,
+      "threshold": "collisions = 0 and ratio ≥ 1.20",
+      "pass": true,
+      "plannerMean": 110.25,
+      "greedyMean": 24.05
+    },
+    "criterion2_exactTies": {
+      "value": 0,
+      "threshold": "< 0.20",
+      "pass": true
+    },
+    "criterion3_imitationAgreement": {
+      "value": 0.93925,
+      "threshold": "≥ 0.85",
+      "pass": true,
+      "trainStates": 32000,
+      "devStates": 8000
+    },
+    "criterion4_errorDetectionAUROC": {
+      "value": 0.8769156285496155,
+      "threshold": "≥ 0.75",
+      "pass": true
+    }
+  }
+}

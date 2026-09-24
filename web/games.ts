@@ -3,11 +3,12 @@ import { getGame, type GameDefinition } from '../src/games/registry';
 import { SnakeView, type BoardView } from './game-view';
 import { LanderView } from './lander-view';
 import { RacingView } from './racing-view';
+import { WarehouseView } from './warehouse-view';
 
 /** How the input layer is laid out in the 3D network view. */
 export type InputLayout =
   /** A square egocentric window: `side × side` cells with `channels` one-hot values each, then `extras` scalars. */
-  | { kind: 'window'; side: number; channels: number; extras: number; channelVars: string[] }
+  | { kind: 'window'; side: number; channels: number; extras: number; channelVars: string[]; emptyVar?: string }
   /** A labeled column of scalars. */
   | { kind: 'list'; labels: string[] };
 
@@ -46,6 +47,16 @@ export const DEMO_GAMES: DemoGame[] = [
     },
     scoreMax: 150,
     scoreLabel: (env) => (env.isDone() ? env.score().toFixed(0) : '–'),
+  },
+  {
+    def: getGame('warehouse'),
+    blurb:
+      'A fleet of 16 robots carries goods between shelves and stations. Each robot sees a 9×9 window; the planner searches space-time around the predicted paths of the others.',
+    createView: (c) => new WarehouseView(c),
+    aspect: '8 / 5',
+    input: { kind: 'window', side: 9, channels: 3, extras: 9, channelVars: ['--ink-3', '--body', '--food'], emptyVar: '--panel-edge' },
+    scoreMax: 140,
+    scoreLabel: (env) => String(env.score()),
   },
   {
     def: getGame('racing'),

@@ -2,12 +2,12 @@
 
 Can a tiny network, trained from scratch by a slow planner, make most decisions at a fraction of the
 planner's cost, and know when to hand control back? This repository is an open, reproducible experiment
-on that question. It covers three games (Snake, a lander and a racing car) and uses no ML libraries: the
-environments, planners, networks, backprop and training loops are all written in TypeScript, and everything
-runs in Node or in a browser tab.
+on that question. It covers four environments (Snake, a lander, a racing car and a multi-robot warehouse)
+and uses no ML libraries: the environments, planners, networks, backprop and training loops are all written
+in TypeScript, and everything runs in Node or in a browser tab.
 
 - **System Two** is a slow, strong planner that acts as the teacher.
-- **System One** is a micro-MLP (5k–17k parameters, He initialization [18], trained with Adam [17]).
+- **System One** is a micro-MLP (5k–21k parameters, He initialization [18], trained with Adam [17]).
   It proposes a move with a confidence. For continuous control (racing) it is a deep ensemble of five
   small regressors [22], whose disagreement sets the confidence.
 - **Guard**: a cheap deterministic check on System One's proposed move.
@@ -33,6 +33,13 @@ For continuous control, the MPC-to-policy distillation of [16] and the end-to-en
 expert with DAgger for agile driving [21] regress the controls directly; we follow them for racing. The
 car uses the kinematic bicycle model common in autonomous-driving control [23, 24], its base controller is
 pure pursuit [25], and planning for lap progress follows optimization-based racing [26].
+
+The warehouse follows robotic fulfilment systems, where fleets of mobile robots carry shelves to pick
+stations [27]. Keeping such a fleet moving is **lifelong multi-agent path finding** (MAPF) [28, 31]. Optimal
+MAPF solvers such as conflict-based search [29] scale poorly with the number of robots, so real-time systems
+plan in a bounded window, as in cooperative space-time search [30], and learned decentralised policies imitate
+a centralised planner from each robot's local view [32, 33]. Our planner is a stateless variant of [30], and
+our System One sees a local window, as in [32].
 
 The guard is a **shield** in the sense of safe RL [13]: a verifier that sits between the policy and the
 environment and blocks actions that fail a safety check. The lander's planner is a **rollout
@@ -151,9 +158,50 @@ decision, and is reported as it is. Longer planner horizons do not help here (1,
 2 / 4 / 8 s). In one of the five runs, System One alone went off track on some seeds (1,232 m); the guard
 restores it (1,332 m).
 
-### What the numbers say: three regimes
+### Warehouse (lifelong multi-robot path finding, planner = cooperative space-time search)
 
-The same pipeline, network family, hybrid and guard produce three different outcomes. Each is informative.
+16 robots on a 32×20 grid carry goods between shelves and stations for 300 timesteps. Each robot decides in
+turn (wait, north, east, south, west), in an order that rotates every timestep; a move into a shelf, a claimed
+cell or a swap is blocked and the robot waits. Score = deliveries per episode. System One: 20,677 parameters
+(108.5 KB), a 9×9 window around the deciding robot plus goal and distance-map features, about 62 s of training
+per run. The guard rejects blocked moves (1 unit) and moves into dead-end cells other than the goal (5 units).
+Planner reference (search window 8): 106.3 deliveries at 527 units per move. Confidence is either the top
+probability or the margin between the top two.
+
+| Condition | Deliveries | % of planner | Cost / move | Planner cost ÷ condition cost | Escalated |
+| --- | --- | --- | --- | --- | --- |
+| Hand-written greedy baseline | 23.9 | 22% | 1 | – | – |
+| Planner, window 4 | 60.1 | 57% | 115 | 4.6× | – |
+| Planner, window 16 | 112.1 | 105% | 2,368 | 0.2× | – |
+| System One alone | 39.2 ± 4.8 | 37% | 1 | – | – |
+| Guard only | 47.1 ± 5.4 | 44% | 8 ± 2 | 68× | 1.2% |
+| Hybrid + guard, margin @ 0.5 | 71.6 ± 4.6 | 67% | 53 ± 7 | 9.9× | 9.1% |
+| Hybrid + guard, margin @ 0.7 | 86.6 ± 3.4 | 81% | 91 ± 9 | 5.8× | 15.2% |
+| **Hybrid + guard, top probability @ 0.9** | **93.6 ± 3.0** | **88%** | **129 ± 9** | **4.1×** | 21.5% |
+| Hybrid + guard, margin @ 0.9 | 97.9 ± 3.2 | 92% | 176 ± 15 | 3.0× | 29.9% |
+
+| | Measured (mean of 5 runs) | Outcome | Holds in |
+| --- | --- | --- | --- |
+| H1 | escalation 26.4% → 22.9% | not confirmed | 0/5 runs |
+| H2 | closest: hybrid + guard, margin @ 0.5: 67.4% of the score at 9.9× lower cost | not confirmed | 0/5 runs |
+| H3 | 36.8% | not confirmed | 0/5 runs |
+| H4 | 97.4% agreement, ECE 0.018 | **confirmed** | 5/5 runs |
+
+The warehouse passed its pre-registered feasibility spike on dev seeds (EXPERIMENTS.md, entry 20), and then
+missed H2 on the test study: no hybrid reaches 90% of the planner's score at a tenth of its cost. The trade-off
+curve is still the best of the four environments. **At about the same cost, the hybrid beats the planner's own
+cheaper setting by a wide margin**: 93.6 deliveries at 129 units per move, against 60.1 at 115 units for the
+planner with a shorter window. Spending the planner's budget only on the decisions System One is unsure about
+works better than spending a smaller budget on every decision.
+
+In the spike, a comparable System One agreed with the planner on 93.9% of the dev states the planner
+visited. In the study it agrees on only 76.2% of the states it reaches when it drives all 16 robots itself.
+This is the compounding-error effect that motivates DAgger [4, 5], amplified by coupling: every robot's
+mistake changes the other robots' states.
+
+### What the numbers say: four regimes
+
+The same pipeline, network family, hybrid and guard produce four different outcomes. Each is informative.
 
 1. **Snake: the planner is needed, and the guard makes the hybrid safe.** System One alone is weak (9%),
    because a 7×7 window cannot see global traps. Confidence measures ambiguity, not stakes, and on dev seeds
@@ -170,10 +218,15 @@ The same pipeline, network family, hybrid and guard produce three different outc
    for ~1/1,000 of the cost and, with the guard, slightly further, while agreeing with it on only 51% of
    decisions. Its confidence is poorly calibrated (ECE 0.27), so "knowing when not to trust itself" fails
    here too, but this student rarely needs the planner.
+4. **Warehouse: confidence works, and escalation is where the value is.** System One alone is weak (37%):
+   a local window cannot anticipate congestion, and its errors compound across the fleet. Its confidence is
+   well calibrated (ECE 0.018), so escalation goes to the right decisions, and the hybrid dominates the
+   planner's own cost knob. It still falls short of the pre-registered 10× target (88% at 4.1×).
 
-Across the three games, **agreement with the teacher is a poor proxy for quality** whenever several
+Across the four environments, **agreement with the teacher is a poor proxy for quality** whenever several
 actions are equally good. The cheap guard is the most consistently useful component. The learned
-confidence works as intended only where labels are unambiguous (Snake).
+confidence works as intended only where labels are unambiguous (Snake and the warehouse, both with
+tie-broken planners).
 
 ### Limitations
 
@@ -190,6 +243,8 @@ confidence works as intended only where labels are unambiguous (Snake).
 - **Racing was integrated despite failing its pre-registered spike** (entries 14–17 in EXPERIMENTS.md).
   Its continuous System One uses a different model (a regression ensemble) and a different agreement
   definition (steering within 0.03 rad and the same pedal sign), both declared before measuring.
+- **The warehouse is a grid abstraction**: unit-time moves, no kinematics, one layout and 16 robots. Its
+  planner is windowed and prioritised, so it is fast but not optimal (unlike conflict-based search [29]).
 - **Browser timings** are not reported here; cost is measured in compute units. The two studies ran
   concurrently, so wall-clock timings in the JSON files include contention.
 
@@ -205,6 +260,7 @@ pnpm typecheck && pnpm test                      # unit tests: gradient checking
 pnpm study --game snake  --runs 5 --split test   # ~2 h
 pnpm study --game lander --runs 5 --split test   # ~45 min
 pnpm study --game racing --runs 5 --split test   # ~2.5 h
+pnpm study --game warehouse --runs 5 --split test   # ~1 h
 
 # Supporting experiments (dev seeds; results in artifacts/experiments/)
 pnpm exp snake-deaths
@@ -214,6 +270,7 @@ pnpm exp lander-imitation      # ~4 min
 pnpm exp lander-acceptability
 pnpm exp racing-feasibility                    # discrete spike (v3)
 pnpm exp racing-continuous-feasibility         # continuous spike
+pnpm exp warehouse-feasibility
 
 # Single model, day-to-day (dev split by default)
 pnpm train:snake  && pnpm eval:snake
@@ -233,12 +290,13 @@ pnpm preview        # serve dist/
 pnpm demo:data      # publish <game>-weights.json (study run 1) and <game>-study.json to web/public/data/
 ```
 
-One static page, with no backend, for every game in the registry (Snake, lander and racing):
+One static page, with no backend, for every game in the registry (Snake, lander, warehouse and racing):
 
 - the live game, with every move colored by who decided it (System One, guard, System Two);
 - System One's probabilities against the confidence threshold;
 - **Inside System One**, a 3D view (three.js) of the real forward pass behind the displayed decision.
-  Inputs are laid out per game (Snake's 7×7 window, the lander's 16 labeled values), hidden units are lit by
+  Inputs are laid out per game (Snake's 7×7 window, the warehouse's 9×9 window, the lander's and the car's
+  labeled values), hidden units are lit by
   their activations, and only the connections with the largest |weight × activation| are drawn;
 - in-tab training in a Web Worker, where the game picks up each new version of the weights;
 - the cost–quality frontier from the 5-run test study, with 95% intervals;
@@ -263,7 +321,8 @@ pnpm site:deploy    # site:build + wrangler deploy (needs `pnpm exec wrangler lo
 ```
 src/core/         Env / Teacher / Student / Guard / Player contracts, seeded PRNG, statistics
 src/games/        registry.ts, snake/ (env, 7×7 encoding, BFS planner, guard), lander/ (physics, autopilot, rollout planner, guard),
-                  racing/ (procedural track, bicycle model, pure pursuit, rollout planner, guard, continuous actions)
+                  racing/ (procedural track, bicycle model, pure pursuit, rollout planner, guard, continuous actions),
+                  warehouse/ (grid layout, lifelong goals, distance maps, greedy baseline, space-time planner, guard)
 src/nn/           MLP, backprop (cross-entropy and MSE), Adam, soft labels, temperature scaling, ECE, deep ensemble, serialization
 src/hybrid/       confidence measures and System One / System Two / hybrid players
 src/training/     replay dataset, bootstrap → DAgger-style escalation loop → consolidation, worker session
@@ -304,3 +363,10 @@ Specifications and design decisions are tracked with [OpenSpec](https://github.c
 24. Rajamani, R. (2012). *Vehicle Dynamics and Control* (2nd ed.). Springer.
 25. Coulter, R. C. (1992). Implementation of the Pure Pursuit Path Tracking Algorithm. Carnegie Mellon University, Robotics Institute, CMU-RI-TR-92-01.
 26. Liniger, A., Domahidi, A., & Morari, M. (2015). Optimization-based autonomous racing of 1:43 scale RC cars. *Optimal Control Applications and Methods*, 36(5), 628–647.
+27. Wurman, P. R., D'Andrea, R., & Mountz, M. (2008). Coordinating Hundreds of Cooperative, Autonomous Vehicles in Warehouses. *AI Magazine*, 29(1), 9–20.
+28. Stern, R., et al. (2019). Multi-Agent Pathfinding: Definitions, Variants, and Benchmarks. *Symposium on Combinatorial Search (SoCS) 2019*.
+29. Sharon, G., Stern, R., Felner, A., & Sturtevant, N. R. (2015). Conflict-based search for optimal multi-agent pathfinding. *Artificial Intelligence*, 219, 40–66.
+30. Silver, D. (2005). Cooperative Pathfinding. *AAAI Conference on Artificial Intelligence and Interactive Digital Entertainment (AIIDE) 2005*.
+31. Li, J., Tinka, A., Kiesel, S., Durham, J. W., Kumar, T. K. S., & Koenig, S. (2021). Lifelong Multi-Agent Path Finding in Large-Scale Warehouses. *AAAI 2021*.
+32. Sartoretti, G., Kerr, J., Shi, Y., Wagner, G., Kumar, T. K. S., Koenig, S., & Choset, H. (2019). PRIMAL: Pathfinding via Reinforcement and Imitation Multi-Agent Learning. *IEEE Robotics and Automation Letters*, 4(3), 2378–2385.
+33. Ma, Z., Luo, Y., & Ma, H. (2021). Distributed Heuristic Multi-Agent Path Finding with Communication. *ICRA 2021*.

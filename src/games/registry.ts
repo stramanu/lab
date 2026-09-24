@@ -5,6 +5,7 @@ import type { PipelineConfig } from '../training/pipeline';
 import { LanderEnv, LanderGuard, LanderTeacher, pilotAction } from './lander';
 import { RacingEnv, RacingGuard, RacingTeacher, controllerAction, racingAgrees } from './racing';
 import { SnakeEnv, SnakeGuard, SnakeTeacher } from './snake';
+import { WarehouseEnv, WarehouseGuard, WarehouseTeacher, greedyAction } from './warehouse';
 
 /** An extra, non-experimental reference player shown next to the conditions. */
 export interface Baseline {
@@ -59,6 +60,14 @@ class BaseControllerPlayer implements Player {
   }
 }
 
+/** The warehouse greedy baseline as a player (O(1) per decision; counted as 1 unit). */
+class GreedyPlayer implements Player {
+  readonly name = 'greedy';
+  act(env: Env): MoveRecord {
+    return { action: greedyAction(env as WarehouseEnv), decider: 'baseline', cost: 1 };
+  }
+}
+
 /** Racing planner knob: rollout horizon of 20 decisions per level (2 / 4 / 8 s). */
 const racingTeacher = (level: number) => new RacingTeacher({ horizon: 20 * level });
 
@@ -84,6 +93,17 @@ export const GAMES: Record<string, GameDefinition> = {
     makeGuard: () => new LanderGuard(),
     pipeline: { tau: 0.03, bootstrapEpisodes: 100 },
     baselines: [{ name: 'autopilot', makePlayer: () => new AutopilotPlayer() }],
+  },
+  warehouse: {
+    name: 'warehouse',
+    title: 'Warehouse',
+    makeEnv: () => new WarehouseEnv(),
+    makeTeacher: (level) => new WarehouseTeacher({ window: 4 * 2 ** (level - 1) }),
+    levels: [1, 2, 3],
+    referenceLevel: 2,
+    makeGuard: () => new WarehouseGuard(),
+    pipeline: { tau: 0.02 / 3 },
+    baselines: [{ name: 'greedy', makePlayer: () => new GreedyPlayer() }],
   },
   racing: {
     name: 'racing',

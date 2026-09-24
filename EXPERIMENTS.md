@@ -33,6 +33,9 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 16 | Racing: incremental steering commands {left, hold, right} × pedal | Adjacent-steering-level confusions were 16.4 of 17.8 error points. Full spike re-run: 100% ✓, 1.198 ✓, 0.58% ✓, agreement **80.5% ✗** | dev (+ train) | No | **Stopped**; decision with the author |
 | 17 | Continuous System One (deep-ensemble regression) for racing; new spike with criteria fixed in `add-continuous-student` | `pnpm exp racing-continuous-feasibility`: agreement **77.4% ✗** (≥ 85%), error-detection AUROC **0.55 ✗** (≥ 0.75), alone on track 100% ✓ (≥ 80%). Alone progress 1,361 m vs base controller 1,103 m on the same seeds | dev (+ train) | No | **Stopped**; decision with the author |
 | 18 | Integrate racing with the continuous System One despite the failed spike (author's decision) | 5-run test study: System One alone 99.9% of the planner at 1,164× lower cost; guard only 101.9% at 97×; H2 and H3 hold in 5/5 runs; H1 and H4 fail; ECE 0.27 | test (final) | – | `add-continuous-student`, `add-racing-game` |
+| 19 | Warehouse planner: stateless cooperative space-time search (predicted trajectories) instead of stateful WHCA* | Determinism requirement (same state, same answer); decided before any measurement | – | No | `add-warehouse-mapf` design |
+| 20 | Warehouse feasibility spike (criteria fixed in the proposal) | `pnpm exp warehouse-feasibility`: 0 collisions and 4.58× greedy deliveries ✓, exact ties 0% ✓, imitation agreement 93.9% ✓, error-detection AUROC 0.877 ✓ | dev (+ train) | No | **Passed**; integrated |
+| 21 | Integrate the warehouse (spike passed) | 5-run test study: System One alone 36.8% of the planner; best hybrid + guard 88% at 4.1× lower cost; H4 holds in 5/5 runs (97.4%, ECE 0.018); H1, H2 and H3 fail. Closed-loop agreement 76.2% vs 93.9% offline in the spike | test (final) | – | `add-warehouse-mapf` |
 
 ## Re-validation on the dev split
 
@@ -159,3 +162,17 @@ The student drives with continuous steering and pedal, while its teacher is limi
 It therefore **matches or beats its teacher on the task** while "disagreeing" on 23% of decisions, and its
 uncertainty carries almost no information about its errors. For this game the premise of escalation (a
 student that needs its teacher and knows when) does not hold.
+
+### `warehouse-feasibility` (decision 20)
+
+Planner: cooperative space-time search, window 8, 16 robots on a 32×20 grid, 300 timesteps. Baseline: greedy
+distance-map descent. It deadlocks, with 89% of moves spent waiting on ad-hoc seeds, and is reported as the
+hand-written reference. Criteria 1–2 on 20 dev seeds. Criteria 3–4: 40 training episodes subsampled every
+6th decision (32,000 states), 10 dev episodes (8,000 states), a 64×64 network, 30 epochs, τ = 0.0067.
+
+| Criterion | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| 1. Collision-free and gain over greedy | 0 collisions; 110.3 vs 24.1 deliveries (×4.58) | 0 and ≥ ×1.20 | pass |
+| 2. Exact ties | 0% | < 20% | pass |
+| 3. Imitation agreement (dev) | 93.9% | ≥ 85% | pass |
+| 4. Error detection, AUROC of 1 − confidence | 0.877 | ≥ 0.75 | pass |

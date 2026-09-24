@@ -180,9 +180,10 @@ export class NetworkView {
       const cells = layout.side * layout.side;
       const channelColors = layout.channelVars.map(color);
       for (let k = 0; k < cells; k++) {
-        let ch = 0;
+        let ch = -1;
         for (let q = 0; q < layout.channels; q++) if (input[k * layout.channels + q] > 0.5) ch = q;
-        inMesh.setColorAt(k, channelColors[ch].clone());
+        // Windows without an explicit "empty" channel colour inactive cells with emptyVar.
+        inMesh.setColorAt(k, ch < 0 ? (layout.emptyVar ? color(layout.emptyVar) : channelColors[0].clone()) : channelColors[ch].clone());
       }
       for (let e = 0; e < layout.extras; e++) {
         const v = Math.min(1, Math.abs(input[cells * layout.channels + e]) * 3);

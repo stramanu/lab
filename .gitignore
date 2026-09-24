@@ -21,6 +21,11 @@ artifacts/racing/*
 !artifacts/racing/study/
 artifacts/racing/study/*
 !artifacts/racing/study/study-test-200.json
+!artifacts/warehouse/
+artifacts/warehouse/*
+!artifacts/warehouse/study/
+artifacts/warehouse/study/*
+!artifacts/warehouse/study/study-test-200.json
 .DS_Store
 dist/
 .playwright-mcp/

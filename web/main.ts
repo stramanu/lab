@@ -565,7 +565,9 @@ function selectGame(name: string): void {
   $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;
   $('network-legend').textContent =
     game.input.kind === 'window'
-      ? 'Inputs: the 7×7 window around the head (colored by what each cell holds), then food direction and length. Hidden layers: 64 + 64 ReLU units. Outputs: straight, left, right.'
+      ? game.def.name === 'warehouse'
+        ? 'Inputs: the 9×9 window around the deciding robot (shelves, other robots, its goal), then goal direction, distance-map hints for the four neighbours, local density and time. Hidden layers: 64 + 64 ReLU units. Outputs: wait, north, east, south, west.'
+        : 'Inputs: the 7×7 window around the head (colored by what each cell holds), then food direction and length. Hidden layers: 64 + 64 ReLU units. Outputs: straight, left, right.'
       : game.def.continuous
         ? `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${game.def.continuous.actionLabels.join(', ')}. Shown: member 1 of the 5-network ensemble; the car follows the ensemble mean.`
         : `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${env.actionNames.join(', ')}.`;

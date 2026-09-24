@@ -100,7 +100,12 @@ export function checkHypotheses(input: HypothesisInputs): HypothesisResult[] {
     id: 'H4',
     statement: 'Above the confidence threshold System One agrees with the teacher',
     target: `≥ ${pct(TARGETS.h4MinAgreement)} at threshold ${refThreshold}`,
-    measured: a4 === null ? 'missing conditions' : `${pct(a4)} (ECE ${ref?.calibration?.ece.toFixed(3) ?? '-'})`,
+    measured:
+      a4 !== null
+        ? `${pct(a4)} (ECE ${ref?.calibration?.ece.toFixed(3) ?? '-'})`
+        : ref
+          ? `System One never acted at threshold ${refThreshold}: its confidence never reached it`
+          : 'missing conditions',
     confirmed: a4 !== null && a4 >= TARGETS.h4MinAgreement,
     details: { agreement: a4, ece: ref?.calibration?.ece ?? null },
   });

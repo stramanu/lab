@@ -14,6 +14,8 @@ export interface NetworkFrame {
   threshold: number;
   /** CSS variable of the decider's color (--s1, --guard, --s2). */
   deciderVar: string;
+  /** Continuous outputs: labels to show instead of "action probability". */
+  outputLabels?: string[];
 }
 
 const EDGES = { in: 120, h1: 120, h2: 24 };
@@ -211,15 +213,15 @@ export class NetworkView {
       const p = this.positions[3][k];
       const s = 0.6 + 1.6 * frame.probs[k];
       out.setMatrixAt(k, m.makeScale(s, s, s).setPosition(p));
-      out.setColorAt(k, k === frame.chosen ? decider.clone() : dim.clone());
+      out.setColorAt(k, k === frame.chosen || frame.chosen < 0 ? decider.clone() : dim.clone());
     }
     out.instanceMatrix.needsUpdate = true;
     out.instanceColor!.needsUpdate = true;
-    const cp = this.positions[3][frame.chosen];
-    this.ring.position.copy(cp);
+    this.ring.visible = frame.chosen >= 0;
+    if (frame.chosen >= 0) this.ring.position.copy(this.positions[3][frame.chosen]);
     (this.ring.material as THREE.MeshBasicMaterial).color = decider;
     this.labels.forEach((div, k) => {
-      div.textContent = `${this.actionNames[k]} ${Number(frame.probs[k]).toFixed(2)}`;
+      div.textContent = frame.outputLabels?.[k] ?? `${this.actionNames[k]} ${Number(frame.probs[k]).toFixed(2)}`;
       div.dataset.chosen = String(k === frame.chosen);
     });
 

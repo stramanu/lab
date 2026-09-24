@@ -72,13 +72,13 @@ for (let k = 1; k <= runs; k++) {
 }
 
 // 4. Aggregate.
-const aggregate: Aggregate = aggregateRuns(perRun, { referenceLevel: game.referenceLevel, measure: measures[0] }, new Set(shared.map((c) => c.name)));
+const aggregate: Aggregate = aggregateRuns(perRun, { referenceLevel: game.referenceLevel, measure: game.continuous ? 'ensemble' : measures[0] }, new Set(shared.map((c) => c.name)));
 const out = {
   game: game.name,
   createdAt: new Date().toISOString(),
   split,
   seeds: { count: seeds.length, first: seeds[0], last: seeds[seeds.length - 1] },
-  model: { params: firstModel.net.numParams, weightsKB: Number((firstModel.raw.length / 1024).toFixed(1)) },
+  model: { params: firstModel.params, weightsKB: Number((firstModel.raw.length / 1024).toFixed(1)) },
   trainingSeconds: Array.from({ length: runs }, (_, i) => loadModel(join(root, `run-${i + 1}`))!.meta?.trainingSeconds ?? null),
   hardware: hardware(),
   ...aggregate,

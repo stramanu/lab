@@ -1,18 +1,27 @@
-import type { SerializedPolicy } from '../nn/serialize';
-import type { LogEntry, TrainingPipeline } from './pipeline';
+import type { LogEntry } from './pipeline';
 
-export interface SessionHooks {
+/** What runSession needs from a pipeline (discrete or continuous). */
+export interface SteppablePipeline<P> {
+  readonly config: { iterations: number };
+  readonly log: LogEntry[];
+  bootstrap(): LogEntry;
+  escalationIteration(): LogEntry;
+  consolidate(meta?: Record<string, unknown>): P;
+  snapshot(): P;
+}
+
+export interface SessionHooks<P> {
   /** Checked between steps; returning true ends the session after the current step. */
   shouldStop(): boolean;
   /** Called after every step with its log entry and the current weights. */
-  onStep(entry: LogEntry, policy: SerializedPolicy): void;
+  onStep(entry: LogEntry, policy: P): void;
   /** Awaited between steps so the host (e.g. a Web Worker) can process messages. */
   yieldControl(): Promise<void>;
 }
 
-export interface SessionResult {
+export interface SessionResult<P> {
   /** Final weights: consolidated if the session completed, the last snapshot if stopped. */
-  policy: SerializedPolicy;
+  policy: P;
   completed: boolean;
 }
 
@@ -21,11 +30,11 @@ export interface SessionResult {
  * time, reporting after each and yielding in between. A completed session
  * therefore produces the same weights as `run()`.
  */
-export async function runSession(
-  pipeline: TrainingPipeline,
-  hooks: SessionHooks,
+export async function runSession<P>(
+  pipeline: SteppablePipeline<P>,
+  hooks: SessionHooks<P>,
   meta: Record<string, unknown> = {},
-): Promise<SessionResult> {
+): Promise<SessionResult<P>> {
   hooks.onStep(pipeline.bootstrap(), pipeline.snapshot());
   await hooks.yieldControl();
   for (let i = 0; i < pipeline.config.iterations; i++) {

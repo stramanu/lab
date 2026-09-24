@@ -54,3 +54,9 @@ export const commandOf = (a: number) => a >> 1;
 export const pedalOf = (a: number) => a & 1;
 
 export type RacingEndReason = 'off-track' | 'timeout';
+
+/** Continuous agreement rule for racing: steering within half a command step and the same pedal sign. */
+export const STEER_TOLERANCE = STEER_STEP / 2;
+export function racingAgrees(student: ArrayLike<number>, planner: ArrayLike<number>): boolean {
+  return Math.abs(student[0] - planner[0]) <= STEER_TOLERANCE && student[1] >= 0 === planner[1] > 0;
+}

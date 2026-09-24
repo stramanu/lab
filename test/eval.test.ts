@@ -210,3 +210,12 @@ describe('hypotheses with guarded variants', () => {
     expect(h[3].details.agreement).toBe(0.97);
   });
 });
+
+describe('H4 when System One never acts', () => {
+  it('says so instead of reporting missing conditions', () => {
+    const conds = syntheticReport(95, 50, 70, 0.97).map((c) => (c.kind === 'hybrid' ? { ...c, agreementAboveThreshold: null } : c));
+    const h4 = checkHypotheses({ conditions: conds, referenceLevel: 1 })[3];
+    expect(h4.confirmed).toBe(false);
+    expect(h4.measured).toContain('never acted');
+  });
+});

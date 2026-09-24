@@ -15,7 +15,8 @@ const SURVIVE = 300;
 const LOOKBACK = 100;
 
 export function run(): ExperimentResult {
-  const { net, calibrationT } = referenceModel('snake');
+  const { net: maybeNet, calibrationT } = referenceModel('snake');
+  const net = maybeNet!;
   const teacher = new SnakeTeacher({ depth: 1 });
   const hybrid = new HybridPlayer(new NetStudent(net, calibrationT), teacher, { threshold: 0.9 });
   const seeds = seedsFor('dev', 30);

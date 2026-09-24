@@ -2,6 +2,7 @@ import type { Env } from '../src/core/types';
 import { getGame, type GameDefinition } from '../src/games/registry';
 import { SnakeView, type BoardView } from './game-view';
 import { LanderView } from './lander-view';
+import { RacingView } from './racing-view';
 
 /** How the input layer is laid out in the 3D network view. */
 export type InputLayout =
@@ -45,6 +46,19 @@ export const DEMO_GAMES: DemoGame[] = [
     },
     scoreMax: 150,
     scoreLabel: (env) => (env.isDone() ? env.score().toFixed(0) : '–'),
+  },
+  {
+    def: getGame('racing'),
+    blurb:
+      'Top-down racing on a procedural track with a grip limit. The network outputs continuous steering and pedal (an ensemble of 5); the planner searches discrete commands and simulates the next 4 s.',
+    createView: (c) => new RacingView(c),
+    aspect: '4 / 3',
+    input: {
+      kind: 'list',
+      labels: ['speed', 'sin Δψ', 'cos Δψ', 'offset', 'steering', 'ahead 5', 'ahead 10', 'ahead 20', 'ahead 30', 'ahead 45', 'ahead 60', 'ahead 80', 'κ 10', 'κ 20', 'κ 30', 'κ 45', 'κ 60', 'headroom 20', 'headroom 40', 'headroom 60'],
+    },
+    scoreMax: 1600,
+    scoreLabel: (env) => `${env.score().toFixed(0)} m`,
   },
 ];
 

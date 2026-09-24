@@ -32,6 +32,7 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 15 | Racing: declared τ revision (τ = smallest preference step / 3) and a single re-run of criterion 4 | Agreement 82.2% ✗ | dev (+ train) | No | Failed → design revision |
 | 16 | Racing: incremental steering commands {left, hold, right} × pedal | Adjacent-steering-level confusions were 16.4 of 17.8 error points. Full spike re-run: 100% ✓, 1.198 ✓, 0.58% ✓, agreement **80.5% ✗** | dev (+ train) | No | **Stopped**; decision with the author |
 | 17 | Continuous System One (deep-ensemble regression) for racing; new spike with criteria fixed in `add-continuous-student` | `pnpm exp racing-continuous-feasibility`: agreement **77.4% ✗** (≥ 85%), error-detection AUROC **0.55 ✗** (≥ 0.75), alone on track 100% ✓ (≥ 80%). Alone progress 1,361 m vs base controller 1,103 m on the same seeds | dev (+ train) | No | **Stopped**; decision with the author |
+| 18 | Integrate racing with the continuous System One despite the failed spike (author's decision) | 5-run test study: System One alone 99.9% of the planner at 1,164× lower cost; guard only 101.9% at 97×; H2 and H3 hold in 5/5 runs; H1 and H4 fail; ECE 0.27 | test (final) | – | `add-continuous-student`, `add-racing-game` |
 
 ## Re-validation on the dev split
 

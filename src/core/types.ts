@@ -109,6 +109,10 @@ export interface MoveRecord {
   audited?: boolean;
   /** Encoding of the state the decision was made on (set by players that encode). */
   state?: Float32Array;
+  /** Continuous action to play instead of the discrete `action` (continuous games). */
+  continuous?: Float64Array;
+  /** The planner's continuous action, when it was queried (continuous games). */
+  teacherAction?: Float64Array;
 }
 
 /** Optional continuous-action extension of an environment (shares the physics of the discrete step). */
@@ -119,6 +123,16 @@ export interface ContinuousEnv extends Env {
   stepContinuous(action: ArrayLike<number>): StepResult;
   /** Continuous equivalent of a discrete action in the current state. */
   continuousOf(action: number): Float64Array;
+}
+
+/** A teacher that can also return its chosen action in continuous form (the regression label). */
+export interface ContinuousTeacher extends Teacher {
+  targetAction(env: Env): { action: Float64Array; cost: number; scores: Float64Array };
+}
+
+/** A guard that can check a continuous action. */
+export interface ContinuousGuard extends Guard {
+  checkContinuous(env: Env, action: ArrayLike<number>): GuardResult;
 }
 
 /** A generic player: what the evaluation compares. */

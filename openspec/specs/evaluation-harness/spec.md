@@ -61,3 +61,10 @@ In a multi-seed study, each hypothesis SHALL be judged on the across-run mean ag
 #### Scenario: Per-run tally
 - **WHEN** H2 holds in 3 of 5 runs and fails on the mean
 - **THEN** the report marks H2 as not confirmed and shows "3/5 runs"
+
+### Requirement: Continuous agreement
+For continuous games, evaluation SHALL measure agreement with the game's declared continuous agreement rule, applied between the student's action and the planner's continuous action. For the racing game, the rule is steering within 0.03 rad and the same pedal sign. Calibration (ECE and reliability data) SHALL use the ensemble's confidence against this agreement, and H4 SHALL be evaluated with it at the unchanged threshold and target.
+
+#### Scenario: Agreement above threshold for racing
+- **WHEN** a continuous hybrid is evaluated
+- **THEN** the report shows the share of System One moves whose action agrees with the planner's under the racing rule

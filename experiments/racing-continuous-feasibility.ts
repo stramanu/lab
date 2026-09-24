@@ -8,12 +8,11 @@
  */
 import { seedsFor, TRAIN_SEED_START } from '../src/eval';
 import { mean } from '../src/core/stats';
-import { RacingEnv, RacingTeacher, controllerAction } from '../src/games/racing';
+import { RacingEnv, RacingTeacher, STEER_TOLERANCE, controllerAction, racingAgrees } from '../src/games/racing';
 import { Ensemble } from '../src/nn';
 import type { ExperimentResult } from './common';
 
-const STEER_TOLERANCE = 0.03;
-const agrees = (p: ArrayLike<number>, t: ArrayLike<number>) => Math.abs(p[0] - t[0]) <= STEER_TOLERANCE && p[1] >= 0 === t[1] > 0;
+const agrees = racingAgrees;
 
 /** Probability that a random positive scores higher than a random negative (ties count half). */
 function auroc(scores: number[], positive: boolean[]): number {

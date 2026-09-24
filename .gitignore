@@ -16,6 +16,11 @@ artifacts/lander/*
 !artifacts/lander/study/
 artifacts/lander/study/*
 !artifacts/lander/study/study-test-200.json
+!artifacts/racing/
+artifacts/racing/*
+!artifacts/racing/study/
+artifacts/racing/study/*
+!artifacts/racing/study/study-test-200.json
 .DS_Store
 dist/
 .playwright-mcp/

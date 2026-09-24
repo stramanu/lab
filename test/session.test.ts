@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SnakeEnv, SnakeGuard, SnakeTeacher } from '../src/games/snake';
-import { importPolicy } from '../src/nn';
+import { importEnsemble, importPolicy } from '../src/nn';
 import { TrainingPipeline, runSession, type PipelineConfig } from '../src/training';
 
 const tiny: Partial<PipelineConfig> = {
@@ -58,6 +58,11 @@ describe('runSession', () => {
 
 describe('demo data', () => {
   const dir = join(__dirname, '..', 'web', 'public', 'data');
+  it('ships a loadable pretrained racing ensemble (study run 1)', () => {
+    const e = importEnsemble(JSON.parse(readFileSync(join(dir, 'racing-weights.json'), 'utf8')));
+    expect(e.members).toHaveLength(5);
+    expect(e.decide(new Float32Array(20)).action).toHaveLength(2);
+  });
   for (const [game, params] of [['snake', 17_283], ['lander', 5_508]] as const) {
     it(`ships loadable pretrained ${game} weights (study run 1)`, () => {
       const { net } = importPolicy(JSON.parse(readFileSync(join(dir, `${game}-weights.json`), 'utf8')));

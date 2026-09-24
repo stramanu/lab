@@ -1,7 +1,9 @@
 import { RandomPlayer } from '../core/players';
-import type { Guard, Teacher } from '../core/types';
+import type { ContinuousGuard, ContinuousTeacher, Guard, Teacher } from '../core/types';
 import type { ConfidenceMeasure } from '../hybrid/confidence';
+import { ContinuousHybridPlayer, ContinuousStudentPlayer, type AgreementRule } from '../hybrid/continuous';
 import { HybridPlayer, NetStudent, StudentPlayer, TeacherPlayer } from '../hybrid/players';
+import type { Ensemble } from '../nn/ensemble';
 import type { Mlp } from '../nn/mlp';
 import type { Condition } from './runner';
 
@@ -82,6 +84,49 @@ export function standardConditions(o: StandardConditionsOptions): Condition[] {
       params: { threshold: 0, confidence: measures[0], level: o.referenceLevel, guard: guard.name },
       makePlayer: hybrid(measures[0], 0),
     });
+  }
+  return conditions;
+}
+
+export interface ContinuousConditionsOptions {
+  makeTeacher(level: number): ContinuousTeacher;
+  levels: number[];
+  referenceLevel: number;
+  ensemble: Ensemble;
+  agrees: AgreementRule;
+  thresholds?: number[];
+  guard?: ContinuousGuard;
+  seed?: number;
+}
+
+/**
+ * Conditions for continuous games: random, planner at each level, the ensemble
+ * alone and the continuous hybrid at each threshold, with and without guard,
+ * plus guard only. Hybrid confidence is the ensemble's calibrated confidence.
+ */
+export function continuousConditions(o: ContinuousConditionsOptions): Condition[] {
+  const thresholds = o.thresholds ?? DEFAULT_THRESHOLDS;
+  const conditions: Condition[] = [{ name: 'random', kind: 'random', params: {}, makePlayer: () => new RandomPlayer(o.seed ?? 0) }];
+  for (const level of o.levels) {
+    conditions.push({ name: `system2 (level ${level})`, kind: 'system2', params: { level }, makePlayer: () => new TeacherPlayer(o.makeTeacher(level)) });
+  }
+  conditions.push({ name: 'system1', kind: 'system1', params: { confidence: 'ensemble' }, makePlayer: () => new ContinuousStudentPlayer(o.ensemble) });
+  const hybrid = (threshold: number, guard?: ContinuousGuard) => () =>
+    new ContinuousHybridPlayer(o.ensemble, o.makeTeacher(o.referenceLevel), o.agrees, { threshold, auditRate: 0 }, guard);
+  for (const threshold of thresholds) {
+    conditions.push({ name: `hybrid ensemble@${threshold}`, kind: 'hybrid', params: { threshold, confidence: 'ensemble', level: o.referenceLevel }, makePlayer: hybrid(threshold) });
+  }
+  const guard = o.guard;
+  if (guard) {
+    for (const threshold of thresholds) {
+      conditions.push({
+        name: `hybrid+guard ensemble@${threshold}`,
+        kind: 'hybrid',
+        params: { threshold, confidence: 'ensemble', level: o.referenceLevel, guard: guard.name },
+        makePlayer: hybrid(threshold, guard),
+      });
+    }
+    conditions.push({ name: 'guard only', kind: 'hybrid', params: { threshold: 0, confidence: 'ensemble', level: o.referenceLevel, guard: guard.name }, makePlayer: hybrid(0, guard) });
   }
   return conditions;
 }

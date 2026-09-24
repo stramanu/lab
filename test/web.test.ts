@@ -35,7 +35,7 @@ describe('chart scales', () => {
 });
 
 describe('frontier from studies', () => {
-  for (const game of ['snake', 'lander']) {
+  for (const game of ['snake', 'lander', 'racing']) {
     const study = JSON.parse(readFileSync(join(__dirname, '..', 'web', 'public', 'data', `${game}-study.json`), 'utf8')) as StudyFile;
     const points = frontierPoints(study);
 

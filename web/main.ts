@@ -1,14 +1,14 @@
-import { argmax, type Env } from '../src/core/types';
-import { HybridPlayer, NetStudent } from '../src/hybrid';
-import { Mlp, importPolicy, type SerializedPolicy } from '../src/nn';
+import { argmax, type ContinuousEnv, type Env, type Player } from '../src/core/types';
+import { ContinuousHybridPlayer, HybridPlayer, NetStudent } from '../src/hybrid';
+import { Ensemble, Mlp, importEnsemble, importPolicy } from '../src/nn';
 import type { LogEntry } from '../src/training/pipeline';
-import { drawBars } from './bars';
+import { drawBars, drawGauges } from './bars';
 import { cssVar, drawLines, drawScatter, formatTick, type ScatterLayout, type ScatterPoint } from './charts';
 import { costDomain, frontierPoints, referencePoint, scoreDomain, type FrontierPoint, type StudyFile } from './frontier';
 import { STATE_VAR, decisionState, type BoardView, type DecisionState } from './game-view';
 import { DEMO_GAMES, demoGame, type DemoGame } from './games';
 import type { NetworkView } from './network-view';
-import type { FromWorker, ToWorker } from './protocol';
+import type { FromWorker, ToWorker, Weights } from './protocol';
 import { CanvasRecorder, download } from './recorder';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -34,29 +34,58 @@ const btnPause = $<HTMLButtonElement>('btn-pause');
 let game: DemoGame = DEMO_GAMES[0];
 let env: Env = game.def.makeEnv();
 let view: BoardView = game.createView(boardCanvas);
-let student!: NetStudent;
-let hybrid!: HybridPlayer;
+/** Discrete games: a policy network. Continuous games: a regression ensemble. */
+let student: NetStudent | null = null;
+let ensemble: Ensemble | null = null;
+let hybrid!: Player;
 let threshold = Number(thresholdInput.value);
 let guardOn = guardInput.checked;
 
 function rebuildHybrid(): void {
-  hybrid = new HybridPlayer(student, game.def.makeTeacher(game.def.referenceLevel), { threshold, auditRate: 0 }, guardOn ? game.def.makeGuard() : undefined);
+  const c = game.def.continuous;
+  if (c && ensemble) {
+    hybrid = new ContinuousHybridPlayer(ensemble, c.makeTeacher(game.def.referenceLevel), c.agrees, { threshold, auditRate: 0 }, guardOn ? c.makeGuard() : undefined);
+  } else if (student) {
+    hybrid = new HybridPlayer(student, game.def.makeTeacher(game.def.referenceLevel), { threshold, auditRate: 0 }, guardOn ? game.def.makeGuard() : undefined);
+  }
 }
 
-function untrainedNet(): Mlp {
-  return new Mlp({ inputSize: env.encodingSize, hidden: [64, 64], outputSize: env.numActions, seed: 20260923 });
+/** The network shown in 3D: the policy, or the first ensemble member. */
+const shownNet = (): Mlp => (ensemble ? ensemble.members[0] : student!.net);
+
+function setUntrained(): void {
+  if (game.def.continuous) {
+    const ce = env as ContinuousEnv;
+    setEnsemble(new Ensemble({ inputSize: env.encodingSize, hidden: [64, 64], low: [...ce.actionLow], high: [...ce.actionHigh], members: 5, seed: 20260923 }), 'Model: untrained (5 random networks)');
+  } else {
+    setModel(new Mlp({ inputSize: env.encodingSize, hidden: [64, 64], outputSize: env.numActions, seed: 20260923 }), 1, 'Model: untrained (random weights)');
+  }
 }
 
 function setModel(net: Mlp, temperature: number, info: string): void {
   student = new NetStudent(net, temperature, 'maxProb');
+  ensemble = null;
   rebuildHybrid();
   $('model-info').textContent = info;
   network?.setModel(net, game.input, env.actionNames);
 }
 
-function applyPolicy(policy: SerializedPolicy, source: string): void {
-  const { net, calibrationT } = importPolicy(policy);
+function setEnsemble(e: Ensemble, info: string): void {
+  ensemble = e;
+  student = null;
+  rebuildHybrid();
+  $('model-info').textContent = info;
+  network?.setModel(e.members[0], game.input, game.def.continuous!.actionLabels);
+}
+
+function applyPolicy(policy: Weights, source: string): void {
   const kb = (JSON.stringify(policy).length / 1024).toFixed(1);
+  if (policy.format === 'systemone-ensemble') {
+    const e = importEnsemble(policy);
+    setEnsemble(e, `Model: ${source} · ensemble of ${e.members.length} × ${e.members[0].numParams.toLocaleString('en-US')} params · ${kb} KB`);
+    return;
+  }
+  const { net, calibrationT } = importPolicy(policy);
   setModel(net, calibrationT, `Model: ${source} · ${net.numParams.toLocaleString('en-US')} params · ${kb} KB · T=${calibrationT.toFixed(2)}`);
 }
 
@@ -69,12 +98,22 @@ let lastProbs: Float32Array | null = null;
 let lastChoice = 0;
 let lastPlayed = 0;
 let lastEncoding: Float32Array | null = null;
+let lastConfidence: number | null = null;
+let lastTeacherAction: Float64Array | null = null;
 
 /**
  * The decision shown by the bars and the 3D view. It is refreshed at most every
  * 80 ms from the latest move, so both panels always show the same decision.
  */
-let shown: { probs: Float32Array; encoding: Float32Array; chosen: number; played: number; state: DecisionState } | null = null;
+let shown: {
+  probs: Float32Array | null;
+  encoding: Float32Array;
+  chosen: number;
+  played: number;
+  state: DecisionState;
+  confidence: number | null;
+  teacherAction: Float64Array | null;
+} | null = null;
 let lastShown = 0;
 
 const WINDOW = 1000;
@@ -108,13 +147,16 @@ function playMove(): void {
   lastState = decisionState(m.decider, m.escalationReason);
   lastProbs = m.probs ?? null;
   lastEncoding = m.state ?? null;
+  lastConfidence = m.confidence ?? null;
+  lastTeacherAction = m.teacherAction ?? null;
   lastChoice = lastProbs ? argmax(lastProbs) : m.action;
   lastPlayed = m.action;
   winState[winPtr] = STATE_CODE[lastState];
   winCost[winPtr] = m.cost;
   winPtr = (winPtr + 1) % WINDOW;
   winCount = Math.min(winCount + 1, WINDOW);
-  env.step(m.action);
+  if (m.continuous) (env as ContinuousEnv).stepContinuous(m.continuous);
+  else env.step(m.action);
   view.record(env, lastState, m.action);
   movesThisSecond++;
 }
@@ -148,20 +190,53 @@ function frame(now: number): void {
     secondStart = now;
   }
   view.draw(env, lastState);
-  if (lastProbs && lastEncoding && (now - lastShown > 80 || !shown)) {
-    shown = { probs: lastProbs, encoding: lastEncoding, chosen: lastChoice, played: lastPlayed, state: lastState };
+  if (lastEncoding && (now - lastShown > 80 || !shown)) {
+    shown = { probs: lastProbs, encoding: lastEncoding, chosen: lastChoice, played: lastPlayed, state: lastState, confidence: lastConfidence, teacherAction: lastTeacherAction };
     lastShown = now;
-    network?.update(
-      { trace: student.net.trace(shown.encoding), probs: shown.probs, chosen: shown.chosen, threshold, deciderVar: STATE_VAR[shown.state] },
-      game.input,
-    );
+    updateNetwork(shown);
   }
-  drawBars(barsCanvas, env.actionNames, shown?.probs ?? null, shown?.chosen ?? 0, shown?.played ?? 0, threshold);
+  const c = game.def.continuous;
+  if (c && ensemble) {
+    const ce = env as ContinuousEnv;
+    const studentAction = shown ? ensemble.decide(shown.encoding).action : null;
+    drawGauges(barsCanvas, c.actionLabels, ce.actionLow, ce.actionHigh, studentAction, shown?.teacherAction ?? null, shown?.confidence ?? null, threshold);
+  } else {
+    drawBars(barsCanvas, env.actionNames, shown?.probs ?? null, shown?.chosen ?? 0, shown?.played ?? 0, threshold);
+  }
   if (now - lastDomUpdate > 120) {
     updateReadouts();
     lastDomUpdate = now;
   }
   requestAnimationFrame(frame);
+}
+
+function updateNetwork(d: NonNullable<typeof shown>): void {
+  if (!network) return;
+  const trace = shownNet().trace(d.encoding);
+  if (ensemble && game.def.continuous) {
+    // Continuous outputs are normalized to [−1, 1]; size nodes by magnitude and label them with values.
+    const labels = game.def.continuous.actionLabels;
+    const values = Array.from(trace.logits, (v) => Math.max(-1, Math.min(1, v)));
+    network.update(
+      {
+        trace,
+        probs: values.map((v) => Math.abs(v)),
+        chosen: -1,
+        threshold,
+        deciderVar: STATE_VAR[d.state],
+        // Member outputs are normalized; show them in the action's units (steering in rad, pedal −1…+1).
+        outputLabels: labels.map((l, k) => {
+          const { low, high } = ensemble!.config;
+          const v = low[k] + ((values[k] + 1) / 2) * (high[k] - low[k]);
+          return `${l} ${v >= 0 ? '+' : ''}${v.toFixed(2)}${l === 'steering' ? ' rad' : ''}`;
+        }),
+      },
+      game.input,
+    );
+    return;
+  }
+  if (!d.probs) return;
+  network.update({ trace, probs: d.probs, chosen: d.chosen, threshold, deciderVar: STATE_VAR[d.state] }, game.input);
 }
 
 const STATE_LABEL: Record<DecisionState, string> = {
@@ -219,7 +294,7 @@ btnPretrained.addEventListener('click', async () => {
   try {
     const res = await fetch(`./data/${game.def.name}-weights.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    applyPolicy((await res.json()) as SerializedPolicy, 'pretrained (run 1 of the 5-run study)');
+    applyPolicy((await res.json()) as Weights, 'pretrained (run 1 of the 5-run study)');
   } catch (err) {
     $('model-info').textContent = `Could not load the pretrained weights: ${String(err)}`;
   } finally {
@@ -405,7 +480,7 @@ async function loadStudy(name: string): Promise<void> {
     study = data;
     frontier = frontierPoints(study);
     const ref = referencePoint(frontier, game.def.referenceLevel);
-    const guard07 = frontier.find((p) => p.label === 'hybrid+guard maxProb@0.7');
+    const guard07 = frontier.find((p) => p.label.startsWith('hybrid+guard') && p.label.endsWith('@0.7'));
     $('frontier-sub').textContent =
       `Mean of ${study.runs} training runs on ${study.seeds.count} held-out ${study.split} seeds, with 95% intervals. ` +
       'Up is better, left is cheaper. The shaded target: at least 90% of the planner’s score for a tenth of its cost.';
@@ -431,11 +506,15 @@ function selectGame(name: string): void {
   $('network-legend').textContent =
     game.input.kind === 'window'
       ? 'Inputs: the 7×7 window around the head (colored by what each cell holds), then food direction and length. Hidden layers: 64 + 64 ReLU units. Outputs: straight, left, right.'
-      : `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${env.actionNames.join(', ')}.`;
+      : game.def.continuous
+        ? `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${game.def.continuous.actionLabels.join(', ')}. Shown: member 1 of the 5-network ensemble; the car follows the ensemble mean.`
+        : `Inputs, top to bottom: ${game.input.labels.join(', ')}. Hidden layers: 64 + 64 ReLU units. Outputs: ${env.actionNames.join(', ')}.`;
   log.length = 0;
   drawCurves();
   $('train-status').textContent = 'Idle. Training takes one to two minutes on a laptop and runs in a background worker.';
-  setModel(untrainedNet(), 1, 'Model: untrained (random weights)');
+  setUntrained();
+  $('policy-title').textContent = game.def.continuous ? "System One's action" : "System One's policy";
+  $('s1-cost').textContent = game.def.continuous ? 'ensemble of 5 · 5 units' : 'network alone · 1 unit';
   resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1));
   void loadStudy(name);
   history.replaceState(null, '', `#${name}`);
@@ -455,7 +534,10 @@ for (const g of DEMO_GAMES) {
 let network: NetworkView | null = null;
 void import('./network-view').then(async ({ NetworkView }) => {
   network = await NetworkView.create($('network'));
-  network?.setModel(student.net, game.input, env.actionNames);
+  if (network) {
+    if (ensemble && game.def.continuous) network.setModel(ensemble.members[0], game.input, game.def.continuous.actionLabels);
+    else if (student) network.setModel(student.net, game.input, env.actionNames);
+  }
 });
 
 // ——— Theme and resize ———

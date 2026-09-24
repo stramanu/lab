@@ -170,6 +170,7 @@ export interface SerializedEnsemble {
   confidenceMap: ConfidenceMap;
   /** Base64 of each member's float32 parameters. */
   members: string[];
+  meta?: Record<string, unknown>;
 }
 
 function toBase64(values: ArrayLike<number>): string {
@@ -186,9 +187,9 @@ function fromBase64(b64: string): Float32Array {
   return new Float32Array(bytes.buffer);
 }
 
-export function exportEnsemble(e: Ensemble): SerializedEnsemble {
+export function exportEnsemble(e: Ensemble, meta?: Record<string, unknown>): SerializedEnsemble {
   const map = { edges: e.confidenceMap.edges.map((v) => (Number.isFinite(v) ? v : 1e9)), values: e.confidenceMap.values };
-  return { format: 'systemone-ensemble', version: 1, config: e.config, confidenceMap: map, members: e.members.map((m) => toBase64(m.params)) };
+  return { format: 'systemone-ensemble', version: 1, config: e.config, confidenceMap: map, members: e.members.map((m) => toBase64(m.params)), ...(meta ? { meta } : {}) };
 }
 
 export function importEnsemble(data: SerializedEnsemble): Ensemble {

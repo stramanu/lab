@@ -1,5 +1,5 @@
 import { ci95, mean, median } from '../core/stats';
-import { argmax, type Env, type Player, type Teacher } from '../core/types';
+import { argmax, type ContinuousEnv, type ContinuousTeacher, type Env, type Player, type Teacher } from '../core/types';
 import { reliability, type Reliability } from '../nn/calibration';
 
 export type ConditionKind = 'random' | 'system2' | 'system1' | 'hybrid' | 'baseline';
@@ -46,6 +46,8 @@ export interface RunOptions {
    * by System One (agreement and calibration). Not counted in cost or time.
    */
   oracle?: Teacher;
+  /** Continuous games: agreement rule between the student's and the planner's continuous actions. */
+  agrees?: (student: ArrayLike<number>, planner: ArrayLike<number>) => boolean;
   onEpisode?(condition: string, index: number, score: number): void;
 }
 
@@ -84,7 +86,21 @@ export function runCondition(condition: Condition, options: RunOptions): Conditi
         guardRuns++;
       }
 
-      if (move.confidence !== undefined && move.probs) {
+      if (move.continuous && move.confidence !== undefined && options.agrees) {
+        // Continuous student: agreement comes from the hybrid when the planner ran, otherwise from the oracle.
+        let agreed = move.agreed;
+        if (agreed === undefined && options.oracle && move.decider === 'system1') {
+          agreed = options.agrees(move.continuous, (options.oracle as ContinuousTeacher).targetAction(env).action);
+        }
+        if (agreed !== undefined) {
+          confidences.push(move.confidence);
+          correct.push(agreed);
+          if (move.decider === 'system1') {
+            s1Moves++;
+            if (agreed) s1Agreed++;
+          }
+        }
+      } else if (move.confidence !== undefined && move.probs) {
         const legal = env.legalActions();
         const studentChoice = argmax(move.probs, legal);
         let teacherChoice: number | null = null;
@@ -99,7 +115,8 @@ export function runCondition(condition: Condition, options: RunOptions): Conditi
           }
         }
       }
-      env.step(move.action);
+      if (move.continuous) (env as ContinuousEnv).stepContinuous(move.continuous);
+      else env.step(move.action);
     }
     const summary = env.summary();
     scores.push(summary.score);

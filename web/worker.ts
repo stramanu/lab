@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { getGame } from '../src/games/registry';
-import { TrainingPipeline, runSession } from '../src/training';
-import type { FromWorker, ToWorker } from './protocol';
+import { ContinuousPipeline, TrainingPipeline, runSession } from '../src/training';
+import type { FromWorker, ToWorker, Weights } from './protocol';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -20,11 +20,14 @@ self.onmessage = async (ev: MessageEvent<ToWorker>) => {
   stopRequested = false;
   try {
     const game = getGame(msg.game);
-    const pipeline = new TrainingPipeline(
-      { name: game.name, makeEnv: game.makeEnv, teacher: game.makeTeacher(game.referenceLevel), guard: game.makeGuard() },
-      { ...game.pipeline, ...msg.config },
-    );
-    const result = await runSession(pipeline, {
+    const c = game.continuous;
+    const pipeline = c
+      ? new ContinuousPipeline({ name: game.name, makeEnv: c.makeEnv, teacher: c.makeTeacher(game.referenceLevel), guard: c.makeGuard(), agrees: c.agrees }, { ...c.pipeline })
+      : new TrainingPipeline(
+          { name: game.name, makeEnv: game.makeEnv, teacher: game.makeTeacher(game.referenceLevel), guard: game.makeGuard() },
+          { ...game.pipeline, ...msg.config },
+        );
+    const result = await runSession<Weights>(pipeline as Parameters<typeof runSession<Weights>>[0], {
       shouldStop: () => stopRequested,
       onStep: (entry, policy) => post({ type: 'progress', entry, policy }),
       // A macrotask boundary lets queued 'stop' messages run between steps.

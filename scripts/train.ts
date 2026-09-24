@@ -42,5 +42,5 @@ if (args['no-guard']) overrides.useGuard = false;
 const { policy, seconds, numParams, json } = trainGame(game, overrides, outDir, level);
 console.log(
   `\nDone in ${seconds.toFixed(1)}s — ${numParams} params, ${(json.length / 1024).toFixed(1)} KB, ` +
-    `T=${policy.calibrationT.toFixed(2)} → ${join(outDir, 'weights.json')}`,
+    `${'calibrationT' in policy ? `T=${policy.calibrationT.toFixed(2)}` : 'ensemble'} → ${join(outDir, 'weights.json')}`,
 );

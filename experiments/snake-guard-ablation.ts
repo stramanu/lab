@@ -9,7 +9,8 @@ import type { ExperimentResult } from './common';
 import { referenceModel } from './common';
 
 export function run(): ExperimentResult {
-  const { net, calibrationT } = referenceModel('snake');
+  const { net: maybeNet, calibrationT } = referenceModel('snake');
+  const net = maybeNet!;
   const seeds = seedsFor('dev', 50);
   const results: Record<string, unknown> = {};
   const planner = runCondition(

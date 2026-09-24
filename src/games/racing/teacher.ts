@@ -1,8 +1,8 @@
-import type { Guard, GuardResult, Teacher, TeacherResult } from '../../core/types';
+import type { ContinuousGuard, ContinuousTeacher, GuardResult, TeacherResult } from '../../core/types';
 import { BRAKE, GAS, STEER_HOLD, commandOf, pedalOf, type RacingConfig } from './config';
 import { controllerAction } from './controller';
 import type { RacingEnv } from './env';
-import { copyCar, emptyCar, simulateDecision, type CarState } from './physics';
+import { copyCar, emptyCar, simulateControl, simulateDecision, type CarState } from './physics';
 import type { Track } from './track';
 
 export interface RacingTeacherConfig {
@@ -36,7 +36,7 @@ export function branchValue(c: CarState, start: CarState, remaining: number): nu
  * Near-equivalent actions (within `satisfice` m) are ranked by a root preference:
  * the base controller's action, then gas over brake, then holding the steering.
  */
-export class RacingTeacher implements Teacher {
+export class RacingTeacher implements ContinuousTeacher {
   readonly name: string;
   readonly config: RacingTeacherConfig;
   private stack: CarState[] = [];
@@ -102,13 +102,20 @@ export class RacingTeacher implements Teacher {
 export const RECOVERY_DECISIONS = 10;
 
 /** Cheap check: the proposed action for one decision, then the base controller; reject if the car leaves the track. */
-export class RacingGuard implements Guard {
+export class RacingGuard implements ContinuousGuard {
   readonly name = 'racing-rollout-guard';
   private scratch = emptyCar();
 
   check(env: RacingEnv, a: number): GuardResult {
     const c = copyCar(env.car, this.scratch);
     let cost = simulateDecision(c, env.track, env.config, a);
+    for (let d = 0; d < RECOVERY_DECISIONS && !c.end; d++) cost += simulateDecision(c, env.track, env.config, controllerAction(c, env.track, env.config));
+    return { ok: c.end !== 'off-track', cost: Math.max(1, cost) };
+  }
+
+  checkContinuous(env: RacingEnv, a: ArrayLike<number>): GuardResult {
+    const c = copyCar(env.car, this.scratch);
+    let cost = simulateControl(c, env.track, env.config, a[0], a[1]);
     for (let d = 0; d < RECOVERY_DECISIONS && !c.end; d++) cost += simulateDecision(c, env.track, env.config, controllerAction(c, env.track, env.config));
     return { ok: c.end !== 'off-track', cost: Math.max(1, cost) };
   }

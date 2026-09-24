@@ -41,14 +41,14 @@ const report: EvalReport = {
   split,
   seeds: { count: seeds.length, first: seeds[0], last: seeds[seeds.length - 1] },
   model: {
-    params: model.net.numParams,
+    params: model.params,
     weightsKB: Number((model.raw.length / 1024).toFixed(1)),
     calibrationT: model.calibrationT,
     trainingSeconds: typeof meta?.trainingSeconds === 'number' ? meta.trainingSeconds : null,
   },
   hardware: hardware(),
   conditions: results,
-  hypotheses: checkHypotheses({ conditions: results, trainingEscalation: trainingEscalation(dir), referenceLevel, measure: measures[0] }),
+  hypotheses: checkHypotheses({ conditions: results, trainingEscalation: trainingEscalation(dir), referenceLevel, measure: game.continuous ? 'ensemble' : measures[0] }),
 };
 
 const out = join(dir, `eval-report-${split}.json`);

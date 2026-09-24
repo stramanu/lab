@@ -387,6 +387,6 @@ The pretrained weights are run 1 of each study, a choice fixed in advance rather
 31. Li, J., Tinka, A., Kiesel, S., Durham, J. W., Kumar, T. K. S., & Koenig, S. (2021). Lifelong Multi-Agent Path Finding in Large-Scale Warehouses. *AAAI 2021*.
 32. Sartoretti, G., Kerr, J., Shi, Y., Wagner, G., Kumar, T. K. S., Koenig, S., & Choset, H. (2019). PRIMAL: Pathfinding via Reinforcement and Imitation Multi-Agent Learning. *IEEE Robotics and Automation Letters*, 4(3), 2378–2385.
 33. Ma, Z., Luo, Y., & Ma, H. (2021). Distributed Heuristic Multi-Agent Path Finding with Communication. *ICRA 2021*.
-34. Rizzo, S. (2026). Rizzo Flow. Post and demo on LinkedIn.
+34. Rizzo, S. (2026). Rizzo Flow. Post and demo on LinkedIn. https://www.linkedin.com/feed/update/urn:li:activity:7508412771974275072/
 35. Runkle, S., & Lovell, H. (2026, September 17). Building a Harness with Jev. *LangChain Blog*. https://www.langchain.com/blog/building-a-harness-with-jev
 36. Zhang, J., & Cho, K. (2017). Query-Efficient Imitation Learning for End-to-End Simulated Driving. *AAAI 2017*.

@@ -5,7 +5,7 @@ Every model, planner and simulation is written from scratch in TypeScript, with 
 in Node or in a browser tab. Every result comes with the protocol that produced it, and negative results
 are published like positive ones.
 
-**Live:** <https://lab.emanuelestrazzullo.dev>
+**Live:** <https://lab.emanuelestrazzullo.dev> · [![CI](https://github.com/stramanu/lab/actions/workflows/ci.yml/badge.svg)](https://github.com/stramanu/lab/actions/workflows/ci.yml)
 
 ## Experiments
 

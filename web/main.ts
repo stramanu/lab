@@ -1,4 +1,5 @@
-import { argmax, type ContinuousEnv, type Env, type Player } from '../src/core/types';
+import { argmax, type ContinuousEnv, type Env, type Player, type Teacher } from '../src/core/types';
+import { RacingEnv } from '../src/games/racing/env';
 import { ContinuousHybridPlayer, HybridPlayer, NetStudent } from '../src/hybrid';
 import { Ensemble, Mlp, importEnsemble, importPolicy } from '../src/nn';
 import type { LogEntry } from '../src/training/pipeline';
@@ -9,7 +10,9 @@ import { STATE_VAR, decisionState, type BoardView, type DecisionState } from './
 import { DEMO_GAMES, demoGame, type DemoGame } from './games';
 import type { NetworkView } from './network-view';
 import type { FromWorker, ToWorker, Weights } from './protocol';
+import { RacingView } from './racing-view';
 import { CanvasRecorder, download } from './recorder';
+import { Telemetry, drawTelemetry } from './telemetry';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = document.documentElement;
@@ -39,6 +42,33 @@ let student: NetStudent | null = null;
 let ensemble: Ensemble | null = null;
 let hybrid!: Player;
 let threshold = Number(thresholdInput.value);
+
+// ——— Racing extras: planner ghost, telemetry, camera and trail modes ———
+const telemetry = new Telemetry(200);
+const telemetryCanvas = $<HTMLCanvasElement>('telemetry');
+let ghostEnv: RacingEnv | null = null;
+let ghostTeacher: Teacher | null = null;
+let ghostOn = true;
+let racingCamera: 'chase' | 'track' = 'chase';
+let racingTrail: 'decider' | 'speed' = 'decider';
+
+function configureRacing(): void {
+  const racing = view instanceof RacingView;
+  $('racing-controls').hidden = !racing;
+  $('telemetry-block').hidden = !racing;
+  ghostEnv = racing && ghostOn ? new RacingEnv() : null;
+  ghostTeacher = ghostEnv ? game.def.makeTeacher(game.def.referenceLevel) : null;
+  if (view instanceof RacingView) {
+    view.camera = racingCamera;
+    view.trailMode = racingTrail;
+    view.ghost = ghostEnv;
+  }
+}
+
+function resetGhost(episodeSeed: number): void {
+  ghostEnv?.reset(episodeSeed);
+  telemetry.clear();
+}
 let guardOn = guardInput.checked;
 
 function rebuildHybrid(): void {
@@ -131,6 +161,7 @@ function resetGame(newSeed: number): void {
   winPtr = 0;
   env.reset(seed);
   view.reset();
+  resetGhost(seed);
   lastProbs = null;
   shown = null;
 }
@@ -142,6 +173,7 @@ function playMove(): void {
     episode++;
     env.reset(seed + episode - 1);
     view.reset();
+    resetGhost(seed + episode - 1);
   }
   const m = hybrid.act(env);
   lastState = decisionState(m.decider, m.escalationReason);
@@ -157,6 +189,11 @@ function playMove(): void {
   winCount = Math.min(winCount + 1, WINDOW);
   if (m.continuous) (env as ContinuousEnv).stepContinuous(m.continuous);
   else env.step(m.action);
+  // The ghost is display only: its planner compute is not added to the live cost.
+  if (ghostEnv && ghostTeacher && !ghostEnv.isDone()) ghostEnv.step(argmax(ghostTeacher.score(ghostEnv).scores));
+  if (env instanceof RacingEnv) {
+    telemetry.push({ speed: env.car.speed, steer: env.car.steer, pedal: m.continuous ? m.continuous[1] : m.action % 2 === 0 ? 1 : -1, escalated: m.decider === 'system2' });
+  }
   view.record(env, lastState, m.action);
   movesThisSecond++;
 }
@@ -205,6 +242,7 @@ function frame(now: number): void {
   }
   if (now - lastDomUpdate > 120) {
     updateReadouts();
+    if (view instanceof RacingView) drawTelemetry(telemetryCanvas, telemetry);
     lastDomUpdate = now;
   }
   requestAnimationFrame(frame);
@@ -371,6 +409,27 @@ function drawCurves(): void {
   drawLines(scoreCanvas, [{ label: 'score', color: cssVar(root, '--s1'), values: log.map((e) => e.meanScore) }], game.scoreMax, (v) => String(v));
 }
 
+for (const b of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
+  b.addEventListener('click', () => {
+    racingCamera = b.dataset.camera as 'chase' | 'track';
+    for (const o of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) o.setAttribute('aria-pressed', String(o === b));
+    if (view instanceof RacingView) view.camera = racingCamera;
+  });
+}
+for (const b of document.querySelectorAll<HTMLButtonElement>('[data-trail]')) {
+  b.addEventListener('click', () => {
+    racingTrail = b.dataset.trail as 'decider' | 'speed';
+    for (const o of document.querySelectorAll<HTMLButtonElement>('[data-trail]')) o.setAttribute('aria-pressed', String(o === b));
+    if (view instanceof RacingView) view.trailMode = racingTrail;
+  });
+}
+$<HTMLInputElement>('ghost').addEventListener('change', (e) => {
+  ghostOn = (e.target as HTMLInputElement).checked;
+  configureRacing();
+  // Restart the episode so the ghost starts level with the live car.
+  resetGame(seed);
+});
+
 // ——— Recorder ———
 const recorder = new CanvasRecorder(boardCanvas);
 if (!recorder.available) {
@@ -500,6 +559,7 @@ function selectGame(name: string): void {
   game = demoGame(name);
   env = game.def.makeEnv();
   view = game.createView(boardCanvas);
+  configureRacing();
   root.style.setProperty('--board-aspect', game.aspect);
   for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.setAttribute('aria-current', String(b.dataset.game === name));
   $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;

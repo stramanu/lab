@@ -39,6 +39,21 @@
           <canvas id="board" aria-label="Game board" role="img"></canvas>
           <div id="rec-badge" class="rec-badge" hidden>● REC</div>
         </div>
+        <div class="racing-only" id="racing-controls" hidden>
+          <div class="segmented" role="group" aria-label="Camera">
+            <button type="button" data-camera="chase" aria-pressed="true">Chase</button>
+            <button type="button" data-camera="track" aria-pressed="false">Whole track</button>
+          </div>
+          <div class="segmented" role="group" aria-label="Trail colour">
+            <button type="button" data-trail="decider" aria-pressed="true">Who decided</button>
+            <button type="button" data-trail="speed" aria-pressed="false">Speed</button>
+          </div>
+          <label class="check"><input id="ghost" type="checkbox" checked /> Planner ghost</label>
+        </div>
+        <div class="racing-only" id="telemetry-block" hidden>
+          <h3>Telemetry <small>last 20 s · red bands: decided by the planner</small></h3>
+          <canvas id="telemetry" class="telemetry" aria-label="Speed, steering and pedal over the last 20 seconds" role="img"></canvas>
+        </div>
         <dl class="readout">
           <div><dt>score</dt><dd id="r-score">0</dd></div>
           <div><dt>episode</dt><dd id="r-episode">1</dd></div>

@@ -1,6 +1,6 @@
 {
   "game": "racing",
-  "createdAt": "2026-09-24T18:37:54.068Z",
+  "createdAt": "2026-09-24T19:53:28.791Z",
   "split": "test",
   "seeds": {
     "count": 200,
@@ -965,10 +965,10 @@
       "id": "H4",
       "statement": "Above the confidence threshold System One agrees with the teacher",
       "target": "≥ 95.0% at threshold 0.9",
-      "measured": "System One never acted at threshold 0.9: its confidence never reached it",
+      "measured": "83.4% (ECE 0.014); mean of the 3 runs where System One acted above the threshold (in the other 2 it never did)",
       "confirmed": false,
       "details": {
-        "agreement": null,
+        "agreement": 0.8341190587871171,
         "ece": 0.013991512676260065
       },
       "runsConfirmed": "0/5"

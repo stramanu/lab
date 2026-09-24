@@ -48,8 +48,9 @@ export function rolloutCost(s: ShipState, cfg: LanderConfig): number {
  * horizon MPC). For each first action it enumerates every continuation of
  * `depth − 1` held actions, then lets the autopilot fly to the end of the
  * episode in simulation, and scores the action by the best outcome found.
- * Because the plain autopilot continuation is always among the candidates,
- * the planner is never worse than the autopilot. Cost = physics steps simulated.
+ * Because the simulation is exact and the plain autopilot continuation is
+ * always among the candidates, the planner does no worse than the autopilot,
+ * up to the satisficing margin. Cost = physics steps simulated.
  */
 export class LanderTeacher implements Teacher {
   readonly name: string;

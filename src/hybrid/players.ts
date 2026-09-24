@@ -54,7 +54,7 @@ export class StudentPlayer implements Player {
 export interface HybridConfig {
   /** Escalate when student confidence is below this value. */
   threshold: number;
-  /** Fraction of confident decisions that are still checked by the teacher (training only). */
+  /** Fraction of confident decisions that are still checked by the teacher (used in training; evaluation and the demo set 0). */
   auditRate: number;
   seed: number;
 }

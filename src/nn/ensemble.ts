@@ -34,7 +34,8 @@ export interface EnsembleDecision {
 const DEFAULT_MAP: ConfidenceMap = { edges: [0.02, 0.05, 0.1, 0.2], values: [0.95, 0.8, 0.6, 0.3] };
 
 /**
- * Deep ensemble (Lakshminarayanan et al. 2017) of small MLP regressors. Each
+ * Simplified deep ensemble (Lakshminarayanan et al. 2017) of small MLP regressors:
+ * independently initialised members trained with MSE only, without predicted variances. Each
  * member regresses the teacher's continuous action in normalized units
  * ([low, high] → [−1, 1]); the action is the clamped mean, and the members'
  * disagreement drives a calibrated confidence.

@@ -106,8 +106,8 @@ interface Stats {
 
 /**
  * Three-phase training for continuous games, mirroring TrainingPipeline:
- * bootstrap on planner-driven episodes, DAgger-style escalation iterations
- * (every planner-queried state becomes a regression example), consolidation
+ * bootstrap on planner-driven episodes, escalation iterations in which
+ * only the states the planner is queried on become regression examples (as in SafeDAgger), consolidation
  * with the confidence map fitted on a validation split by episode segment.
  */
 export class ContinuousPipeline {

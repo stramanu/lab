@@ -6,11 +6,11 @@ import { copyCar, emptyCar, simulateControl, simulateDecision, type CarState } f
 import type { Track } from './track';
 
 export interface RacingTeacherConfig {
-  /** Tree depth: 10^depth branches. The cost knob. */
+  /** Tree depth: 6^depth command sequences, each rolled out at every speed margin in `margins`. */
   depth: number;
   /** Decisions of base-controller driving after the tree. */
   horizon: number;
-  /** Outcomes within this many metres of the best count as equivalent (then the preference decides). */
+  /** Outcomes within this many value units (metres plus 0.5 × speed) of the best count as equivalent (then the preference decides). */
   satisfice: number;
   /**
    * Speed margins tried by the base controller in the rollouts. The base

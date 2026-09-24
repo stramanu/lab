@@ -2,7 +2,7 @@
  * Multi-seed study: trains N runs with different training seeds, evaluates
  * them on one split and aggregates results across runs (mean, 95% t-interval,
  * per-run hypothesis tally). Resumable: finished runs and evaluations are reused.
- * Usage: pnpm study --game snake|lander [--runs 5] [--split dev|test] [--seeds N] [--measures maxProb,margin]
+ * Usage: pnpm study --game <snake|lander|warehouse|racing|quadruped> [--runs 5] [--split dev|test] [--seeds N] [--measures maxProb,margin]
  *        [--workers N]     (parallel evaluation threads; default: cores − 2; 1 = sequential; same numbers)
  *        [--iterations K]  (fewer escalation iterations: smoke tests only, never for reported results)
  *        [--bootstrap N]   (fewer bootstrap episodes: smoke tests only, never for reported results)

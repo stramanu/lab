@@ -1,7 +1,7 @@
 # game-interfaces Specification
 
 ## Purpose
-Defines the game-agnostic common contract between environment, teacher (System Two), student (System One) and hybrid, so that the same pipeline serves Snake and later games by changing only the environment.
+Defines the game-agnostic common contract between environment, teacher (System Two), student (System One) and hybrid, so that the same pipeline, hybrid and evaluation serve every game; a new game supplies its environment, teacher and guard, and continuous-action games extend the contract.
 
 ## Requirements
 

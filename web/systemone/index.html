@@ -39,8 +39,8 @@
       </div>
       <h1>System One <em>/ System Two</em></h1>
       <p class="lede">
-        A tiny network learns a game from a slow planner, inside this tab. It plays on intuition, a cheap check
-        catches its dangerous moves, and it asks the planner only when it is unsure.
+        A tiny network, trained by a slow planner, proposes every move with a confidence. A cheap check catches
+        its dangerous moves, and the planner decides whenever the network is unsure.
       </p>
       <nav class="game-tabs" aria-label="Game" id="game-tabs"></nav>
       <p class="blurb" id="game-blurb"></p>
@@ -65,11 +65,11 @@
             <path d="M440 160 H197 V76" class="dashed" /><text x="206" y="178" class="label">the planner's answer becomes a training example</text>
           </svg></div>
           <div class="howto-text">
-            <p><b>System Two</b> is a planner. Before every move it simulates what happens next for each possible action and picks the best. It is strong but slow; its work is counted in <em>compute units</em>: the positions it explores or the physics steps it simulates.</p>
+            <p><b>System Two</b> is a planner. Before every move it looks ahead, by searching or simulating, from each candidate action and picks the best. It is strong but slow; its work is counted in <em>compute units</em>: the positions it explores or the physics steps it simulates.</p>
             <p><b>System One</b> is a small neural network. From the game's state (its inputs are listed under “This game”), it proposes a move in a single pass, 1 unit (5 for an ensemble of five networks), together with a <em>confidence</em>.</p>
             <p><b>The threshold and the guard.</b> If the confidence is below the threshold (the slider), the planner decides instead. If it is above, a cheap <em>guard</em> checks the move for immediate danger; if the move fails, the planner decides too.</p>
-            <p><b>How System One learns.</b> It first imitates the planner on games the planner plays. Then the hybrid plays, and every state where it had to ask the planner is labelled by the planner and added to its training data. The network learns exactly where it was weak.</p>
-            <p><b>The percentages.</b> “Who decided” counts the last 1,000 moves. With untrained (random) weights the confidence is low, so the planner decides almost everything: System Two near 100%, System One near 0%. As the network trains, its confidence grows, and the shares cross: System One rises, System Two falls (watch it with “Train in this tab”, and in the “Share of moves” chart). Moving the threshold down gives more moves to System One: cheaper, but riskier.</p>
+            <p><b>How System One learns.</b> It first imitates the planner on games the planner plays. Then the hybrid plays, and every state where it had to ask the planner is labelled by the planner and added to its training data. The network gets more data where it was unsure or wrong.</p>
+            <p><b>The percentages.</b> “Who decided” counts the last 1,000 moves. With untrained (random) weights the confidence is low, so the planner decides almost everything: System Two near 100%, System One near 0%. As the network trains, its confidence grows and System One's share rises (watch it with “Train in this tab”, and in the “Share of moves” chart). How far it rises depends on the game: for the lander and racing, the planner still decides most moves at the end of training. Moving the threshold down gives more moves to System One: cheaper, but riskier.</p>
             <p><b>The cost.</b> The large number is the mean compute per move over the same 1,000 moves. The “Cost vs quality” chart compares it with the planner alone, from the published study.</p>
           </div>
         </div>
@@ -258,8 +258,9 @@
     <footer class="colophon">
       <p>
         Everything runs in your browser: the environments, the planners, the network and its backprop, written from
-        scratch in TypeScript. Cost is counted in compute units: nodes expanded or physics steps simulated by the
-        planner or the guard, and one unit per network forward pass. Method, protocol, results and references are in
+        scratch in TypeScript (the quadruped's 3D physics uses the Rapier engine). Cost is counted in compute
+        units: search nodes expanded or physics steps simulated by the planner or the guard, and one unit per
+        network forward pass. Units are comparable within a game, not across games. Method, protocol, results and references are in
         the experiment's write-up in the lab repository (docs/systemone.md).
       </p>
     </footer>

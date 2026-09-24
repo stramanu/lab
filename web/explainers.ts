@@ -48,7 +48,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
     ],
     outputs: '4 actions: nothing, main engine, left thruster, right thruster. Confidence is the largest probability, after temperature scaling.',
     planner:
-      'A rollout algorithm: for each first action (and short sequences of held actions) it lets a hand-written autopilot fly the rest of the descent in simulation, and keeps the best outcome. By construction it is never worse than the autopilot. Cost: physics steps simulated.',
+      'A rollout algorithm: for each first action (and short sequences of held actions) it lets a hand-written autopilot fly the rest of the descent in simulation, and keeps the best outcome. Because its simulation is exact and the autopilot\'s own choice is always a candidate, it lands whenever the autopilot would. Cost: physics steps simulated.',
     guard: 'Plays the proposed action for one decision, then a recovery policy for ten; rejects it if that ends in a crash or out of bounds.',
     result: 'The network reaches 85% of the planner, but the hand-written autopilot scores higher at the same cost: sometimes a rule is enough. The autopilot alternates engine on and off, so many actions are equivalent, which caps what imitation can learn.',
   },
@@ -57,7 +57,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
     inputs: [
       { count: 243, name: '9×9 window around the deciding robot', detail: 'North is always up. Each of the 81 cells has 3 values: shelf or wall, another robot, the robot\'s own goal.' },
       { count: 3, name: 'Goal', detail: 'Direction of the goal (a unit vector) and its distance along the aisles.' },
-      { count: 4, name: 'Next-step hints', detail: 'For north, east, south and west: how much closer or farther the goal gets by stepping there (+1 if blocked).' },
+      { count: 4, name: 'Next-step hints', detail: 'For north, east, south and west: how much closer or farther the goal gets by stepping there (+1 for a shelf or wall).' },
       { count: 2, name: 'Context', detail: 'Share of the other robots inside the window, and the fraction of the shift elapsed.' },
     ],
     outputs: '5 actions: wait, north, east, south, west. Confidence is the largest probability, after temperature scaling.',
@@ -65,7 +65,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
       'Cooperative space-time search: it predicts where the other robots will be over the next 8 timesteps, then searches a time-expanded map for the best path from each possible move of the deciding robot. Cost: nodes expanded, about 530 per move.',
     guard: 'Rejects a move into a shelf, into a cell another robot has claimed, a swap with another robot, or a step into a dead end that is not the goal.',
     result:
-      'Alone, the network reaches 37% of the planner. The hybrid reaches 88% for 4.1× less compute, missing the 10× target, but at equal compute it beats the planner\'s own cheaper setting: 93.6 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018).',
+      'Alone, the network reaches 37% of the planner. The hybrid reaches 88% for 4.1× less compute, missing the 10× target, but at about the same compute it beats the planner with a shorter search window: 93.6 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018).',
   },
   racing: {
     what: 'A car on a procedural closed track, with a grip limit: take the corners too fast and it leaves the track. Score = metres of track covered in 60 s.',
@@ -83,7 +83,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
       'Simulates 6 commands (steer left, hold or right, with gas or brake), each followed by a hand-written pure-pursuit driver at several speed margins for the next 4 s, and keeps the one that covers the most track. Cost: physics steps, about 5,800 per move.',
     guard: 'Plays the proposed action for one decision, then the base driver for 1 s; rejects it if the car would leave the track.',
     result:
-      'The network alone drives 99.9% as far as the planner for 1,164× less compute; with the guard, 102% for 97× less. It agrees with the planner on only 51% of decisions, and its confidence is poorly calibrated (ECE 0.27): several actions are equally good.',
+      'The network alone drives 99.9% as far as the planner for 1,164× less compute; with the guard, 102% for 97× less. It agrees with the planner on only 51% of decisions, because several actions are about equally good, and its confidence is poorly calibrated (ECE 0.27).',
   },
   quadruped: {
     what: 'A 12-joint four-legged robot in 3D rigid-body physics (Rapier) trots forward for 20 s while pushes hit it; the ground friction changes from run to run. Score = metres walked; a fall ends the run.',
@@ -101,9 +101,9 @@ export const EXPLAINERS: Record<string, Explainer> = {
     outputs:
       '4 continuous modulations of a hand-written trot: forward and sideways foot placement, body height and step frequency (0 leaves the trot unchanged). As in racing, System One would be an ensemble of 5 networks.',
     planner:
-      'From a snapshot of the physics, it tries 21 modulations for 0.1 s, each followed by the hand-written trot for 1 s, and scores the metres gained minus a penalty for tilting (and a large one for falling). It does not see future pushes. Cost: physics steps, about 4,100 per move.',
-    guard: 'Simulates the proposed modulation for 0.2 s; rejects it if the robot would fall or tilt beyond 45°.',
+      'From a snapshot of the physics, it tries 21 modulations for 0.1 s, each followed by the hand-written trot, 1 s per rollout in total, and scores the metres gained minus a penalty for tilting (and a large one for falling). It does not see future pushes. Cost: physics steps, about 4,100 per move.',
+    guard: 'Plays the proposed modulation for 0.1 s, then the plain trot for 0.1 s; rejects it if the robot would fall or tilt beyond 45°.',
     result:
-      'In progress. Its feasibility test stopped the experiment: the planner falls on 1 run in 20 where the hand-written trot falls on 4, but the network matched the planner on only 60% of states (the target was 85%). In an exploratory run with 8× the data, a larger network (5 × 256×256) walked 93% as far as the planner and fell as rarely. That network is now in training for the 5-run study; until it is published, the planner decides every move on this page.',
+      'In progress. Its feasibility test stopped the experiment: the planner falls on 1 run in 20 where the hand-written trot falls on 4, but the network matched the planner on only 60% of states (the target was 85%). In one exploratory run on development seeds, with about 8× the data, a larger network (5 × 256×256) walked 93% as far as the planner and fell as rarely (1 run in 20 for both). That network is now in training for the 5-run study; until it is published, the planner decides every move on this page.',
   },
 };

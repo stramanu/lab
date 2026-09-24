@@ -39,8 +39,8 @@
       <div class="masthead-top"><span class="kicker">Emanuele Strazzullo · research notebook</span></div>
       <h1>The <em>lab</em></h1>
       <p class="lede">
-        Small, reproducible experiments in machine learning, planning and control. Every model, planner and
-        simulation is written from scratch and runs in your browser. Every result comes with the protocol that
+        Small, reproducible experiments in machine learning, planning and control. The networks and planners are written
+        from scratch and run in your browser. Every result comes with the protocol that
         produced it, and the negative results are published too.
       </p>
     </header>
@@ -66,9 +66,9 @@
         <ul class="findings">
           <li><b>Snake</b> With a cheap safety check, the hybrid reaches 93–98% of the planner's score for 9–18× less compute.</li>
           <li><b>Lander</b> A hand-written autopilot beats the network at the same cost: sometimes a rule is enough.</li>
-          <li><b>Warehouse</b> 16 robots: at the same compute, the hybrid delivers 93.6 loads where the planner delivers 60.1; the 10× target is missed.</li>
+          <li><b>Warehouse</b> 16 robots: at about the same compute, the hybrid delivers 93.6 loads where the planner with a shorter search window delivers 60.1; the 10× target is missed.</li>
           <li><b>Racing</b> The network alone drives 99.9% as far as the planner, for 1,164× less compute.</li>
-          <li><b>Quadruped</b> Preview: a 3D walking robot you can push. Its feasibility test stopped the experiment (the network matched the planner on 60% of states, the target was 85%); with more data, a larger network drove it almost as well as the planner. The network is now in training for the final study.</li>
+          <li><b>Quadruped</b> Preview: a 3D walking robot you can push. Its feasibility test stopped the experiment (the network matched the planner on 60% of states, the target was 85%); in an exploratory run with more data, a larger network walked 93% as far as the planner. The network is now in training for the final study.</li>
         </ul>
         <a class="experiment-link" href="./systemone/">Open the experiment →</a>
       </article>
@@ -97,11 +97,11 @@
         <h2 id="method-title">How experiments are run</h2>
         <ol>
           <li><b>Targets first.</b> What would count as success is written down before measuring, and never changed afterwards.</li>
-          <li><b>Separate data.</b> Design decisions use development seeds or writers; final numbers use held-out test ones, touched once.</li>
-          <li><b>Repeated runs.</b> Every final result is the mean of 5 independent training runs, with 95% intervals.</li>
-          <li><b>Feasibility first.</b> Before a long study, a short test with go/no-go criteria decides whether it is worth running.</li>
+          <li><b>Separate data.</b> Design decisions use development seeds or writers; final numbers use held-out test ones, used only for the final studies.</li>
+          <li><b>Repeated runs.</b> Every final result that depends on training is the mean of 5 independent training runs, with 95% intervals.</li>
+          <li><b>Feasibility first.</b> Before a long study, a short test with go/no-go criteria decides whether it is worth running; when a study goes ahead anyway, that is stated.</li>
           <li><b>Everything logged.</b> Every design decision is recorded with its evidence, and negative results are reported like positive ones.</li>
-          <li><b>From scratch.</b> No machine-learning libraries: networks, backpropagation, planners and environments are written in TypeScript.</li>
+          <li><b>From scratch.</b> No machine-learning libraries: networks, backpropagation, planners and environments are written in TypeScript (the quadruped's 3D physics uses the Rapier engine).</li>
         </ol>
       </section>
     </main>

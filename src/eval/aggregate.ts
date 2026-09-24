@@ -67,13 +67,15 @@ function meanCondition(runs: ConditionResult[]): ConditionResult {
     const v = runs.map(f);
     return v.every((x) => typeof x === 'number') ? mean(v as number[]) : null;
   };
+  // Agreement above the threshold exists only in runs where System One acted there: average those.
+  const acted = runs.map((c) => c.agreementAboveThreshold).filter((x): x is number => typeof x === 'number');
   const ece = avg((c) => c.calibration?.ece);
   return {
     ...first,
     score: { ...first.score, mean: avg((c) => c.score.mean)!, ci95: 0 },
     costPerMove: avg((c) => c.costPerMove)!,
     escalationRate: avg((c) => c.escalationRate),
-    agreementAboveThreshold: avg((c) => c.agreementAboveThreshold),
+    agreementAboveThreshold: acted.length ? mean(acted) : null,
     calibration: ece === null ? null : { ece, bins: [] },
   };
 }
@@ -116,9 +118,15 @@ export function aggregateRuns(
 
   const onMean = checkHypotheses({ ...options, conditions: names.map((_, i) => meanCondition(runs.map((r) => r.conditions[i]))), trainingEscalation: meanCurve });
   const perRun = runs.map((r) => checkHypotheses({ ...options, conditions: r.conditions, trainingEscalation: r.trainingEscalation }));
-  const hypotheses = onMean.map((h, k) => ({
-    ...h,
-    runsConfirmed: `${perRun.filter((p) => p[k].confirmed).length}/${runs.length}`,
-  }));
+  const hypotheses = onMean.map((h, k) => {
+    const out = { ...h, runsConfirmed: `${perRun.filter((p) => p[k].confirmed).length}/${runs.length}` };
+    if (h.id !== 'H4') return out;
+    const acted = perRun.filter((p) => typeof p[k].details.agreement === 'number').length;
+    if (acted === 0 || acted === runs.length) return out;
+    return {
+      ...out,
+      measured: `${h.measured}; mean of the ${acted} runs where System One acted above the threshold (in the other ${runs.length - acted} it never did)`,
+    };
+  });
   return { runs: runs.length, conditions, hypotheses };
 }

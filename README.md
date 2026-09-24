@@ -1,8 +1,9 @@
 # Lab
 
 Small, reproducible experiments in machine learning, planning and control, by Emanuele Strazzullo.
-Every model, planner and simulation is written from scratch in TypeScript, with no ML libraries, and runs
-in Node or in a browser tab. Every result comes with the protocol that produced it, and negative results
+The networks, their training, the planners and the simulations are written from scratch in TypeScript,
+with no ML libraries (the one exception: the quadruped's 3D physics uses the Rapier engine), and everything
+runs in Node or in a browser tab. Every result comes with the protocol that produced it, and negative results
 are published like positive ones.
 
 **Live:** <https://lab.emanuelestrazzullo.dev> · [![CI](https://github.com/stramanu/lab/actions/workflows/ci.yml/badge.svg)](https://github.com/stramanu/lab/actions/workflows/ci.yml)
@@ -18,11 +19,12 @@ Headline results (test data, mean of 5 training runs):
 
 - **Snake**: with a cheap safety check, the hybrid reaches 93–98% of the planner's score for 9–18× less compute.
 - **Lander**: a hand-written autopilot beats the network at the same cost.
-- **Warehouse**: at equal compute the hybrid delivers 93.6 loads where the planner's cheaper setting
-  delivers 60.1; the pre-registered 10× target is missed.
+- **Warehouse**: at about the same compute (129 vs 115 units per move), the hybrid delivers 93.6 loads where
+  the planner with a shorter search window delivers 60.1; the pre-registered 10× target is missed.
 - **Racing**: the network alone drives 99.9% as far as the planner for 1,164× less compute.
-- **Quadruped**: stopped at its feasibility test (imitation 60%, target 85%); an exploratory follow-up
-  found that a larger network drives almost as well as the planner, and a 5-run test study is running.
+- **Quadruped**: stopped at its feasibility test (imitation 60%, target 85%). An exploratory follow-up
+  (one run, development seeds) found that a larger network walks 93% as far as the planner; a 5-run test
+  study is running.
 - **Handwriting**: 83.9% of letters right on 20 unseen writers, against 83.2% for the classic recogniser,
   for 1,302× less arithmetic; the 90% target is missed.
 

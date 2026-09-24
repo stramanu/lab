@@ -73,7 +73,7 @@ export function resampleStrokes(strokes: Strokes, n = NUM_POINTS): PointCloud {
 /**
  * Training augmentation, applied to normalised strokes before resampling: rotation in [−10°, 10°],
  * independent x/y scaling in [0.85, 1.15], shear in [−0.2, 0.2], Gaussian point jitter (σ = 0.01).
- * Affine and elastic distortions are standard for handwriting (Simard, Steinkraus & Platt 2003).
+ * Affine distortions are standard for handwriting (Simard, Steinkraus & Platt 2003); their elastic distortions are not used.
  */
 function augment(strokes: Strokes, rng: Rng): Strokes {
   const angle = ((rng.next() * 2 - 1) * 10 * Math.PI) / 180;

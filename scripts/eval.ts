@@ -1,6 +1,6 @@
 /**
  * Evaluates trained weights of any registered game on a seed split (dev by default).
- * Usage: pnpm eval --game snake|lander [--split dev|test] [--dir artifacts/<game>] [--seeds N]
+ * Usage: pnpm eval --game <snake|lander|warehouse|racing|quadruped> [--split dev|test] [--dir artifacts/<game>] [--seeds N]
  *        [--levels a,b,c] [--measures maxProb,margin] [--no-guard] [--workers N]
  * Package aliases: pnpm eval:snake, pnpm eval:lander.
  */

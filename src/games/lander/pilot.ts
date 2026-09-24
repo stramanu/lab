@@ -6,7 +6,7 @@ import { padCenter, terrainHeight, windAt, type World } from './world';
  * Hand-written PD autopilot: steer toward the pad by tilting, hold a descent
  * rate that shrinks with altitude, hover while off the pad and low, level out
  * near the ground. It is the base policy of the MPC rollouts and the recovery
- * policy of the guard, not a player in the experiment.
+ * policy of the guard, and the "autopilot" baseline of the evaluation.
  */
 export function pilotAction(s: ShipState, w: World, cfg: LanderConfig): number {
   const dx = s.x - padCenter(w);

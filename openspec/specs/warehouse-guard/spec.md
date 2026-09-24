@@ -1,7 +1,7 @@
 # warehouse-guard Specification
 
 ## Purpose
-Provides the warehouse guard: a near-free check that rejects a robot's proposed move if it would collide with a cell or swap already claimed this timestep, or enter a dead-end pocket another robot is about to leave through.
+Provides the warehouse guard: a near-free check that rejects a robot's proposed move if it would collide with a cell or swap already claimed this timestep, or step into a dead-end cell that is not the robot's goal.
 
 ## Requirements
 

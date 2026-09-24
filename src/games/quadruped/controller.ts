@@ -1,8 +1,8 @@
 /**
- * Hand-written base controller: a trot gait generator (a phase oscillator with diagonal leg pairs
- * half a cycle apart, a simple central-pattern-generator scheme; Ijspeert 2008), Raibert-style foot
- * placement for balance (Raibert 1986), and position control of the legs through per-leg inverse
- * kinematics. Stance feet sweep backwards relative to their hips at the commanded speed (the legs
+ * Hand-written base controller: a trot timing generator (an open-loop phase clock with diagonal leg
+ * pairs half a cycle apart; simpler than the coupled-oscillator central pattern generators reviewed by
+ * Ijspeert 2008), Raibert-style foot placement for balance (Raibert 1986), and position control of the
+ * legs through per-leg inverse kinematics. Stance feet sweep backwards relative to their hips at the commanded speed (the legs
  * servo the body along), swing feet land at the Raibert touchdown point, and every hip is held at
  * the nominal height above its foot, which levels the trunk. The action modulates the controller
  * (Iscen et al. 2018): a = 0 is the base controller.

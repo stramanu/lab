@@ -1,6 +1,11 @@
 import type { TrainData } from '../nn/train';
 
-/** FNV-1a hash of the encoding quantized to bytes (values expected in [0, 1]). */
+/**
+ * FNV-1a hash of the encoding, each value clamped to [0, 1] and quantized to 1/255. Encodings with values
+ * outside [0, 1] (lander, warehouse) can collide, so distinct states may be rejected as duplicates:
+ * measured on planner-driven training episodes, 0.3% of Snake states, 0.1% of lander states and 4.9% of
+ * warehouse states. Kept as is so that the published studies stay reproducible (EXPERIMENTS.md, decision 33).
+ */
 export function hashEncoding(x: ArrayLike<number>): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < x.length; i++) {

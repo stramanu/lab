@@ -118,7 +118,8 @@ interface IterationStats {
 }
 
 /**
- * Three-phase training (bootstrap imitation, DAgger-style escalation loop,
+ * Three-phase training (bootstrap imitation; an escalation loop in which the
+ * teacher labels only the states it is asked about, escalated or audited, as in SafeDAgger;
  * consolidation). Phases are exposed as methods so a Web Worker can drive
  * them step by step; `run()` executes them all.
  */

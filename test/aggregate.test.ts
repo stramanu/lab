@@ -60,6 +60,21 @@ describe('aggregateRuns', () => {
     expect(agg.hypotheses.find((h) => h.id === 'H1')!.confirmed).toBe(true);
   });
 
+  it('judges H4 on the runs where System One acted above the threshold, and says so', () => {
+    const withAgreement = (agreement: number | null) => {
+      const r = run(95, 50);
+      r.conditions[2] = cond('hybrid maxProb@0.9', 'hybrid', { threshold: 0.9, confidence: 'maxProb' }, 95, 50, agreement);
+      return r;
+    };
+    const agg = aggregateRuns([withAgreement(0.8), withAgreement(null), withAgreement(0.9), withAgreement(null), withAgreement(0.85)], { referenceLevel: 1 });
+    const h4 = agg.hypotheses.find((h) => h.id === 'H4')!;
+    expect(h4.details.agreement).toBeCloseTo(0.85, 10);
+    expect(h4.measured).toContain('mean of the 3 runs where System One acted');
+    expect(h4.measured).not.toContain('never acted at threshold');
+    expect(h4.confirmed).toBe(false);
+    expect(h4.runsConfirmed).toBe('0/5');
+  });
+
   it('rejects runs with different conditions', () => {
     const a = run(95, 50);
     const b = { ...run(95, 50), conditions: run(95, 50).conditions.slice(0, 2) };

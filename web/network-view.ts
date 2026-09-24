@@ -32,7 +32,7 @@ const LAYER_X = [-4.2, -1.4, 1.4, 4.2];
 
 /**
  * 3D view of System One's live forward pass: input layout per game, hidden
- * layers as 8×8 grids lit by their activations, outputs sized by probability,
+ * layers as square grids lit by their activations, outputs sized by probability,
  * and only the connections with the largest |weight × activation|.
  */
 export class NetworkView {

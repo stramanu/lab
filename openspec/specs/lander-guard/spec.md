@@ -1,7 +1,7 @@
 # lander-guard Specification
 
 ## Purpose
-Provides the lander's cheap safety check on the action proposed by System One: a single short rollout that rejects actions leading to a crash within a fraction of a second, so the hybrid escalates where a confident mistake would be fatal.
+Provides the lander's cheap safety check on the action proposed by System One: a single short rollout that rejects actions leading to a crash within about one second, so the hybrid escalates where a confident mistake would be fatal.
 
 ## Requirements
 

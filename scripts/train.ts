@@ -1,6 +1,6 @@
 /**
  * Offline training in Node for any registered game.
- * Usage: pnpm train --game snake|lander [--out artifacts/<game>] [--seed 1] [--iterations 30]
+ * Usage: pnpm train --game <snake|lander|warehouse|racing|quadruped> [--out artifacts/<game>] [--seed 1] [--iterations 30]
  *        [--tau T] [--threshold 0.9] [--audit 0.02] [--retrain-every 2000] [--bootstrap-episodes K]
  *        [--level L] [--confidence maxProb|margin] [--capacity 100000] [--no-guard]
  * Package aliases: pnpm train:snake, pnpm train:lander.

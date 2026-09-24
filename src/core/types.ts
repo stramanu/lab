@@ -1,6 +1,9 @@
 /**
- * Game-agnostic common contract (inspired by Jev / Rizzo Flow).
- * The same pipeline serves Snake and later games: only the Env changes.
+  * Game-agnostic contracts shared by every game: environment, teacher (System Two), student (System One),
+ * guard and player. A decision is a choice with a probability per action and a confidence, the same
+ * shape as the answers of Jev-style "System One" models (see docs/systemone.md, "Where the idea came
+ * from"); the pipeline, hybrid and evaluation work on these types, so a new game adds its Env, Teacher
+ * and Guard and a registry entry.
  */
 
 export interface StepResult {

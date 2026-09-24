@@ -1,7 +1,7 @@
 # training-pipeline Specification
 
 ## Purpose
-Defines the three-phase training protocol (imitation, DAgger-style escalation, consolidation) that compiles the teacher's slow reasoning into the micro-network's intuition, with logs that become the demo's curves.
+Defines the three-phase training protocol (imitation, an escalation loop in which the teacher labels only the states it is queried on, consolidation) that compiles the teacher's slow reasoning into the micro-network's intuition, with logs that become the demo's curves.
 
 ## Requirements
 

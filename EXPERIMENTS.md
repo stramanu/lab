@@ -48,15 +48,19 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 27 | Quadruped feasibility spike v1 (criteria fixed in the proposal) | `pnpm exp quadruped-feasibility`: determinism ✓; base controller 0/20 falls at 0.35 m/s ✓; J = 8 N·s (base falls on 20%); planner falls 4/20 like the base (✗) while covering ×1.79 the distance; 178 ms per decision ✓; agreement 31.2% (✗); AUROC 0.61 (✗). The base action is only 34% of the planner's labels | dev | No | Stopped and reported to the author |
 | 28 | Quadruped: declared planner revision before spike v2 (author's choice after v1). Stability term, k = 0.4 m / (π/3) rad (reaching the fall limit costs one second of base walking); satisficing margin = the base gait's 1 s variability | `pnpm exp quadruped-margin`: 5.7 mm (smaller than v1's 1 cm, so candidate differences are real, not noise). Rules fixed in design.md before any v2 measurement | dev | No | `add-quadruped-locomotion` design ("Revision after spike v1") |
 | 29 | Quadruped feasibility spike v2 (revised planner, same criteria and seeds) | `pnpm exp quadruped-feasibility`: criteria 1, 2 ✓; planner falls 1/20 vs 4/20 for the base controller, ×1.63 distance ✓; 185 ms ✓; agreement 60.2% (✗, v1 31.2%); AUROC 0.65 (✗, v1 0.61). The base action is now 56% of the labels (v1 34%) | dev | No | Stopped, as fixed before v2: no System One study |
-| 30 | Quadruped: EXPLORATORY follow-up (post hoc, not pre-registered; the spike verdict stands). Does System One drive well although it imitates poorly? 10× the spike data on all cores, two sizes (5 × 64×64, 5 × 256×256), the ensemble driving alone with pushes on 20 dev seeds | Author's question after spike v2; designed before any full-scale measurement (a 4-seed smoke test only checked the pipeline) | dev | No | `pnpm exp quadruped-exploratory` |
+| 30 | Quadruped: EXPLORATORY follow-up (post hoc, not pre-registered; the spike verdict stands). Does System One drive well although it imitates poorly? 10× the spike's planner-driven episodes (about 8× its states) on all cores, two sizes (5 × 64×64, 5 × 256×256), the ensemble driving alone with pushes on 20 dev seeds | Author's question after spike v2; designed before any full-scale measurement (a 4-seed smoke test only checked the pipeline) | dev | No | `pnpm exp quadruped-exploratory` |
 | 31 | Quadruped: run the standard 5-run test study (author's choice after decision 30), with H1–H4 unchanged; a 5 × 256×256 ensemble; pipeline sized for a 0.18 s planner (400 bootstrap episodes, 5 escalation iterations of ≤ 4,000 moves); parallel bootstrap, identical to sequential; agreement and calibration on every 4th decision | Fixed in design.md ("Study after the exploratory follow-up") before any study measurement | test (final) | No | `add-quadruped-locomotion` |
-| 32 | Random baseline seeded per episode (found by an external code review): the random player drew from one stream across all episodes, so its row depended on episode order and on how seeds were split across workers | `scripts/rerun-random.ts` then re-aggregation from cached files: only the random rows change (snake 0.18 → 0.14, lander 0 → 0, warehouse 1.66 → 1.73, racing 20.6 → 20.9); every other number is bitwise identical. `check-parallel` now includes the random condition | test (final; baseline row only) | No | `tests: parallel-eval`; quadruped study re-aggregated the same way |
+| 32 | Random baseline seeded per episode (found by an external code review): the random player drew from one stream across all episodes, so its row depended on episode order and on how seeds were split across workers | `scripts/rerun-random.ts` then re-aggregation from cached files: only the random rows change (snake 0.18 → 0.14, lander 0 → 0, warehouse 1.66 → 1.73, racing 20.6 → 20.9); every other number is bitwise identical. `check-parallel` now includes the random condition | test (final; baseline row only) | No | `tests: parallel-eval`; the quadruped study, started before the fix, will be re-aggregated the same way |
+| 33 | Dataset deduplication kept as implemented (found by a claims review): the hash clamps each encoding value to [0, 1] and quantizes it to 1/255, so distinct states can be rejected as duplicates | Probe on planner-driven training episodes (seeds 1,000,000+): 0.3% of Snake states (5 episodes), 0.1% of lander states (20), 4.9% of warehouse states (2) are wrongly rejected. Fixing it would change every published Snake, lander and warehouse number; left to the author | train | No | `correct-published-claims` design; documented in `src/training/dataset.ts` |
+| 34 | H4 across runs judged on the runs where System One acted above the threshold (reporting bug found by a claims review: one run without such decisions made the mean undefined, and the report said System One "never acted") | Racing re-aggregated from cached runs: H4 now reads 83.4% agreement in the 3 runs where System One acted at 0.9 (it never did in 2); still not confirmed, 0/5 runs. Every other field unchanged | test (final; report text only) | No | `correct-published-claims`; `test/aggregate.test.ts` |
 
-## Re-validation on the dev split
+## Supporting experiments (dev split)
 
-All five experiments are deterministic: two consecutive runs give identical results, timings excepted.
-The Snake experiments use one reference model per game, trained with the default configuration and
-pipeline seed 1 (`artifacts/experiments/models/`).
+The first five (`snake-deaths` to `lander-acceptability`) re-validate the contaminated decisions 4, 9 and
+10; the others are the feasibility spikes and follow-ups of later games. All are deterministic: two
+consecutive runs give identical results, timings excepted. `snake-deaths` and `snake-guard-ablation` share
+one reference model, trained with the default configuration and pipeline seed 1
+(`artifacts/experiments/models/`).
 
 ### `snake-deaths` (decision 4)
 
@@ -92,7 +96,7 @@ Four encodings, same pipeline (15 escalation iterations, seed 1), 30 dev seeds, 
 | 7×7 + body age, tail, rays | 263 | 21,251 | 45.7 | 83.4 |
 | 11×11 + body age, tail, rays | 623 | 44,291 | 45.1 | 83.0 |
 
-The decision holds. Richer inputs add about 10 points to System One alone and nothing to the hybrid;
+The decision holds. Richer inputs add about 10 points to System One alone and lower the unguarded hybrid (95.3 → 83.0–83.4);
 all variants stay far below the planner's ~380.
 
 ### `lander-imitation` (decision 9)
@@ -154,9 +158,9 @@ Re-runs (the criteria and thresholds never changed):
 | v3 (`racing-feasibility.json`) | incremental steering + τ rule | 100% | 1.198 | 0.58% | 80.5% ✗ |
 
 v3 error breakdown on dev states: "hold vs turn" 13.1 points, pedal 4.9, left vs right 0.1. The planner switches
-action on 38.9% of consecutive decisions and matches the base controller on only 21.1% of them. As on the
-lander, when a continuous control problem is discretized, the planner's choice depends on fine timing that
-a small classifier cannot predict confidently.
+action on 38.9% of consecutive decisions and matches the base controller on only 21.1% of them. Our
+interpretation, as on the lander: when a continuous control problem is discretized, the planner's choice
+depends on fine timing that a small classifier cannot predict confidently.
 
 ### `racing-continuous-feasibility` (decision 17)
 

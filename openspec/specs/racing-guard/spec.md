@@ -1,7 +1,7 @@
 # racing-guard Specification
 
 ## Purpose
-Provides the racing guard: a single short rollout that rejects a proposed action if it would take the car off the track within a fraction of a second, at a small fraction of the planner's cost.
+Provides the racing guard: a single short rollout that rejects a proposed action if it would take the car off the track within about one second, at a small fraction of the planner's cost.
 
 ## Requirements
 

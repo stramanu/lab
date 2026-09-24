@@ -89,7 +89,7 @@ const quadrupedTeacher = (level: number) => new QuadrupedTeacher({ horizon: 5 * 
 /** Declared agreement rule for the quadruped: every action component within 0.25 (half the candidate grid's spacing). */
 export const quadrupedAgrees = (a: ArrayLike<number>, b: ArrayLike<number>) => Array.from(a).every((v, i) => Math.abs(v - b[i]) <= 0.25);
 
-/** Racing planner knob: rollout horizon of 20 decisions per level (2 / 4 / 8 s). */
+/** Racing planner knob: rollout horizon of 20 decisions per level (2 / 4 / 6 s). */
 const racingTeacher = (level: number) => new RacingTeacher({ horizon: 20 * level });
 
 export const GAMES: Record<string, GameDefinition> = {

@@ -15,11 +15,11 @@ recogniser that is invariant to stroke order and direction and compares the inpu
 - **Data**: the 26 uppercase letters of UJI Pen Characters v2 [4] (60 writers, 2 samples per letter,
   stylus on a tablet PC; CC BY 4.0), 3,120 samples. The split is by writer and follows the database's own:
   its 20 "tst" writers are the test set (1,040 letters); of its 40 "trn" writers, 10 are dev and 30 train.
-- **System One**: the same from-scratch MLP (256 → 64 → 64 → 26, 22,298 parameters) on a 16×16 raster of
+- **Network**: the lab's from-scratch MLP (256 → 64 → 64 → 26, 22,298 parameters) on a 16×16 raster of
   the ink, trained for 60 epochs with train-only affine distortions and jitter [6], temperature-scaled on
   dev writers [7]. The raster encoding was chosen over a trajectory encoding on dev by a rule fixed in
   advance; the two were tied (88.7% each, `pnpm exp handwriting-encoding`).
-- **$P** uses all 1,560 training letters as templates, the strongest configuration the same data allows.
+- **$P** uses all 1,560 training letters as templates: the same letters the network is trained on.
 - **Cost**: 2 operations per multiply–accumulate for the MLP, and 5 per point-to-point distance for $P (its
   square root is not counted, which favours $P).
 
@@ -36,11 +36,11 @@ Test writers, 5 training runs (`pnpm hw:study`, about 1 minute; times are wall-c
 | R2: MLP top-1 ≥ $P's − 3 points, at ≥ 100× lower cost | 83.9% vs 83.2%, 1,302× cheaper | **confirmed** | 5/5 runs |
 | R3: ECE after temperature scaling ≤ 0.05 | 0.054 → 0.019 | **confirmed** | 5/5 runs |
 
-The network matches the classic recogniser's first answer for 1/1,300 of its arithmetic, and its confidence is
-well calibrated, but neither reaches 90% on writers they have never seen. Test writers are harder than dev
+The network is as accurate as the classic recogniser on its first answer, for 1/1,300 of the arithmetic, and
+its confidence is well calibrated, but neither reaches 90% on writers they have never seen. Test writers are harder than dev
 writers (88.7% on dev). The network's most frequent mistakes are I read as J (15% of the I's), H as M, R as K,
-A as Q and D as O (7–8% each); $P is better in the top 3 (94.6% vs 92.7%). The in-browser pad adds a
-third caveat: the data was written with a stylus, and a finger writes differently.
+A as Q and D as O (7–8% each); $P is better in the top 3 (94.6% vs 92.7%). On the in-browser pad
+accuracy may be lower still: the data was written with a stylus, and a finger writes differently.
 
 ## Reproduce
 

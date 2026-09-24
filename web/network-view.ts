@@ -3,7 +3,7 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 import type { Mlp } from '../src/nn/mlp';
 import { cssVar } from './charts';
 import type { InputLayout } from './games';
-import { topContributions } from './network-math';
+import { outputContributions, topContributions } from './network-math';
 
 type Three = typeof THREE;
 
@@ -250,7 +250,7 @@ export class NetworkView {
     const groups = [
       { list: topContributions(params, offsets.w1, config.inputSize, n1, input, EDGES.in), from: 0 },
       { list: topContributions(params, offsets.w2, n1, n2, h1, EDGES.h1), from: 1 },
-      { list: topContributions(params, offsets.w3, n2, config.outputSize, h2, EDGES.h2), from: 2 },
+      { list: outputContributions(params, offsets.w3, n2, config.outputSize, h2, frame.probs, frame.chosen, EDGES.h2), from: 2 },
     ];
     const pos = this.edges.geometry.getAttribute('position') as THREE.BufferAttribute;
     const col = this.edges.geometry.getAttribute('color') as THREE.BufferAttribute;

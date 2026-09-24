@@ -344,7 +344,8 @@ One static page, with no backend, for every game in the registry (Snake, lander,
 - **Inside System One**, a 3D view (three.js) of the real forward pass behind the displayed decision.
   Inputs are laid out per game (Snake's 7×7 window, the warehouse's 9×9 window, the lander's and the car's
   labeled values), hidden units are lit by their activations, and only the connections with the largest
-  |weight × activation| are drawn;
+  |weight × activation| are drawn (into the outputs, those into the chosen output and the runner-up, so the
+  view shows why the chosen one won);
 - in-tab training in a Web Worker, where the game picks up each new version of the weights;
 - the cost–quality frontier from the 5-run test study, with 95% intervals;
 - video recording of the board.

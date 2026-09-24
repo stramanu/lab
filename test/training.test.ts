@@ -14,6 +14,16 @@ describe('ReplayDataset', () => {
     expect(d.size).toBe(1);
   });
 
+  it('keeps distinct states whose values lie outside [0, 1] or differ below 1/255', () => {
+    const d = new ReplayDataset(10, 2, 2);
+    expect(d.add(vec(-0.5, 2), [1, 0], [1, 1])).toBe(true);
+    expect(d.add(vec(-0.2, 3), [1, 0], [1, 1])).toBe(true); // both clamp to (0, 1) under a clamped hash
+    expect(d.add(vec(0.5, 0), [1, 0], [1, 1])).toBe(true);
+    expect(d.add(vec(0.501, 0), [1, 0], [1, 1])).toBe(true); // same 1/255 bucket, different state
+    expect(d.add(vec(-0.2, 3), [0, 1], [1, 1])).toBe(false); // exact duplicate
+    expect(d.size).toBe(4);
+  });
+
   it('replaces the oldest examples when full and forgets their hashes', () => {
     const d = new ReplayDataset(3, 2, 2);
     for (let i = 0; i < 3; i++) d.add(vec(i / 10, 0), [1, 0], [1, 1]);

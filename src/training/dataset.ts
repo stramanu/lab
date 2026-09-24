@@ -1,16 +1,13 @@
 import type { TrainData } from '../nn/train';
 
-/**
- * FNV-1a hash of the encoding, each value clamped to [0, 1] and quantized to 1/255. Encodings with values
- * outside [0, 1] (lander, warehouse) can collide, so distinct states may be rejected as duplicates:
- * measured on planner-driven training episodes, 0.3% of Snake states, 0.1% of lander states and 4.9% of
- * warehouse states. Kept as is so that the published studies stay reproducible (EXPERIMENTS.md, decision 33).
- */
+/** FNV-1a hash of the encoding's float32 bit patterns: equal encodings give equal hashes. */
 export function hashEncoding(x: ArrayLike<number>): number {
+  const f = new Float32Array(1);
+  const bits = new Uint32Array(f.buffer);
   let h = 0x811c9dc5;
   for (let i = 0; i < x.length; i++) {
-    const q = Math.max(0, Math.min(255, Math.round(x[i] * 255)));
-    h ^= q;
+    f[0] = x[i];
+    h ^= bits[0];
     h = Math.imul(h, 0x01000193) >>> 0;
   }
   return h >>> 0;
@@ -18,14 +15,15 @@ export function hashEncoding(x: ArrayLike<number>): number {
 
 /**
  * Fixed-capacity ring buffer of labeled states. When full, the oldest example
- * is overwritten. States whose encoding hash is already present are rejected.
+ * is overwritten. A state is rejected only if an identical encoding (as float32) is already present;
+ * the hash only narrows the comparison.
  */
 export class ReplayDataset implements TrainData {
   private xs: Float32Array;
   private ys: Float32Array;
   private masks: Uint8Array;
   private hashes: Uint32Array;
-  private index = new Map<number, number>();
+  private index = new Map<number, number[]>();
   private count = 0;
   private writePtr = 0;
 
@@ -47,11 +45,13 @@ export class ReplayDataset implements TrainData {
   /** Adds an example; returns false if it was a duplicate. */
   add(x: ArrayLike<number>, y: ArrayLike<number>, legal: ArrayLike<number | boolean>): boolean {
     const h = hashEncoding(x);
-    if (this.index.has(h)) return false;
+    if (this.find(x, h) >= 0) return false;
     const slot = this.writePtr;
     if (this.count === this.capacity) {
       const old = this.hashes[slot];
-      if (this.index.get(old) === slot) this.index.delete(old);
+      const slots = this.index.get(old)!;
+      slots.splice(slots.indexOf(slot), 1);
+      if (!slots.length) this.index.delete(old);
     } else {
       this.count++;
     }
@@ -61,13 +61,27 @@ export class ReplayDataset implements TrainData {
       this.masks[slot * this.numActions + a] = legal[a] ? 1 : 0;
     }
     this.hashes[slot] = h;
-    this.index.set(h, slot);
+    const slots = this.index.get(h);
+    if (slots) slots.push(slot);
+    else this.index.set(h, [slot]);
     this.writePtr = (slot + 1) % this.capacity;
     return true;
   }
 
   has(x: ArrayLike<number>): boolean {
-    return this.index.has(hashEncoding(x));
+    return this.find(x, hashEncoding(x)) >= 0;
+  }
+
+  /** Slot holding an encoding identical to `x` (compared as float32), or −1. */
+  private find(x: ArrayLike<number>, h: number): number {
+    const slots = this.index.get(h);
+    if (!slots) return -1;
+    for (const slot of slots) {
+      let same = true;
+      for (let i = 0; i < this.inputSize && same; i++) same = this.xs[slot * this.inputSize + i] === Math.fround(x[i]);
+      if (same) return slot;
+    }
+    return -1;
   }
 
   x(i: number): Float32Array {

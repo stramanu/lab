@@ -39,10 +39,12 @@ teacher; the network is the student with a sensor.
 - **Environment:** the current quadruped with the calibrated terrain (hills up to 16°, 1 branch per
   metre), unchanged. The sensor is added to the encoding. Proprioception stays, so the blind network is
   the ablation.
-- **Sensor, level 1 (this lab, from scratch):** a height scan, i.e. vertical rays around the trunk, on a
-  small grid in the trunk's yaw frame (for example 11 × 7 points, 10 cm apart, from 0.2 m behind to
-  0.8 m ahead). Values are heights relative to the trunk, with optional noise and dropout.
-  - Rapier ray casts are cheap and deterministic.
+- **Sensor, level 1 (this lab, from scratch; implemented, change `add-quadruped-height-scan`):** a height
+  scan on a grid in the trunk's heading frame: 11 × 7 points, 10 cm apart, from 0.2 m behind to 0.8 m
+  ahead. Values are ground heights relative to the trunk.
+  - It reads the terrain's analytic surface, which matches vertical ray casts on the physics ground within
+    1 cm (terrain tests), so it is exact, deterministic and cheap.
+  - Noise and dropout are a later, declared question.
   - Same seeds, same pushes, same planner.
 - **Sensor, level 2 (the lab's "applied" side, later and optional):** a low-resolution depth image
   (for example 32 × 24) rendered on a GPU. It needs a renderer, and possibly MuJoCo Playground on Colab
@@ -52,6 +54,10 @@ teacher; the network is the student with a sensor.
   over the scan is an option, with the MLP as the baseline.
 - **Training:** the existing continuous pipeline on varied terrain: planner-labelled bootstrap, then the
   escalation loop. The terrain study's fine-tuning results are the blind baseline.
+  - The scan adds input units, so the published weights cannot be reused as they are.
+  - A full study could start from them anyway, as in Net2Net (Chen et al. 2016): copy the weights of the
+    46 proprioceptive inputs and set those of the new scan inputs to zero, so that training starts
+    exactly from the blind network and learns to use the scan.
 - **Page:** the scan points drawn around the robot in the 3D view, coloured by height, and a "sensor
   off" switch to watch the blind network.
 

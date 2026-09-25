@@ -1,0 +1,206 @@
+{
+  "name": "quadruped-height-scan",
+  "createdAt": "2026-09-25T15:20:30.287Z",
+  "claim": "Exploratory spike: a height scan lets the quadruped System One imitate and drive better on terrain than a blind one trained on the same planner data; modular against single network.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10041
+  ],
+  "config": {
+    "J": 8,
+    "dataEpisodes": 6,
+    "calibrationEpisodes": 2,
+    "epochs": 1,
+    "hidden": [
+      256,
+      256
+    ],
+    "terrains": [
+      "flat",
+      "hills",
+      "mixed"
+    ],
+    "smoke": true
+  },
+  "results": {
+    "cost": {
+      "blindMs": 1.5470288200000002,
+      "scanMs": 1.559475,
+      "overhead": 0.008045215343822631
+    },
+    "planner": {
+      "flat": {
+        "distance": 8.1834077835083,
+        "falls": 1
+      },
+      "hills": {
+        "distance": 9.389090538024902,
+        "falls": 0
+      },
+      "mixed": {
+        "distance": 9.145403385162354,
+        "falls": 0
+      }
+    },
+    "networks": {
+      "blind": {
+        "params": 394260,
+        "perTerrain": {
+          "flat": {
+            "agreement": 0.685,
+            "auroc": 0.6049704553354188,
+            "meanConfidence": 0.6114999999999996,
+            "alone": {
+              "distance": 4.884456038475037,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.5968731080856667
+          },
+          "hills": {
+            "agreement": 0.595,
+            "auroc": 0.607583774250441,
+            "meanConfidence": 0.6056249999999999,
+            "alone": {
+              "distance": 5.529189825057983,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.5888951440680333
+          },
+          "mixed": {
+            "agreement": 0.545,
+            "auroc": 0.535437040024196,
+            "meanConfidence": 0.5872499999999994,
+            "alone": {
+              "distance": 3.8340660333633423,
+              "falls": 2
+            },
+            "aloneVsPlanner": 0.4192342176599658
+          }
+        }
+      },
+      "single": {
+        "params": 492820,
+        "perTerrain": {
+          "flat": {
+            "agreement": 0.65,
+            "auroc": 0.6234065934065934,
+            "meanConfidence": 0.571250000000001,
+            "alone": {
+              "distance": 6.387907266616821,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.7805925643214455
+          },
+          "hills": {
+            "agreement": 0.575,
+            "auroc": 0.611918158567775,
+            "meanConfidence": 0.4970000000000014,
+            "alone": {
+              "distance": 3.8657002449035645,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.4117225442920009
+          },
+          "mixed": {
+            "agreement": 0.54,
+            "auroc": 0.6161433172302737,
+            "meanConfidence": 0.47400000000000114,
+            "alone": {
+              "distance": 3.7495290637016296,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.40999056091773106
+          }
+        }
+      },
+      "modular": {
+        "params": 494020,
+        "perTerrain": {
+          "flat": {
+            "agreement": 0.675,
+            "auroc": 0.6282051282051282,
+            "meanConfidence": 0.6085000000000004,
+            "alone": {
+              "distance": 4.926279067993164,
+              "falls": 1
+            },
+            "aloneVsPlanner": 0.601983818760798
+          },
+          "hills": {
+            "agreement": 0.58,
+            "auroc": 0.6217672413793104,
+            "meanConfidence": 0.5841249999999998,
+            "alone": {
+              "distance": 1.9884339570999146,
+              "falls": 2
+            },
+            "aloneVsPlanner": 0.21178131673637085
+          },
+          "mixed": {
+            "agreement": 0.535,
+            "auroc": 0.6270224098080595,
+            "meanConfidence": 0.5732499999999996,
+            "alone": {
+              "distance": 2.8767160177230835,
+              "falls": 2
+            },
+            "aloneVsPlanner": 0.31455321286213717
+          }
+        }
+      }
+    },
+    "criteria": {
+      "C1": {
+        "measured": 0.008045215343822631,
+        "pass": true
+      },
+      "modular": {
+        "C3": {
+          "measured": {
+            "hills": -0.015000000000000013,
+            "mixed": -0.010000000000000009
+          },
+          "pass": false
+        },
+        "C4": {
+          "measured": 0.21178131673637085,
+          "pass": false
+        },
+        "C5": {
+          "measured": 1.008562474344878,
+          "pass": true
+        }
+      },
+      "single": {
+        "C3": {
+          "measured": {
+            "hills": -0.020000000000000018,
+            "mixed": -0.0050000000000000044
+          },
+          "pass": false
+        },
+        "C4": {
+          "measured": 0.4117225442920009,
+          "pass": false
+        },
+        "C5": {
+          "measured": 1.3078032059863054,
+          "pass": true
+        }
+      },
+      "C6": {
+        "hills": {
+          "agreement": 0.0050000000000000044,
+          "aloneVsPlanner": -0.19994122755563004
+        },
+        "mixed": {
+          "agreement": -0.0050000000000000044,
+          "aloneVsPlanner": -0.0954373480555939
+        }
+      }
+    },
+    "trainingStates": 1200
+  }
+}

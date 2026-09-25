@@ -1,6 +1,6 @@
 {
   "name": "snake-inputs",
-  "createdAt": "2026-09-23T19:18:50.404Z",
+  "createdAt": "2026-09-25T04:16:12.434Z",
   "claim": "Richer inputs (11×11 window, body age, tail direction, obstacle rays) change System One alone only marginally.",
   "split": "dev",
   "seeds": [
@@ -45,30 +45,30 @@
     "window7": {
       "inputs": 201,
       "params": 17283,
-      "system1Score": 35.666666666666664,
-      "hybrid09Score": 95.33333333333333,
-      "hybrid09Escalation": 0.1595345618763202
+      "system1Score": 37.13333333333333,
+      "hybrid09Score": 85.26666666666667,
+      "hybrid09Escalation": 0.15094379865628665
     },
     "window11": {
       "inputs": 489,
       "params": 35715,
-      "system1Score": 36.233333333333334,
-      "hybrid09Score": 82.96666666666667,
-      "hybrid09Escalation": 0.21694237815032752
+      "system1Score": 37.96666666666667,
+      "hybrid09Score": 83.46666666666667,
+      "hybrid09Escalation": 0.2119062642790313
     },
     "window7+extras": {
       "inputs": 263,
       "params": 21251,
-      "system1Score": 45.733333333333334,
-      "hybrid09Score": 83.4,
-      "hybrid09Escalation": 0.15421330879047965
+      "system1Score": 44.06666666666667,
+      "hybrid09Score": 98.06666666666666,
+      "hybrid09Escalation": 0.17629482071713148
     },
     "window11+extras": {
       "inputs": 623,
       "params": 44291,
-      "system1Score": 45.06666666666667,
-      "hybrid09Score": 83.03333333333333,
-      "hybrid09Escalation": 0.15664436161135312
+      "system1Score": 42.233333333333334,
+      "hybrid09Score": 80.83333333333333,
+      "hybrid09Escalation": 0.2246193477160863
     }
   }
 }

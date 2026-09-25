@@ -390,7 +390,7 @@ async function selectGame(name: string): Promise<void> {
   training.reset(
     game.scoreMax,
     game.def.name === 'quadruped'
-      ? 'Training this game takes hours (every planner decision simulates 21 futures in the physics engine), so it is done offline; the trained model will be published when the study ends.'
+      ? 'Training this game takes hours (every planner decision simulates 21 futures in the physics engine), so it is done offline; load the pretrained model instead.'
       : null,
   );
   setUntrained();

@@ -1,6 +1,6 @@
 {
   "name": "snake-guard-ablation",
-  "createdAt": "2026-09-23T19:06:33.849Z",
+  "createdAt": "2026-09-25T04:09:47.999Z",
   "claim": "With the same model, adding the guard turns a failing hybrid into one that plays near the planner at a fraction of its cost.",
   "split": "dev",
   "seeds": [
@@ -65,46 +65,46 @@
       "costPerMove": 1029.0632946591975
     },
     "no-guard@0.7": {
-      "score": 65.82,
-      "ci95": 5.543629482568257,
-      "costPerMove": 336.23928235796666,
-      "escalationRate": 0.05353267834258864,
+      "score": 58.58,
+      "ci95": 5.678159758231534,
+      "costPerMove": 412.01172380492517,
+      "escalationRate": 0.06545630130371802,
       "guardEscalation": 0
     },
     "no-guard@0.9": {
-      "score": 87.2,
-      "ci95": 7.736922385548404,
-      "costPerMove": 850.4696286181082,
-      "escalationRate": 0.16089151161940063,
+      "score": 95.24,
+      "ci95": 8.774068848601543,
+      "costPerMove": 984.7391628747675,
+      "escalationRate": 0.19721728895848,
       "guardEscalation": 0
     },
     "no-guard@0.95": {
-      "score": 118.58,
-      "ci95": 10.957998094542633,
-      "costPerMove": 1345.8145732676783,
-      "escalationRate": 0.2941975518268682,
+      "score": 129.36,
+      "ci95": 10.284314238684072,
+      "costPerMove": 1610.7981558140639,
+      "escalationRate": 0.3601718168822282,
       "guardEscalation": 0
     },
     "guard@0": {
-      "score": 318.06,
-      "ci95": 26.520385022846103,
-      "costPerMove": 51.17356231928594,
-      "escalationRate": 0.01417676204311396,
-      "guardEscalation": 0.01417676204311396
+      "score": 184.86,
+      "ci95": 27.01917362466883,
+      "costPerMove": 80.07616974257112,
+      "escalationRate": 0.010236206662194219,
+      "guardEscalation": 0.010236206662194219
     },
     "guard@0.7": {
-      "score": 372.66,
-      "ci95": 7.27991599951538,
-      "costPerMove": 106.98396762428933,
-      "escalationRate": 0.0415328313648235,
-      "guardEscalation": 0.007453135925139707
+      "score": 379.86,
+      "ci95": 6.089085264635403,
+      "costPerMove": 117.4829459996673,
+      "escalationRate": 0.048384551929465315,
+      "guardEscalation": 0.007506572753044561
     },
     "guard@0.9": {
-      "score": 378.58,
-      "ci95": 6.826280556789327,
-      "costPerMove": 245.9906926560464,
-      "escalationRate": 0.1522168876211952,
-      "guardEscalation": 0.0026889749228121394
+      "score": 375.2,
+      "ci95": 7.846197550406186,
+      "costPerMove": 288.37599297540146,
+      "escalationRate": 0.16322817797562625,
+      "guardEscalation": 0.002238229923603665
     }
   }
 }

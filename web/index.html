@@ -64,11 +64,11 @@
           new training example. The same pipeline runs on five very different problems.
         </p>
         <ul class="findings">
-          <li><b>Snake</b> With a cheap safety check, the hybrid reaches 93–98% of the planner's score for 9–18× less compute.</li>
+          <li><b>Snake</b> With a cheap safety check, the hybrid reaches 98% of the planner's score for 8.8× less compute, just short of the 10× target.</li>
           <li><b>Lander</b> A hand-written autopilot beats the network at the same cost: sometimes a rule is enough.</li>
-          <li><b>Warehouse</b> 16 robots: at about the same compute, the hybrid delivers 93.6 loads where the planner with a shorter search window delivers 60.1; the 10× target is missed.</li>
+          <li><b>Warehouse</b> 16 robots: with less compute than the planner's cheaper setting, the hybrid delivers 89.4 loads against 60.1; the 10× target is missed.</li>
           <li><b>Racing</b> The network alone drives 99.9% as far as the planner, for 1,164× less compute.</li>
-          <li><b>Quadruped</b> Preview: a 3D walking robot you can push. Its feasibility test stopped the experiment (the network matched the planner on 60% of states, the target was 85%); in an exploratory run with more data, a larger network walked 93% as far as the planner. The network is now in training for the final study.</li>
+          <li><b>Quadruped</b> A 3D walking robot you can push. With its safety check, the network walks 91% as far as the planner for 82× less compute, while agreeing with it on only 41% of decisions.</li>
         </ul>
         <a class="experiment-link" href="./systemone/">Open the experiment →</a>
       </article>

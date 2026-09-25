@@ -15,16 +15,18 @@ are published like positive ones.
 | 01 | **System One / System Two.** Can a tiny network, trained by a slow planner, make most decisions at a fraction of the planner's cost, and know when to hand control back? Five environments: Snake, lander, warehouse, racing, quadruped. | [docs/systemone.md](docs/systemone.md) | [/systemone/](https://lab.emanuelestrazzullo.dev/systemone/) |
 | 02 | **Handwriting pad.** Can a 22k-parameter network read handwritten letters as well as a classic recogniser that compares each letter with every stored example? | [docs/handwriting.md](docs/handwriting.md) | [/handwriting/](https://lab.emanuelestrazzullo.dev/handwriting/) |
 
-Headline results (test data, mean of 5 training runs):
+Headline results (test data, mean of 5 training runs). The Snake, lander and warehouse studies were re-run
+after a bug fix in the training data; the corrected numbers are below, and the change is documented in the
+write-up.
 
-- **Snake**: with a cheap safety check, the hybrid reaches 93–98% of the planner's score for 9–18× less compute.
+- **Snake**: with a cheap safety check, the hybrid reaches 98% of the planner's score for 8.8× less compute,
+  just short of the 10× target; more aggressive settings are cheaper but depend on the training run.
 - **Lander**: a hand-written autopilot beats the network at the same cost.
-- **Warehouse**: at about the same compute (129 vs 115 units per move), the hybrid delivers 93.6 loads where
-  the planner with a shorter search window delivers 60.1; the pre-registered 10× target is missed.
+- **Warehouse**: with less compute than the planner's cheaper setting (95 vs 115 units per move), the hybrid
+  delivers 89.4 loads against 60.1; the pre-registered 10× target is missed.
 - **Racing**: the network alone drives 99.9% as far as the planner for 1,164× less compute.
-- **Quadruped**: stopped at its feasibility test (imitation 60%, target 85%). An exploratory follow-up
-  (one run, development seeds) found that a larger network walks 93% as far as the planner; a 5-run test
-  study is running.
+- **Quadruped**: the network with its safety check walks 91% as far as the planner for 82× less compute,
+  although it agrees with the planner on only 41% of decisions.
 - **Handwriting**: 83.9% of letters right on 20 unseen writers, against 83.2% for the classic recogniser,
   for 1,302× less arithmetic; the 90% target is missed.
 

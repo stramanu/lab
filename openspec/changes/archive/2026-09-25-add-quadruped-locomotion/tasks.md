@@ -12,11 +12,11 @@
 
 ## 3. Feasibility spike (go/no-go)
 
-- [ ] 3.1 Write and run `experiments/quadruped-feasibility.ts` (criteria 1–6 on dev seeds, in the order of design.md); record the tuning and the result in EXPERIMENTS.md. If any criterion fails, stop and report to the user
+- [x] 3.1 Write and run `experiments/quadruped-feasibility.ts` (criteria 1–6 on dev seeds, in the order of design.md); record the tuning and the result in EXPERIMENTS.md. If any criterion fails, stop and report to the user
 
 ## 4. Integration (only if the spike passes)
 
-- [ ] 4.1 Register the game (continuous spec, levels 1/2/3, reference 2, guard, agreement rule); verify `pnpm train --game quadruped` and a 3-seed dev eval
-- [ ] 4.2 Run the 5-run test study with parallel evaluation; verify the JSON
-- [ ] 4.3 Add `web/quadruped-view.ts` (three.js, lazy Rapier), the demo entry and demo data; verify in the browser (Playwright) on desktop and at 375px
-- [ ] 4.4 README quadruped section and references (Raibert 1986, Ijspeert 2008, Iscen et al. 2018, Di Carlo et al. 2018, Tassa et al. 2012, Howell et al. 2022, Carius et al. 2020, Lee et al. 2020, Hwangbo et al. 2019, Rapier), EXPERIMENTS.md; typecheck, tests, strict validation; archive, commit, redeploy
+- [x] 4.1 Register the game (continuous spec, levels 1/2/3, reference 2, guard, agreement rule); verify `pnpm train --game quadruped` and a 3-seed dev eval
+- [x] 4.2 Run the 5-run test study with parallel evaluation; verify the JSON
+- [x] 4.3 Add `web/quadruped-view.ts` (three.js, lazy Rapier), the demo entry and demo data; verify in the browser (Playwright) on desktop and at 375px
+- [x] 4.4 README quadruped section and references (Raibert 1986, Ijspeert 2008, Iscen et al. 2018, Di Carlo et al. 2018, Tassa et al. 2012, Howell et al. 2022, Carius et al. 2020, Lee et al. 2020, Hwangbo et al. 2019, Rapier), EXPERIMENTS.md; typecheck, tests, strict validation; archive, commit, redeploy

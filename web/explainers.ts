@@ -32,7 +32,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
     planner:
       'Simulates each move and scores it by safety (can the snake still reach its own tail afterwards?), progress towards the food along a shortest path, and the free area it can reach, with one step of lookahead. Cost: the cells its searches explore, about 1,000 per move.',
     guard: 'Plays the proposed move once and rejects it if the snake dies or can no longer reach its tail: a fragment of the planner run on a single move, a few dozen units.',
-    result: 'Alone, the network reaches only 9% of the planner (a 7×7 window cannot see traps across the board). With the guard, the hybrid reaches 93–98% of the planner for 9–18× less compute. Its confidence is well calibrated (ECE 0.009).',
+    result: 'Alone, the network reaches only 9% of the planner (a 7×7 window cannot see traps across the board). With the guard and a threshold of 0.7, the hybrid reaches 98% of the planner for 8.8× less compute; lower thresholds are cheaper but depend on the training run. Its confidence is well calibrated (ECE 0.008).',
   },
   lander: {
     what: 'A 2D lander with gravity, wind, limited fuel and rough terrain must touch down gently on the pad. Score = 100 + 50 × the fuel left on a safe landing, 0 otherwise.',
@@ -50,7 +50,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
     planner:
       'A rollout algorithm: for each first action (and short sequences of held actions) it lets a hand-written autopilot fly the rest of the descent in simulation, and keeps the best outcome. Because its simulation is exact and the autopilot\'s own choice is always a candidate, it lands whenever the autopilot would. Cost: physics steps simulated.',
     guard: 'Plays the proposed action for one decision, then a recovery policy for ten; rejects it if that ends in a crash or out of bounds.',
-    result: 'The network reaches 85% of the planner, but the hand-written autopilot scores higher at the same cost: sometimes a rule is enough. The autopilot alternates engine on and off, so many actions are equivalent, which caps what imitation can learn.',
+    result: 'The network reaches 83% of the planner, but the hand-written autopilot scores higher at the same cost: sometimes a rule is enough. The autopilot alternates engine on and off, so many actions are equivalent, which caps what imitation can learn.',
   },
   warehouse: {
     what: '16 robots carry loads between shelves and stations on a 32×20 grid for 300 timesteps. Robots decide one at a time, in a rotating order. Score = deliveries.',
@@ -65,7 +65,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
       'Cooperative space-time search: it predicts where the other robots will be over the next 8 timesteps, then searches a time-expanded map for the best path from each possible move of the deciding robot. Cost: nodes expanded, about 530 per move.',
     guard: 'Rejects a move into a shelf, into a cell another robot has claimed, a swap with another robot, or a step into a dead end that is not the goal.',
     result:
-      'Alone, the network reaches 37% of the planner. The hybrid reaches 88% for 4.1× less compute, missing the 10× target, but at about the same compute it beats the planner with a shorter search window: 93.6 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018).',
+      'Alone, the network reaches 40% of the planner. The hybrid reaches 91% for 4.0× less compute, missing the 10× target, but with less compute than the planner with a shorter search window it delivers far more: 89.4 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018).',
   },
   racing: {
     what: 'A car on a procedural closed track, with a grip limit: take the corners too fast and it leaves the track. Score = metres of track covered in 60 s.',
@@ -99,11 +99,11 @@ export const EXPLAINERS: Record<string, Explainer> = {
       { count: 4, name: 'Last action', detail: 'The 4 modulations applied in the previous decision.' },
     ],
     outputs:
-      '4 continuous modulations of a hand-written trot: forward and sideways foot placement, body height and step frequency (0 leaves the trot unchanged). As in racing, System One would be an ensemble of 5 networks.',
+      '4 continuous modulations of a hand-written trot: forward and sideways foot placement, body height and step frequency (0 leaves the trot unchanged). As in racing, System One is an ensemble of 5 networks: the robot follows their mean, and their disagreement sets the confidence.',
     planner:
       'From a snapshot of the physics, it tries 21 modulations for 0.1 s, each followed by the hand-written trot, 1 s per rollout in total, and scores the metres gained minus a penalty for tilting (and a large one for falling). It does not see future pushes. Cost: physics steps, about 4,100 per move.',
     guard: 'Plays the proposed modulation for 0.1 s, then the plain trot for 0.1 s; rejects it if the robot would fall or tilt beyond 45°.',
     result:
-      'In progress. Its feasibility test stopped the experiment: the planner falls on 1 run in 20 where the hand-written trot falls on 4, but the network matched the planner on only 60% of states (the target was 85%). In one exploratory run on development seeds, with about 8× the data, a larger network (5 × 256×256) walked 93% as far as the planner and fell as rarely (1 run in 20 for both). That network is now in training for the 5-run study; until it is published, the planner decides every move on this page.',
+      'Alone, the network walks 88% as far as the planner for 1/820 of the compute, and falls less often than the hand-written trot (12–23 against 67 falls in 200 runs). With the guard, it walks 91% as far as the planner with about as few falls, for 82× less compute. It agrees with the planner on only 41% of decisions, because several modulations are about equally good, and its confidence is poorly calibrated when it acts alone (ECE 0.23). The experiment went ahead after failing its feasibility test (60% imitation, target 85%), and says so.',
   },
 };

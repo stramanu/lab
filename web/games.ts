@@ -106,7 +106,6 @@ export const DEMO_GAMES: DemoGame[] = [
     },
     scoreMax: 14,
     scoreLabel: (env) => `${env.score().toFixed(1)} m`,
-    preview: 'Preview: the neural network is still in training (5-run study in progress). Until it is published, the planner decides every move. You can already push the robot.',
   },
 ];
 

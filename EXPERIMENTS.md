@@ -51,8 +51,10 @@ Design notes for every change live in `openspec/changes/archive/<date>-<change>/
 | 30 | Quadruped: EXPLORATORY follow-up (post hoc, not pre-registered; the spike verdict stands). Does System One drive well although it imitates poorly? 10× the spike's planner-driven episodes (about 8× its states) on all cores, two sizes (5 × 64×64, 5 × 256×256), the ensemble driving alone with pushes on 20 dev seeds | Author's question after spike v2; designed before any full-scale measurement (a 4-seed smoke test only checked the pipeline) | dev | No | `pnpm exp quadruped-exploratory` |
 | 31 | Quadruped: run the standard 5-run test study (author's choice after decision 30), with H1–H4 unchanged; a 5 × 256×256 ensemble; pipeline sized for a 0.18 s planner (400 bootstrap episodes, 5 escalation iterations of ≤ 4,000 moves); parallel bootstrap, identical to sequential; agreement and calibration on every 4th decision | Fixed in design.md ("Study after the exploratory follow-up") before any study measurement | test (final) | No | `add-quadruped-locomotion` |
 | 32 | Random baseline seeded per episode (found by an external code review): the random player drew from one stream across all episodes, so its row depended on episode order and on how seeds were split across workers | `scripts/rerun-random.ts` then re-aggregation from cached files: only the random rows change (snake 0.18 → 0.14, lander 0 → 0, warehouse 1.66 → 1.73, racing 20.6 → 20.9); every other number is bitwise identical. `check-parallel` now includes the random condition | test (final; baseline row only) | No | `tests: parallel-eval`; the quadruped study, started before the fix, will be re-aggregated the same way |
-| 33 | Dataset deduplication kept as implemented (found by a claims review): the hash clamps each encoding value to [0, 1] and quantizes it to 1/255, so distinct states can be rejected as duplicates | Probe on planner-driven training episodes (seeds 1,000,000+): 0.3% of Snake states (5 episodes), 0.1% of lander states (20), 4.9% of warehouse states (2) are wrongly rejected. Fixing it would change every published Snake, lander and warehouse number; left to the author | train | No | `correct-published-claims` design; documented in `src/training/dataset.ts` |
+| 33 | Dataset deduplication: the hash clamped each encoding value to [0, 1] and quantized it to 1/255, so distinct states could be rejected as duplicates (found by a claims review) | Probe on planner-driven training episodes (seeds 1,000,000+): 0.3% of Snake states (5 episodes), 0.1% of lander states (20), 4.9% of warehouse states (2) wrongly rejected. First kept and documented, then fixed: states are now rejected only if identical (decision 35) | train | No | `correct-published-claims`, `fix-dataset-dedup` |
 | 34 | H4 across runs judged on the runs where System One acted above the threshold (reporting bug found by a claims review: one run without such decisions made the mean undefined, and the report said System One "never acted") | Racing re-aggregated from cached runs: H4 now reads 83.4% agreement in the 3 runs where System One acted at 0.9 (it never did in 2); still not confirmed, 0/5 runs. Every other field unchanged | test (final; report text only) | No | `correct-published-claims`; `test/aggregate.test.ts` |
+| 35 | Re-run the Snake, lander and warehouse studies and the Snake experiments after the deduplication fix (decision 33). No design decision was made between the first and the corrected studies; the test split was used a second time only to measure the fixed code. Both sets of results are published (the first in git history, before commit `71bdf4f`) | Corrected 5-run test studies. Snake: H2 now fails (hybrid + guard @ 0.5, 83.0% at 15.7×, 2/5 runs; first study 93.0%, 4/5 runs), because at thresholds ≤ 0.5 runs range from 227 to 370 points; @ 0.7, 97.5% at 8.8× in every run. Lander: H2 now fails (88.2% at 11.1×, 2/5 runs; first study 90.7%, 4/5). Warehouse: System One alone 36.8% → 40.2%; H4 still holds, H2 still fails. Dev experiments: `snake-deaths` 20 → 23 of 30; `snake-guard-ablation` and `snake-inputs` below | test (final) and dev | No | `fix-dataset-dedup` |
+| 36 | Integrate the quadruped (5-run test study, decision 31) | System One alone 88.2% of the planner at 820× lower cost (12–23 falls in 200 episodes vs 67 for the hand-written trot); guard only 91.1% at 82.3× (2–7 falls vs the planner's 6); H2 holds in 4/5 runs, H3 in 5/5; H1 fails (82% escalation); H4 fails narrowly (94.2%, 1/5 runs). Random row re-evaluated per decision 32 before aggregation | test (final) | – | `add-quadruped-locomotion` |
 
 ## Supporting experiments (dev split)
 
@@ -64,11 +66,11 @@ one reference model, trained with the default configuration and pipeline seed 1
 
 ### `snake-deaths` (decision 4)
 
-Unguarded hybrid at threshold 0.9, 30 dev seeds, all 30 games ending in a collision. In **20 of 30**
+Unguarded hybrid at threshold 0.9, 30 dev seeds, all 30 games ending in a collision. In **23 of 30**
 deaths, the last move from which the planner could still save the game (by surviving 300 more moves)
 is exactly the last move System One played confidently against the planner's choice.
-*The earlier, contaminated analysis reported 28 of 30. That figure came from a different model on
-seeds 1–30 and is superseded by this one.*
+*The earlier, contaminated analysis reported 28 of 30 (a different model, seeds 1–30); before the
+dataset fix (decision 35) this analysis gave 20 of 30. Both are superseded by this one.*
 
 ### `snake-guard-ablation` (decision 4)
 
@@ -76,14 +78,17 @@ Same model, 50 dev seeds. Planner: 381.7 points at 1,029 units/move.
 
 | Hybrid | Score (±95%) | Cost / move | Escalated |
 | --- | --- | --- | --- |
-| no guard @ 0.7 | 65.8 ± 5.5 | 336 | 5.4% |
-| no guard @ 0.9 | 87.2 ± 7.7 | 850 | 16.1% |
-| no guard @ 0.95 | 118.6 ± 11.0 | 1,346 | 29.4% |
-| guard only (threshold 0) | 318.1 ± 26.5 | 51 | 1.4% |
-| guard @ 0.7 | 372.7 ± 7.3 | 107 | 4.2% |
-| guard @ 0.9 | 378.6 ± 6.8 | 246 | 15.2% |
+| no guard @ 0.7 | 58.6 ± 5.7 | 412 | 6.5% |
+| no guard @ 0.9 | 95.2 ± 8.8 | 985 | 19.7% |
+| no guard @ 0.95 | 129.4 ± 10.3 | 1,611 | 36.0% |
+| guard only (threshold 0) | 184.9 ± 27.0 | 80 | 1.0% |
+| guard @ 0.7 | 379.9 ± 6.1 | 117 | 4.8% |
+| guard @ 0.9 | 375.2 ± 7.8 | 288 | 16.3% |
 
-The decision holds: the guard is what makes the hybrid work.
+The decision holds: the guard is what makes the hybrid work, but only together with a confidence
+threshold. With this reference model, the guard alone reaches less than half the planner's score (before
+the dataset fix, with another model, it reached 318), which matches the run-to-run variance of the test
+study at low thresholds.
 
 ### `snake-inputs` (decision 4)
 
@@ -91,13 +96,14 @@ Four encodings, same pipeline (15 escalation iterations, seed 1), 30 dev seeds, 
 
 | Encoding | Inputs | Params | System One alone | Hybrid @ 0.9 |
 | --- | --- | --- | --- | --- |
-| 7×7 (used) | 201 | 17,283 | 35.7 | 95.3 |
-| 11×11 | 489 | 35,715 | 36.2 | 83.0 |
-| 7×7 + body age, tail, rays | 263 | 21,251 | 45.7 | 83.4 |
-| 11×11 + body age, tail, rays | 623 | 44,291 | 45.1 | 83.0 |
+| 7×7 (used) | 201 | 17,283 | 37.1 | 85.3 |
+| 11×11 | 489 | 35,715 | 38.0 | 83.5 |
+| 7×7 + body age, tail, rays | 263 | 21,251 | 44.1 | 98.1 |
+| 11×11 + body age, tail, rays | 623 | 44,291 | 42.2 | 80.8 |
 
-The decision holds. Richer inputs add about 10 points to System One alone and lower the unguarded hybrid (95.3 → 83.0–83.4);
-all variants stay far below the planner's ~380.
+The decision holds. Richer inputs add up to 7 points to System One alone; their effect on the unguarded
+hybrid is inconsistent (−4 to +13 points; before the dataset fix it was −12), and every variant stays far
+below the planner's ~380.
 
 ### `lander-imitation` (decision 9)
 

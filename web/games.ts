@@ -66,7 +66,7 @@ export const DEMO_GAMES: DemoGame[] = [
   },
   {
     def: getGame('warehouse'),
-    speed: 35,
+    speed: 90,
     blurb:
       'A fleet of 16 robots carries goods between shelves and stations. Each robot sees a 9×9 window; the planner searches space-time around the predicted paths of the others.',
     createView: (c) => new WarehouseView(c),

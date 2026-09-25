@@ -1,3 +1,5 @@
+import { DEFAULT_TERRAIN, type TerrainConfig } from './terrain';
+
 /** Robot, physics, episode and action parameters of the quadruped (starting values, tuned in the spike on dev seeds). */
 
 export interface QuadrupedConfig {
@@ -38,6 +40,9 @@ export interface QuadrupedConfig {
   pushFirst: [number, number];
   pushEvery: [number, number];
   pushImpulse: number;
+
+  /** Procedural terrain (flat by default, as in training and in the published study). */
+  terrain: TerrainConfig;
 }
 
 export const DEFAULT_QUADRUPED_CONFIG: QuadrupedConfig = {
@@ -73,6 +78,8 @@ export const DEFAULT_QUADRUPED_CONFIG: QuadrupedConfig = {
   pushEvery: [1.5, 3],
   /** Calibrated in the spike by the pre-registered rule: the base controller falls on 20% of 20 dev seeds (EXPERIMENTS.md). */
   pushImpulse: 8,
+
+  terrain: DEFAULT_TERRAIN,
 };
 
 export const LEG_NAMES = ['FR', 'FL', 'HR', 'HL'] as const;

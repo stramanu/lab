@@ -7,6 +7,7 @@ import type { RevoluteImpulseJoint, World } from '@dimforge/rapier3d-determinist
 import { JOINTS_PER_LEG, NUM_JOINTS, type QuadrupedConfig } from './config';
 import { legInverse, quatAxisAngle, relativeAngle, rotate, type Quat, type Vec3 } from './kinematics';
 import { rapier } from './rapier';
+import { addTerrain, FLAT_TERRAIN, surfaceHeight, type TerrainSpec } from './terrain';
 
 /** Collision groups: robot parts collide only with the ground. */
 const GROUND_GROUPS = (0x0001 << 16) | 0xffff;
@@ -48,11 +49,12 @@ export function standingHeight(cfg: QuadrupedConfig): number {
   return 0.75 * (cfg.thigh + cfg.shank);
 }
 
-export function buildRobot(cfg: QuadrupedConfig, friction: number): { world: World; handles: RobotHandles } {
+export function buildRobot(cfg: QuadrupedConfig, friction: number, terrain: TerrainSpec = FLAT_TERRAIN): { world: World; handles: RobotHandles } {
   const R = rapier();
   const world = new R.World({ x: 0, y: -9.81, z: 0 });
   world.timestep = cfg.dt;
   world.createCollider(R.ColliderDesc.cuboid(500, 0.1, 500).setTranslation(0, -0.1, 0).setFriction(friction).setCollisionGroups(GROUND_GROUPS));
+  addTerrain(world, terrain, cfg.terrain, friction, GROUND_GROUPS);
 
   const h0 = standingHeight(cfg);
   const H = h0 + cfg.footRadius;
@@ -108,7 +110,8 @@ export function setJointTargets(world: World, h: RobotHandles, targets: ArrayLik
 
 const v3 = (v: { x: number; y: number; z: number }): Vec3 => [v.x, v.y, v.z];
 
-export function readRobot(world: World, h: RobotHandles, cfg: QuadrupedConfig): RobotState {
+/** Robot state; foot contacts are measured from the ground surface under each foot (branches included). */
+export function readRobot(world: World, h: RobotHandles, cfg: QuadrupedConfig, terrain: TerrainSpec = FLAT_TERRAIN): RobotState {
   const trunk = world.getRigidBody(h.trunk);
   const rot = trunk.rotation();
   const q = new Float64Array(NUM_JOINTS);
@@ -132,7 +135,7 @@ export function readRobot(world: World, h: RobotHandles, cfg: QuadrupedConfig): 
     const c = shank.translation();
     const foot: Vec3 = [c.x + off[0], c.y + off[1], c.z + off[2]];
     feet.push(foot);
-    contacts.push(foot[1] <= cfg.footRadius + 0.004);
+    contacts.push(foot[1] - surfaceHeight(terrain, foot[0], foot[2]) <= cfg.footRadius + 0.004);
   }
   return { pos: v3(trunk.translation()), rot, linvel: v3(trunk.linvel()), angvel: v3(trunk.angvel()), q, qd, feet, contacts };
 }

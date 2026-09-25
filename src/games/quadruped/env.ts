@@ -6,6 +6,7 @@ import { controlStep, copyControllerState, DEFAULT_GAIT, initialControllerState,
 import { rotate, quatConj, tiltOf, yawOf, type Vec3 } from './kinematics';
 import { rapier } from './rapier';
 import { buildRobot, pushTrunk, readRobot, setJointTargets, standingHeight, type RobotHandles, type RobotState } from './robot';
+import { FLAT_TERRAIN, generateTerrain, hillHeight, type TerrainSpec } from './terrain';
 
 export const QUADRUPED_ENCODING_SIZE = 46;
 
@@ -26,10 +27,11 @@ export interface QuadrupedSnapshot {
   nextPush: number;
   lastPush: Push | null;
   end: 'fall' | 'timeout' | null;
+  terrain: TerrainSpec;
 }
 
 /**
- * A 12-joint quadruped walking forward on flat ground in deterministic 3D rigid-body physics
+ * A 12-joint quadruped walking forward on flat ground (or on seeded procedural terrain, see terrain.ts) in deterministic 3D rigid-body physics
  * (Rapier), hit by seeded horizontal pushes. One decision every 100 ms modulates the base
  * controller; the score is the forward displacement (m). Worlds are WebAssembly objects:
  * call `dispose()` on copies that are no longer needed (the planner does).
@@ -61,6 +63,8 @@ export class QuadrupedEnv implements ContinuousEnv {
   end: 'fall' | 'timeout' | null = null;
   /** Ground friction of this episode (seeded). */
   friction = 0;
+  /** Terrain of this episode (seeded; flat by default). */
+  terrain: TerrainSpec = FLAT_TERRAIN;
   private targets = new Float64Array(NUM_JOINTS);
 
   constructor(config: Partial<QuadrupedConfig> = {}, gait: Partial<GaitConfig> = {}) {
@@ -73,7 +77,8 @@ export class QuadrupedEnv implements ContinuousEnv {
     this.dispose();
     const [lo, hi] = this.config.frictionRange;
     this.friction = lo + (hi - lo) * Rng.stream(seed, 'quadruped-friction').next();
-    const { world, handles } = buildRobot(this.config, this.friction);
+    this.terrain = generateTerrain(seed, this.config.terrain);
+    const { world, handles } = buildRobot(this.config, this.friction, this.terrain);
     this.world = world;
     this.handles = handles;
     this.configureWorld();
@@ -86,7 +91,13 @@ export class QuadrupedEnv implements ContinuousEnv {
     this.lastPush = null;
     this.nextPush = 0;
     this.pushes = schedulePushes(seed, this.config);
-    this.robot = readRobot(world, handles, this.config);
+    this.robot = readRobot(world, handles, this.config, this.terrain);
+  }
+
+  /** Trunk height above the hills directly below it (on flat ground: its height). */
+  trunkHeight(): number {
+    const p = this.robot.pos;
+    return p[1] - hillHeight(this.terrain, p[0], p[2]);
   }
 
   private configureWorld(): void {
@@ -104,7 +115,7 @@ export class QuadrupedEnv implements ContinuousEnv {
     let simulated = 0;
     for (let i = 0; i < cfg.stepsPerDecision; i++) {
       if (this.steps % cfg.stepsPerControl === 0) {
-        this.robot = readRobot(this.world, this.handles, cfg);
+        this.robot = readRobot(this.world, this.handles, cfg, this.terrain);
         controlStep(this.robot, this.controller, this.lastAction, this.time, cfg.dt * cfg.stepsPerControl, cfg, this.gait, this.targets);
         setJointTargets(this.world, this.handles, this.targets, cfg);
       }
@@ -118,8 +129,8 @@ export class QuadrupedEnv implements ContinuousEnv {
       simulated++;
     }
     this.decisions++;
-    this.robot = readRobot(this.world, this.handles, cfg);
-    if (this.robot.pos[1] < cfg.minHeight || tiltOf(this.robot.rot) > (cfg.maxTiltDeg * Math.PI) / 180) this.end = 'fall';
+    this.robot = readRobot(this.world, this.handles, cfg, this.terrain);
+    if (this.trunkHeight() < cfg.minHeight || tiltOf(this.robot.rot) > (cfg.maxTiltDeg * Math.PI) / 180) this.end = 'fall';
     else if (this.time >= cfg.duration - 1e-9) this.end = 'timeout';
     return simulated;
   }
@@ -143,7 +154,7 @@ export class QuadrupedEnv implements ContinuousEnv {
   }
 
   /**
-   * 46 proprioceptive values: trunk height, gravity direction in the trunk frame, heading (sin, cos),
+   * 46 proprioceptive values: trunk height (above the hills below it), gravity direction in the trunk frame, heading (sin, cos),
    * trunk linear and angular velocity in the trunk frame, 12 joint angles and velocities,
    * 4 foot contacts, gait phase (sin, cos) and the last action.
    */
@@ -155,7 +166,7 @@ export class QuadrupedEnv implements ContinuousEnv {
     const w = rotate(inv, r.angvel);
     const yaw = yawOf(r.rot);
     let o = 0;
-    out[o++] = (r.pos[1] - standingHeight(this.config)) / 0.1;
+    out[o++] = (this.trunkHeight() - standingHeight(this.config)) / 0.1;
     for (const x of g) out[o++] = x;
     out[o++] = Math.sin(yaw);
     out[o++] = Math.cos(yaw);
@@ -206,6 +217,7 @@ export class QuadrupedEnv implements ContinuousEnv {
       nextPush: this.nextPush,
       lastPush: this.lastPush,
       end: this.end,
+      terrain: this.terrain,
     };
   }
 
@@ -231,7 +243,8 @@ export class QuadrupedEnv implements ContinuousEnv {
     e.nextPush = options.pushes === false ? 0 : s.nextPush;
     e.lastPush = s.lastPush;
     e.end = s.end;
-    e.robot = readRobot(e.world, handles, config);
+    e.terrain = s.terrain;
+    e.robot = readRobot(e.world, handles, config, e.terrain);
     return e;
   }
 

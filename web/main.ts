@@ -220,6 +220,7 @@ let actualSpeed = 0;
 let lastDomUpdate = 0;
 
 const speedFromSlider = (v: number) => Math.round(5 * 400 ** v); // 5 … 2000 moves/s
+const sliderFromSpeed = (moves: number) => Math.log(moves / 5) / Math.log(400);
 
 function frame(now: number): void {
   const dt = Math.min(100, now - lastFrame);
@@ -415,6 +416,8 @@ async function selectGame(name: string): Promise<void> {
   if (game.preview) $('model-info').textContent = 'Model: not published yet (the network is in training)';
   $('policy-title').textContent = game.def.continuous ? "System One's action" : "System One's policy";
   $('s1-cost').textContent = game.def.continuous ? 'ensemble of 5 · 5 units' : 'network alone · 1 unit';
+  speedInput.value = String(sliderFromSpeed(game.speed));
+  syncOutputs();
   resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1));
   // Every game starts with its published network; "Train in this tab" starts again from random weights.
   if (!game.preview) {

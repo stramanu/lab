@@ -27,6 +27,8 @@ export interface DemoGame {
   def: GameDefinition;
   /** Short line under the title. */
   blurb: string;
+  /** Moves per second the page starts at for this game. */
+  speed: number;
   createView(canvas: HTMLCanvasElement): BoardView;
   /** CSS aspect ratio of the board. */
   aspect: string;
@@ -41,6 +43,7 @@ export interface DemoGame {
 export const DEMO_GAMES: DemoGame[] = [
   {
     def: getGame('snake'),
+    speed: 35,
     blurb: 'Snake on a 20×20 grid. The network sees a 7×7 window around the head; the planner searches the whole board.',
     createView: (c) => new SnakeView(c),
     aspect: '1 / 1',
@@ -50,6 +53,7 @@ export const DEMO_GAMES: DemoGame[] = [
   },
   {
     def: getGame('lander'),
+    speed: 35,
     blurb: 'A 2D lander with gravity, inertia, fuel and wind. The network sees 16 numbers; the planner simulates the future.',
     createView: (c) => new LanderView(c),
     aspect: '10 / 7',
@@ -62,6 +66,7 @@ export const DEMO_GAMES: DemoGame[] = [
   },
   {
     def: getGame('warehouse'),
+    speed: 35,
     blurb:
       'A fleet of 16 robots carries goods between shelves and stations. Each robot sees a 9×9 window; the planner searches space-time around the predicted paths of the others.',
     createView: (c) => new WarehouseView(c),
@@ -72,6 +77,7 @@ export const DEMO_GAMES: DemoGame[] = [
   },
   {
     def: getGame('racing'),
+    speed: 60,
     blurb:
       'Top-down racing on a procedural track with a grip limit. The network outputs continuous steering and pedal (an ensemble of 5); the planner searches discrete commands and simulates the next 4 s.',
     createView: (c) => new RacingView(c),
@@ -85,6 +91,7 @@ export const DEMO_GAMES: DemoGame[] = [
   },
   {
     def: getGame('quadruped'),
+    speed: 6,
     blurb:
       'A 12-joint quadruped in 3D rigid-body physics (Rapier) trots forward while pushes hit it. The network modulates a hand-written trot (step placement, height, frequency); the planner simulates 21 modulations 1 s ahead.',
     createView: (c) => new QuadrupedView(c),

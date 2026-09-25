@@ -7,11 +7,12 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%23f2ede2%27/%3E%3Crect x=%272%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%276%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%232c3a34%27/%3E%3Crect x=%2710%27 y=%277%27 width=%274%27 height=%274%27 fill=%27%231f8a5b%27/%3E%3C/svg%3E" />
     <meta name="description" content="A real quadruped model, the Unitree Go1, simulated by MuJoCo in your browser and driven by a policy trained on a GPU. Steer it, change the terrain, push it." />
     <script>
-      // Apply the stored light/dark choice before the first paint (see web/theme.ts).
+      // Apply the stored light/dark choice before the first paint (see web/theme.ts); dark by default.
+      let t = null;
       try {
-        const t = localStorage.getItem('lab-theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        t = localStorage.getItem('lab-theme');
       } catch {}
+      document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark';
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -55,7 +56,7 @@
           <button id="go1-reset" type="button" class="ghost">Restart</button>
           <button id="go1-hop" type="button" class="ghost">Jump</button>
           <label class="field inline"><span>Terrain</span>
-            <select id="go1-terrain"><option value="flat">Flat</option><option value="rough">Rough</option><option value="course">Obstacle course</option></select>
+            <select id="go1-terrain"><option value="course" selected>Obstacle course</option><option value="flat">Flat</option><option value="rough">Rough</option></select>
           </label>
         </div>
         <p class="hint" id="go1-policy">Policy: loading…</p>

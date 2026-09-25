@@ -1,7 +1,7 @@
 """Copies the Go1 scene used by MuJoCo Playground (flat and rough terrain) into the site, with flat,
 browser-friendly paths, and writes the licence notice of every third-party file.
 
-Usage: .venv/bin/python export_web_assets.py [--out ../../web/public/applied/go1]
+Usage: .venv/bin/python export_web_assets.py [--out ../../web/public/applied/assets/go1]
 """
 import argparse
 import re
@@ -33,7 +33,7 @@ These files are copies of third-party models and assets, with file paths rewritt
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default=str(Path(__file__).parent / ".." / ".." / "web" / "public" / "applied" / "go1"))
+    parser.add_argument("--out", default=str(Path(__file__).parent / ".." / ".." / "web" / "public" / "applied" / "assets" / "go1"))
     out = Path(parser.parse_args().out).resolve()
     (out / "meshes").mkdir(parents=True, exist_ok=True)
     (out / "assets").mkdir(parents=True, exist_ok=True)

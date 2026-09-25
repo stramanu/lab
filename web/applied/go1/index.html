@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Go1 · Lab</title>
+    <meta name="description" content="A real quadruped model, the Unitree Go1, simulated by MuJoCo in your browser and driven by a policy trained on a GPU. Steer it, change the terrain, push it." />
+    <script>
+      // Apply the stored light/dark choice before the first paint (see web/theme.ts).
+      try {
+        const t = localStorage.getItem('lab-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../../styles.css" />
+    <link rel="stylesheet" href="./go1.css" />
+  </head>
+  <body>
+    <nav class="labnav" aria-label="Lab">
+      <a class="labnav-home" href="../../">lab<span>.emanuelestrazzullo.dev</span></a>
+      <div class="labnav-links">
+        <a href="../../systemone/">System One</a>
+        <a href="../../handwriting/">Handwriting</a>
+        <a href="./" aria-current="page">Go1</a>
+      </div>
+      <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
+    </nav>
+    <header class="masthead">
+      <div class="masthead-top"><span class="kicker">Lab · Applied · Experiment 3 · work in progress</span></div>
+      <h1>Go1 <em>in your browser</em></h1>
+      <p class="lede">
+        A model of a real robot, the Unitree Go1, simulated by MuJoCo in this tab and driven by a neural
+        network trained on a GPU. Steer it with the keyboard or the sliders, change the terrain, and drag on it
+        to push it.
+      </p>
+    </header>
+    <main class="go1-layout">
+      <section class="panel go1-view-panel" aria-label="Simulation">
+        <canvas id="go1-view" class="go1-view" aria-label="Unitree Go1, 3D view" role="img"></canvas>
+        <p class="go1-status" id="go1-status"></p>
+        <p class="go1-readout" id="go1-readout"></p>
+      </section>
+      <section class="panel go1-controls" aria-labelledby="go1-controls-title">
+        <h2 id="go1-controls-title">Drive it</h2>
+        <p class="hint">Keyboard: <kbd>W</kbd> <kbd>S</kbd> forward and back, <kbd>A</kbd> <kbd>D</kbd> sideways, <kbd>Q</kbd> <kbd>E</kbd> turn (or the arrows). Otherwise the sliders set the command.</p>
+        <label class="field"><span>Forward <span><output id="cmd-vx-out">0.50</output> m/s</span></span><input id="cmd-vx" type="range" min="-0.6" max="1" step="0.05" value="0.5" /></label>
+        <label class="field"><span>Sideways <span><output id="cmd-vy-out">0.00</output> m/s</span></span><input id="cmd-vy" type="range" min="-0.6" max="0.6" step="0.05" value="0" /></label>
+        <label class="field"><span>Turn <span><output id="cmd-yaw-out">0.00</output> rad/s</span></span><input id="cmd-yaw" type="range" min="-1" max="1" step="0.05" value="0" /></label>
+        <div class="go1-buttons">
+          <button id="cmd-stop" type="button" class="ghost">Stop</button>
+          <button id="go1-reset" type="button" class="ghost">Restart</button>
+          <label class="field inline"><span>Terrain</span>
+            <select id="go1-terrain"><option value="flat">Flat</option><option value="rough">Rough</option></select>
+          </label>
+        </div>
+        <p class="hint" id="go1-policy">Policy: loading…</p>
+      </section>
+      <section class="panel go1-about" aria-labelledby="go1-about-title">
+        <h2 id="go1-about-title">What this is</h2>
+        <p>
+          The lab's <b>applied</b> side: unlike the experiments written from scratch, this one relies on
+          established tools, and says so. The robot model is the Unitree Go1 from MuJoCo Menagerie. The
+          network (48 sensor values → 512 → 256 → 128 → 12 joint targets, 50 times a second) is trained with
+          PPO in MuJoCo Playground on a GPU, then runs here in plain TypeScript. The physics runs in this tab on
+          DeepMind's MuJoCo WebAssembly build, about 90 times faster than real time on a laptop.
+        </p>
+        <p>
+          <b>Status:</b> feasibility tests in progress (browser speed ✓; training, transfer to the browser and
+          a GPU planner pending). The plan and its criteria are in the repository
+          (<code>docs/proposals/mujoco-quadruped.md</code>).
+        </p>
+        <p class="hint">
+          Third-party: Unitree Go1 model © Unitree Robotics, BSD 3-Clause; MuJoCo and MuJoCo Playground ©
+          Google DeepMind, Apache 2.0; terrain texture from Poly Haven, CC0. Licence notices ship with the model
+          files (<a href="../assets/go1/NOTICE.md">NOTICE</a>).
+        </p>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

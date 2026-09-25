@@ -51,7 +51,7 @@ async function main(): Promise<void> {
   const t0 = performance.now();
   const mujoco = await loadMujoco();
   say(`MuJoCo loaded in ${(performance.now() - t0).toFixed(0)} ms`);
-  const base = new URL('../go1/', location.href);
+  const base = new URL('../assets/go1/', location.href);
   mujoco.FS.mkdir('/go1');
   mujoco.FS.mkdir('/go1/assets');
   mujoco.FS.mkdir('/go1/meshes');
@@ -99,14 +99,14 @@ async function main(): Promise<void> {
 }
 
 /**
- * Spike A3, when the policy exported by the Colab notebook is present (../go1/go1-policy.json): the
+ * Spike A3, when the policy exported by the Colab notebook is present (../assets/go1/go1-policy.json): the
  * TypeScript policy against JAX's recorded actions, then 10 episodes of 20 s with a forward command of
  * 0.5 m/s, on flat ground (the criterion) and on rough terrain (reported).
  */
 async function runA3(mujoco: MainModule): Promise<unknown> {
-  const res = await fetch(new URL('../go1/go1-policy.json', location.href));
-  if (!res.ok) {
-    say('A3: no exported policy yet (../go1/go1-policy.json), skipped');
+  const res = await fetch(new URL('../assets/go1/go1-policy.json', location.href));
+  if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) {
+    say('A3: no exported policy yet (../assets/go1/go1-policy.json), skipped');
     return null;
   }
   const exp = (await res.json()) as BraxPolicyExport & { constants?: Go1Constants; pairs: Array<{ state: number[]; action: number[] }> };

@@ -1,0 +1,66 @@
+.go1-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+.go1-view-panel {
+  position: relative;
+  align-self: start;
+}
+
+.go1-view {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 4px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.go1-status {
+  position: absolute;
+  inset: 40% 0 auto;
+  text-align: center;
+  font: 400 13px/1.4 var(--mono);
+  color: var(--ink-2);
+}
+
+.go1-readout {
+  margin: 8px 0 0;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+
+.go1-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.go1-about p {
+  margin: 0 0 10px;
+}
+
+kbd {
+  font: 500 11px/1 var(--mono);
+  padding: 2px 5px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+}
+
+@media (max-width: 820px) {
+  .go1-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.go1-about {
+  grid-column: 1 / -1;
+}

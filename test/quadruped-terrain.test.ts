@@ -32,6 +32,16 @@ describe('quadruped terrain', () => {
     expect(generateTerrain(10001, terrain('mixed'))).not.toEqual(generateTerrain(10002, terrain('mixed')));
   });
 
+  it('draws every kind with the varied terrain, deterministically per seed', () => {
+    const kinds = new Set<string>();
+    for (let seed = 10001; seed <= 10040; seed++) {
+      const spec = generateTerrain(seed, terrain('varied'));
+      kinds.add(spec.kind);
+      expect(generateTerrain(seed, terrain('varied'))).toEqual(spec);
+    }
+    expect([...kinds].sort()).toEqual(['branches', 'flat', 'hills', 'mixed']);
+  });
+
   it('starts every episode on flat ground and keeps hills within the maximum slope', () => {
     for (let seed = 10001; seed <= 10010; seed++) {
       const spec = generateTerrain(seed, terrain('hills'));

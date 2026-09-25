@@ -27,9 +27,12 @@ export class Pool<Task extends { id: number }> {
     });
   }
 
-  run(task: Omit<Task, 'id'>): Promise<Reply> {
+  /** Queues a task; `urgent` tasks go ahead of the queued ones (e.g. training ahead of evaluation). */
+  run(task: Omit<Task, 'id'>, urgent = false): Promise<Reply> {
     return new Promise((resolve, reject) => {
-      this.queue.push({ task: { ...task, id: this.nextId++ } as Task, resolve, reject });
+      const entry = { task: { ...task, id: this.nextId++ } as Task, resolve, reject };
+      if (urgent) this.queue.unshift(entry);
+      else this.queue.push(entry);
       this.pump();
     });
   }

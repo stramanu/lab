@@ -3,7 +3,7 @@ import { mean } from '../core/stats';
 import type { ContinuousEnv, ContinuousGuard, ContinuousTeacher, MoveRecord, Player } from '../core/types';
 import { TRAIN_SEED_START } from '../eval/seeds';
 import { ContinuousHybridPlayer, type AgreementRule } from '../hybrid/continuous';
-import { Ensemble, exportEnsemble, type SerializedEnsemble } from '../nn/ensemble';
+import { Ensemble, exportEnsemble, importEnsemble, type SerializedEnsemble } from '../nn/ensemble';
 import type { LogEntry, Phase } from './pipeline';
 
 export interface ContinuousPipelineConfig {
@@ -131,10 +131,18 @@ export class ContinuousPipeline {
     readonly game: ContinuousGameSpec,
     config: Partial<ContinuousPipelineConfig> = {},
     private readonly onLog?: (e: LogEntry) => void,
+    /** Fine-tuning: start from these weights (same architecture) instead of random ones. */
+    initial?: SerializedEnsemble,
   ) {
     this.config = { ...DEFAULT_CONTINUOUS_PIPELINE, ...config };
     const probe = game.makeEnv();
-    this.ensemble = new Ensemble({
+    (probe as { dispose?: () => void }).dispose?.();
+    if (initial) {
+      const [h1, h2] = this.config.hidden;
+      if (initial.config.inputSize !== probe.encodingSize || initial.config.hidden[0] !== h1 || initial.config.hidden[1] !== h2 || initial.config.members !== this.config.members)
+        throw new Error('The initial ensemble does not match the pipeline architecture');
+    }
+    this.ensemble = initial ? importEnsemble(initial) : new Ensemble({
       inputSize: probe.encodingSize,
       hidden: this.config.hidden,
       low: [...probe.actionLow],

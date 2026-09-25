@@ -57,6 +57,20 @@ describe('continuous pipeline', () => {
     expect(p.log[1].escalationRate).toBeGreaterThanOrEqual(0);
   });
 
+  it('starts from the given weights when fine-tuning, and rejects another architecture', () => {
+    const trained = new ContinuousPipeline(game(), config).run();
+    const tuned = new ContinuousPipeline(game(), { ...config, seed: 2 }, undefined, trained);
+    const env = shortEnv();
+    env.reset(5);
+    const x = env.encode();
+    const reference = new ContinuousPipeline(game(), config, undefined, trained).ensemble.decide(x).action;
+    expect(Array.from(tuned.ensemble.decide(x).action)).toEqual(Array.from(reference));
+    expect(Array.from(new ContinuousPipeline(game(), { ...config, seed: 2 }).ensemble.decide(x).action)).not.toEqual(Array.from(reference));
+    expect(() => new ContinuousPipeline(game(), { ...config, hidden: [16, 16] }, undefined, trained)).toThrow(/architecture/);
+    tuned.run();
+    expect(tuned.log.map((e) => e.phase)).toEqual(['bootstrap', 'escalation', 'escalation', 'consolidation']);
+  });
+
   it('is reproducible', () => {
     const a = new ContinuousPipeline(game(), config).run();
     const b = new ContinuousPipeline(game(), config).run();

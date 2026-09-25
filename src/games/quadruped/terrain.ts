@@ -8,7 +8,8 @@ import type { World } from '@dimforge/rapier3d-deterministic-compat';
 import { Rng } from '../../core/rng';
 import { rapier } from './rapier';
 
-export type TerrainKind = 'flat' | 'hills' | 'branches' | 'mixed';
+/** `varied` draws one of the other four per episode (for training on all of them). */
+export type TerrainKind = 'flat' | 'hills' | 'branches' | 'mixed' | 'varied';
 export const TERRAIN_KINDS: readonly TerrainKind[] = ['flat', 'hills', 'branches', 'mixed'];
 
 export interface TerrainConfig {
@@ -72,6 +73,10 @@ export interface TerrainSpec {
 export const FLAT_TERRAIN: TerrainSpec = { kind: 'flat', hills: [], branches: [] };
 
 export function generateTerrain(seed: number, cfg: TerrainConfig): TerrainSpec {
+  if (cfg.kind === 'varied') {
+    const kind = TERRAIN_KINDS[Math.floor(TERRAIN_KINDS.length * Rng.stream(seed, 'quadruped-terrain-kind').next())];
+    return generateTerrain(seed, { ...cfg, kind });
+  }
   if (cfg.kind === 'flat') return FLAT_TERRAIN;
   const rng = Rng.stream(seed, 'quadruped-terrain');
   const uniform = ([a, b]: [number, number]) => a + (b - a) * rng.next();

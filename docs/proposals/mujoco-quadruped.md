@@ -1,8 +1,18 @@
 # Proposal: a real quadruped (Unitree Go1) in MuJoCo, with GPU physics
 
-Status: **started**. This is the first experiment of the lab's "applied" side: established libraries, GPUs
-and a model of a real robot, under the same method as the rest of the lab. The feasibility spike's
-criteria are fixed in the OpenSpec change `add-applied-mujoco-spike` before any measurement.
+Status: **feasibility spike done** (EXPERIMENTS.md, decisions 40, 42–44). This is the first experiment of
+the lab's "applied" side: established libraries, GPUs and a model of a real robot, under the same method as
+the rest of the lab.
+
+| Criterion | Result |
+| --- | --- |
+| A1: browser speed | ✓ ~90–100× real time |
+| A2: training on Colab | ✗ on time only: 83.7 min on a T4 (limit 60); the policy walks, 0 falls, 0.47 m/s |
+| A3: policy in TypeScript, walking in the browser | ✓ matches JAX within 1.7e-7; 0 falls on flat and rough |
+| A4: GPU planner | ✗ 173 ms per decision on a T4 (limit 100), and it reduced to the policy: the noise-free candidate always won |
+
+The page `/applied/go1/` runs the trained policy. Next, as a new change: a planner with smooth
+perturbations and a task score, on a faster GPU, before the study.
 
 ## Why
 
@@ -28,8 +38,10 @@ small MLP that our TypeScript code can evaluate.
 
 ## What exists already (checked on 2026-09-25, locally)
 
-- `pip install playground` installs MuJoCo 3.14.0, JAX 0.11 and the environments
-  `Go1JoystickFlatTerrain`, `Go1JoystickRoughTerrain`, `Go1Getup`, `Go1Handstand` and `Go1Footstand`.
+- `pip install playground` installs MuJoCo 3.14.0 and the environments
+    `Go1JoystickFlatTerrain`, `Go1JoystickRoughTerrain`, `Go1Getup`, `Go1Handstand` and `Go1Footstand`.
+  It resolves JAX 0.11, which breaks training with brax 0.14.2, so JAX is pinned to 0.9.2
+  (`applied/mujoco-quadruped/requirements.txt`).
 - `Go1JoystickRoughTerrain`:
   - 12 actuators, control at 50 Hz (0.02 s), simulation at 250 Hz;
   - a 48-value observation (what a real robot measures) and a 123-value privileged observation (what a
@@ -66,8 +78,12 @@ small MLP that our TypeScript code can evaluate.
 
 - `applied/mujoco-quadruped/`: Python (training, planner, notebooks for Colab), with a virtual environment
   that is not committed.
-- The page, when it exists: `web/applied/` (planned), running the same model with `@mujoco/mujoco`.
-- Results: `artifacts/applied/` for summaries; weights are published as small JSON files, as today.
+- **Pages:**
+  - `web/applied/go1/` (`/applied/go1/`), running the same model with `@mujoco/mujoco`;
+  - the spike page `web/applied/go1-spike/`.
+- **Results:**
+  - Colab outputs in `applied/mujoco-quadruped/results/`, browser spikes in `artifacts/experiments/applied-go1-*.json`;
+  - the published policy and the model files in `web/public/applied/assets/go1/`.
 
 ## References
 

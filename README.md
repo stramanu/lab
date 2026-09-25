@@ -1,9 +1,12 @@
 # Lab
 
 Small, reproducible experiments in machine learning, planning and control, by Emanuele Strazzullo.
-The networks, their training, the planners and the simulations are written from scratch in TypeScript,
-with no ML libraries (the one exception: the quadruped's 3D physics uses the Rapier engine), and everything
-runs in Node or in a browser tab. Every result comes with the protocol that produced it, and negative results
+The lab has two sides:
+- **From scratch** (experiments 01–02): the networks, their training, the planners and the simulations are
+  written in TypeScript with no ML libraries. The one exception is the quadruped's 3D physics, which uses
+  the Rapier engine. Everything runs in Node or in a browser tab.
+- **Applied** (experiment 03): established tools (MuJoCo, MuJoCo Playground, JAX, a Colab GPU) and models
+  of real robots. The page says so, and the method is the same. Every result comes with the protocol that produced it, and negative results
 are published like positive ones.
 
 **Live:** <https://lab.emanuelestrazzullo.dev> · [![CI](https://github.com/stramanu/lab/actions/workflows/ci.yml/badge.svg)](https://github.com/stramanu/lab/actions/workflows/ci.yml)
@@ -14,6 +17,7 @@ are published like positive ones.
 | --- | --- | --- | --- |
 | 01 | **System One / System Two.** Can a tiny network, trained by a slow planner, make most decisions at a fraction of the planner's cost, and know when to hand control back? Five environments: Snake, lander, warehouse, racing, quadruped. | [docs/systemone.md](docs/systemone.md) | [/systemone/](https://lab.emanuelestrazzullo.dev/systemone/) |
 | 02 | **Handwriting pad.** Can a 22k-parameter network read handwritten letters as well as a classic recogniser that compares each letter with every stored example? | [docs/handwriting.md](docs/handwriting.md) | [/handwriting/](https://lab.emanuelestrazzullo.dev/handwriting/) |
+| 03 | **Go1 in your browser** (applied side). Can a model of a real robot, trained on a GPU with MuJoCo Playground, walk in a browser tab, and can a planner teach it where it struggles? Feasibility spike done; study next. | [docs/proposals/mujoco-quadruped.md](docs/proposals/mujoco-quadruped.md) | [/applied/go1/](https://lab.emanuelestrazzullo.dev/applied/go1/) |
 
 Headline results (test data, mean of 5 training runs). The Snake, lander and warehouse studies were re-run
 after a bug fix in the training data; the corrected numbers are below, and the change is documented in the
@@ -27,6 +31,8 @@ write-up.
 - **Racing**: the network alone drives 99.9% as far as the planner for 1,164× less compute.
 - **Quadruped**: the network with its safety check walks 91% as far as the planner for 82× less compute,
   although it agrees with the planner on only 41% of decisions.
+- **Go1 (applied)**: trained in 84 minutes on a free Colab T4, the policy walks on rough ground with no falls
+  and runs in the browser exactly as in training; a first GPU planner did not improve on it.
 - **Handwriting**: 83.9% of letters right on 20 unseen writers, against 83.2% for the classic recogniser,
   for 1,302× less arithmetic; the 90% target is missed.
 
@@ -75,6 +81,7 @@ pnpm site:deploy    # build site/ and deploy it (Cloudflare Worker with static a
 | `/` | the lab |
 | `/systemone/` | System One / System Two |
 | `/handwriting/` | Handwriting pad (the former `/systemone/handwriting/` redirects here) |
+| `/applied/go1/` | Go1 in your browser (applied side) |
 | `/data/` | published weights and study results |
 
 ## Layout

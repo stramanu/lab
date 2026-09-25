@@ -1,0 +1,141 @@
+{
+  "gpu": "Tesla T4",
+  "ppo": {
+    "action_repeat": 1,
+    "batch_size": 256,
+    "discounting": 0.97,
+    "entropy_cost": 0.01,
+    "episode_length": 1000,
+    "learning_rate": 0.0003,
+    "max_grad_norm": 1.0,
+    "normalize_observations": true,
+    "num_envs": 8192,
+    "num_evals": 10,
+    "num_minibatches": 32,
+    "num_resets_per_eval": 10,
+    "num_timesteps": 200000000,
+    "num_updates_per_batch": 4,
+    "reward_scaling": 1.0,
+    "unroll_length": 20
+  },
+  "progress": [
+    {
+      "steps": 0,
+      "minutes": 2.4576083699862163,
+      "reward": 0.0005529697518795729
+    },
+    {
+      "steps": 22937600,
+      "minutes": 13.12990738550822,
+      "reward": 19.217945098876953
+    },
+    {
+      "steps": 45875200,
+      "minutes": 22.507395974795024,
+      "reward": 24.066089630126953
+    },
+    {
+      "steps": 68812800,
+      "minutes": 31.411402412255605,
+      "reward": 27.388120651245117
+    },
+    {
+      "steps": 91750400,
+      "minutes": 40.20926065047582,
+      "reward": 27.21317481994629
+    },
+    {
+      "steps": 114688000,
+      "minutes": 48.95183324019114,
+      "reward": 27.420902252197266
+    },
+    {
+      "steps": 137625600,
+      "minutes": 57.65759194294612,
+      "reward": 28.193199157714844
+    },
+    {
+      "steps": 160563200,
+      "minutes": 66.34351253906885,
+      "reward": 28.118968963623047
+    },
+    {
+      "steps": 183500800,
+      "minutes": 75.0123971581459,
+      "reward": 27.961076736450195
+    },
+    {
+      "steps": 206438400,
+      "minutes": 83.6558430035909,
+      "reward": 28.854610443115234
+    }
+  ],
+  "episodes": [
+    {
+      "seed": 1000,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.310544835085159
+    },
+    {
+      "seed": 1001,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.3366081254008
+    },
+    {
+      "seed": 1002,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.349328274149771
+    },
+    {
+      "seed": 1003,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.32375507950157
+    },
+    {
+      "seed": 1004,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.290902039573869
+    },
+    {
+      "seed": 1005,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.502637484309432
+    },
+    {
+      "seed": 1006,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.470933786364396
+    },
+    {
+      "seed": 1007,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.183528655920053
+    },
+    {
+      "seed": 1008,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.371313352310684
+    },
+    {
+      "seed": 1009,
+      "fell": false,
+      "seconds": 20.0,
+      "forward_m": 9.415470884978042
+    }
+  ],
+  "a2": {
+    "train_minutes": 83.67507637341818,
+    "falls": 0,
+    "mean_forward_speed": 0.4677751125879689,
+    "pass": false
+  }
+}

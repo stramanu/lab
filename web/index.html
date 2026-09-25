@@ -31,6 +31,7 @@
       <div class="labnav-links">
         <a href="./systemone/">System One</a>
         <a href="./handwriting/">Handwriting</a>
+        <a href="./applied/go1/">Go1</a>
       </div>
       <button id="theme" class="ghost" type="button" aria-label="Toggle light or dark theme">◐</button>
     </nav>
@@ -40,7 +41,7 @@
       <h1>The <em>lab</em></h1>
       <p class="lede">
         Small, reproducible experiments in machine learning, planning and control. The networks and planners are written
-        from scratch and run in your browser. Every result comes with the protocol that
+        from scratch and run in your browser, except on the applied side, which uses established tools and says so. Every result comes with the protocol that
         produced it, and the negative results are published too.
       </p>
     </header>
@@ -93,6 +94,26 @@
         <a class="experiment-link" href="./handwriting/">Open the experiment →</a>
       </article>
 
+      <article class="panel experiment">
+        <div class="experiment-meta">
+          <span class="experiment-number">03</span>
+          <span class="experiment-status">applied · in progress</span>
+        </div>
+        <h3>Go1 in your browser</h3>
+        <p class="question">
+          Can a model of a real robot, trained on a GPU, walk in a browser tab, and can a planner teach it where
+          it struggles?
+        </p>
+        <p>
+          The lab's applied side: established tools (MuJoCo, MuJoCo Playground, a free Colab GPU) instead of code
+          written from scratch, under the same method. The Unitree Go1 runs in your browser, and you steer it.
+        </p>
+        <ul class="findings">
+          <li><b>So far</b> Trained in 84 minutes on a Colab T4, the policy walks on rough ground without falling, and runs in the browser exactly as it did in training. A first GPU planner never improved on it.</li>
+        </ul>
+        <a class="experiment-link" href="./applied/go1/">Open the experiment →</a>
+      </article>
+
       <section class="panel method" aria-labelledby="method-title">
         <h2 id="method-title">How experiments are run</h2>
         <ol>
@@ -101,7 +122,7 @@
           <li><b>Repeated runs.</b> Every final result that depends on training is the mean of 5 independent training runs, with 95% intervals.</li>
           <li><b>Feasibility first.</b> Before a long study, a short test with go/no-go criteria decides whether it is worth running; when a study goes ahead anyway, that is stated.</li>
           <li><b>Everything logged.</b> Every design decision is recorded with its evidence, and negative results are reported like positive ones.</li>
-          <li><b>From scratch.</b> No machine-learning libraries: networks, backpropagation, planners and environments are written in TypeScript (the quadruped's 3D physics uses the Rapier engine).</li>
+          <li><b>From scratch.</b> On the from-scratch side, no machine-learning libraries: networks, backpropagation, planners and environments are written in TypeScript (the quadruped's 3D physics uses the Rapier engine). The applied side uses established tools, and says which.</li>
         </ol>
       </section>
     </main>

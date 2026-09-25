@@ -1,0 +1,54 @@
+{
+  "name": "applied-go1-a3",
+  "createdAt": "2026-09-25T21:07:57.321093",
+  "claim": "Feasibility spike A3: the PPO policy trained in MuJoCo Playground (MJX/Warp, Colab T4) runs in TypeScript with JAX's actions and walks in the browser's MuJoCo (WebAssembly, C engine).",
+  "split": "n/a (Playground's reset distribution, lab RNG, seeds 1000-1009)",
+  "config": {
+    "page": "web/applied/go1-spike/",
+    "policy": "web/public/applied/assets/go1/go1-policy.json",
+    "command": [
+      0.5,
+      0,
+      0
+    ],
+    "episodeSeconds": 20,
+    "browser": "Chromium 153 (Playwright), headless, Apple M4 Max"
+  },
+  "results": {
+    "pass": true,
+    "equivalenceMaxAbs": 1.65e-07,
+    "pairs": 100,
+    "flat": {
+      "falls": 0,
+      "meanForwardSpeed": 0.487,
+      "forward_m": [
+        9.71,
+        9.73,
+        9.71,
+        9.74,
+        9.73,
+        9.78,
+        9.73,
+        9.74,
+        9.69,
+        9.78
+      ]
+    },
+    "rough": {
+      "falls": 0,
+      "meanForwardSpeed": 0.478,
+      "forward_m": [
+        9.59,
+        9.64,
+        9.38,
+        9.49,
+        9.5,
+        9.74,
+        9.54,
+        9.7,
+        9.54,
+        9.54
+      ]
+    }
+  }
+}

@@ -64,3 +64,13 @@ kbd {
 .go1-about {
   grid-column: 1 / -1;
 }
+
+.go1-status-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.go1-status-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}

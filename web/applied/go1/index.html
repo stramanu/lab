@@ -67,10 +67,16 @@
           PPO in MuJoCo Playground on a GPU, then runs here in plain TypeScript. The physics runs in this tab on
           DeepMind's MuJoCo WebAssembly build, about 90 times faster than real time on a laptop.
         </p>
+        <p><b>Status:</b> feasibility tests done.</p>
+        <ul class="go1-status-list">
+          <li>The physics runs about 90× faster than real time in the browser.</li>
+          <li>Training took 84 minutes on a free Colab T4 (the limit set was 60), and the policy walks.</li>
+          <li>The policy runs here exactly as in JAX (within 2 × 10⁻⁷) and walks on flat and rough ground.</li>
+          <li>A first GPU planner was too slow (173 ms per decision on a T4) and never improved on the policy.</li>
+        </ul>
         <p>
-          <b>Status:</b> feasibility tests in progress (browser speed ✓; training, transfer to the browser and
-          a GPU planner pending). The plan and its criteria are in the repository
-          (<code>docs/proposals/mujoco-quadruped.md</code>).
+          Next: a better planner, then the System One / System Two study. The plan, criteria and results are in
+          the repository (<code>docs/proposals/mujoco-quadruped.md</code>).
         </p>
         <p class="hint">
           Third-party: Unitree Go1 model © Unitree Robotics, BSD 3-Clause; MuJoCo and MuJoCo Playground ©

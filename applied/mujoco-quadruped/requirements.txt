@@ -2,7 +2,8 @@
 playground==0.2.0
 mujoco==3.14.0
 mujoco-mjx==3.14.0
-jax==0.11.2
-jaxlib==0.11.2
+# JAX 0.9.2: brax 0.14.2 (the latest) calls jax.device_put_replicated, removed in JAX 0.10.
+jax==0.9.2
+jaxlib==0.9.2
 brax==0.14.2
 warp-lang==1.17.0

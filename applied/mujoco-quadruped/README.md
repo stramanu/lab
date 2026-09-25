@@ -17,6 +17,14 @@ Measured on an Apple M4 Max (2026-09-25): `Go1JoystickRoughTerrain` loads in 0.3
 environment at 0.2× real time on the CPU (MuJoCo Warp backend). Observations: a 48-value state and a
 123-value privileged state; 12 actuators; control at 50 Hz.
 
+## Training on Colab (spike A2)
+
+Open [`train_go1_a2.ipynb`](train_go1_a2.ipynb) in Colab with a GPU runtime and run all cells. It trains
+Playground's default PPO configuration, evaluates the policy against criterion A2, and downloads
+`go1-a2-results.zip` (the policy for A3 and the results). The notebook was smoke-tested locally on the CPU
+with a tiny budget. That test found that `pip install playground` resolves JAX 0.11, which breaks
+training with brax 0.14.2, so JAX is pinned to 0.9.2.
+
 ## Third-party model
 
 The Unitree Go1 model comes from [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie)

@@ -397,6 +397,15 @@ a luxury.
   and game-specific agreement definitions, both declared before measuring.
 - **The warehouse is a grid abstraction**: unit-time moves, no kinematics, one layout and 16 robots. Its
   planner is windowed and prioritised, so it is fast but not optimal (unlike conflict-based search [29]).
+- **The warehouse has no deadlock resolution, and gridlock shapes its results.** Every driver slows down as
+  an episode goes on (`pnpm exp warehouse-gridlock`, 20 dev seeds). The planner delivers 41.6 loads in the
+  first quarter of an episode and 13.0 in the last, and 5 of 20 episodes end frozen (on average, fewer than
+  2 of the 16 robots move per timestep over the last 50). The hybrid ends frozen in 9 of 20 episodes,
+  System One alone in 10, and the greedy baseline in all 20. Lifelong-MAPF systems resolve such deadlocks
+  explicitly, for example with priority inheritance and backtracking (PIBT [47]) or rolling-horizon
+  conflict resolution [31]. Our planner has neither, so System One learns from a teacher that is weak
+  exactly there. A planner with deadlock resolution would be a new version of the experiment, not a change
+  to this one.
 - **The quadruped is a simulation**: one robot model, flat ground, pushes of a single size, and a planner
   that modulates a hand-written trot rather than controlling the joints directly.
 - **Browser timings** are not reported here; cost is measured in compute units. Studies shared the
@@ -425,6 +434,7 @@ pnpm exp lander-acceptability
 pnpm exp racing-feasibility                    # discrete spike (v3)
 pnpm exp racing-continuous-feasibility         # continuous spike
 pnpm exp warehouse-feasibility
+pnpm exp warehouse-gridlock
 pnpm exp quadruped-solver
 pnpm exp quadruped-margin
 pnpm exp quadruped-feasibility                 # spike v2 (v1's result is kept)
@@ -505,3 +515,4 @@ Each game opens with its published weights: run 1 of its study, a choice fixed i
 44. Lee, J., Hwangbo, J., Wellhausen, L., Koltun, V., & Hutter, M. (2020). Learning Quadrupedal Locomotion over Challenging Terrain. *Science Robotics*, 5(47), eabc5986.
 45. Hwangbo, J., Lee, J., Dosovitskiy, A., Bellicoso, D., Tsounis, V., Koltun, V., & Hutter, M. (2019). Learning Agile and Dynamic Motor Skills for Legged Robots. *Science Robotics*, 4(26), eaau5872.
 46. Dimforge. Rapier physics engine, deterministic WebAssembly build `@dimforge/rapier3d-deterministic-compat` 0.20.0. https://rapier.rs
+47. Okumura, K., Machida, M., Défago, X., & Tamura, Y. (2022). Priority Inheritance with Backtracking for Iterative Multi-agent Path Finding. *Artificial Intelligence*, 310, 103752.

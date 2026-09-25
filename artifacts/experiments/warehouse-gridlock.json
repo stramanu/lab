@@ -1,0 +1,59 @@
+{
+  "name": "warehouse-gridlock",
+  "createdAt": "2026-09-25T08:36:10.334Z",
+  "claim": "The warehouse fleet slows down and often ends in gridlock under every driver: the planner has no deadlock resolution, and System One inherits it.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020
+  ],
+  "config": {
+    "model": "artifacts/warehouse/study/run-1",
+    "tail": 50,
+    "frozenBelow": 2
+  },
+  "results": {
+    "system2 (level 2)": {
+      "deliveries": 110.25,
+      "firstQuarter": 41.65,
+      "lastQuarter": 13,
+      "frozenAtEnd": 5
+    },
+    "hybrid+guard maxProb@0.7": {
+      "deliveries": 85.6,
+      "firstQuarter": 37.1,
+      "lastQuarter": 7.1,
+      "frozenAtEnd": 9
+    },
+    "system1": {
+      "deliveries": 46.05,
+      "firstQuarter": 25.9,
+      "lastQuarter": 2.15,
+      "frozenAtEnd": 10
+    },
+    "greedy": {
+      "deliveries": 24.05,
+      "firstQuarter": 19.7,
+      "lastQuarter": 0.15,
+      "frozenAtEnd": 20
+    }
+  }
+}

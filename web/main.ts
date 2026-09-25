@@ -167,6 +167,8 @@ function resetGame(newSeed: number): void {
   episode = 1;
   episodeScores.length = 0;
   decisions.clear();
+  guardSaves = 0;
+  $('guard-saves').textContent = '0';
   env.reset(seed);
   view.reset();
   racing.reset(seed);
@@ -194,8 +196,21 @@ function playMove(): void {
   applyMove(hybrid.act(env));
 }
 
+let guardSaves = 0;
+/** Restarts the guard's glow on the board and on its row (one per stopped move, visible at any speed). */
+function flashGuard(): void {
+  guardSaves++;
+  $('guard-saves').textContent = String(guardSaves);
+  for (const el of [$('board-wrap'), document.querySelector<HTMLElement>('.tier[data-state="guard"]')!]) {
+    el.classList.remove('guard-flash');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('guard-flash');
+  }
+}
+
 function applyMove(m: MoveRecord): void {
   lastState = decisionState(m.decider, m.escalationReason);
+  if (lastState === 'guard') flashGuard();
   lastProbs = m.probs ?? null;
   lastEncoding = m.state ?? null;
   lastConfidence = m.confidence ?? null;

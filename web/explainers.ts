@@ -65,7 +65,7 @@ export const EXPLAINERS: Record<string, Explainer> = {
       'Cooperative space-time search: it predicts where the other robots will be over the next 8 timesteps, then searches a time-expanded map for the best path from each possible move of the deciding robot. Cost: nodes expanded, about 530 per move.',
     guard: 'Rejects a move into a shelf, into a cell another robot has claimed, a swap with another robot, or a step into a dead end that is not the goal.',
     result:
-      'Alone, the network reaches 40% of the planner. The hybrid reaches 91% for 4.0× less compute, missing the 10× target, but with less compute than the planner with a shorter search window it delivers far more: 89.4 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018).',
+      'Alone, the network reaches 40% of the planner. The hybrid reaches 91% for 4.0× less compute, missing the 10× target, but with less compute than the planner with a shorter search window it delivers far more: 89.4 deliveries against 60.1. Its confidence is well calibrated (ECE 0.018). A known limitation: as an episode goes on the fleet often ends in gridlock, with the planner too, because the planner has no deadlock resolution.',
   },
   racing: {
     what: 'A car on a procedural closed track, with a grip limit: take the corners too fast and it leaves the track. Score = metres of track covered in 60 s.',

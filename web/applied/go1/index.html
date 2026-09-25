@@ -60,7 +60,7 @@
         </div>
         <p class="hint" id="go1-policy">Policy: loading…</p>
         <p class="hint">
-          <b>Jump</b> uses the robot's own legs: it brakes, crouches and pushes straight up (the trunk rises about 30 cm), following a hand-written sequence, because the network was never trained to jump; then the network lands it. A fixed sequence cannot correct its rotation in the air, so it sometimes falls, more often on rough ground: agile jumps are learned.
+          <b>Jump</b> uses the robot's own legs: it crouches and pushes straight up (the trunk rises about 30 cm), also while walking, following a hand-written sequence, because the network was never trained to jump; then the network lands it and walks on. A fixed sequence cannot correct its rotation in the air, so it sometimes falls, more often on rough ground: agile jumps are learned.
           <b>Obstacle course</b>, straight ahead: ramps, steps of 2–6 cm and bumps, then steps of 8, 10 and 12 cm.
           The network cannot see the ground, and on dev tests it cleared the first part every time and the 8 cm
           step two times in five.

@@ -41,7 +41,6 @@ let constants: Go1Constants = GO1_DEFAULTS;
 let terrain: Terrain = 'flat';
 let feetSites: number[] = [];
 let jump: Go1Jump | null = null;
-const STILL = new Float64Array(3);
 let episode = 0;
 let falls = 0;
 let origin: [number, number] = [0, 0];
@@ -150,10 +149,8 @@ function frame(now: number): void {
     // Real time: one control step (20 ms) per 20 ms of wall-clock time.
     while (simTime >= constants.ctrl_dt) {
       simTime -= constants.ctrl_dt;
-      // A jump in progress overrides the policy (except while braking, when the policy stands still).
-      const scripted = jump?.active ? jump.next() : null;
-      const braking = jump?.active && !scripted;
-      const action = scripted ?? (policy ? policy.act(task.observe(braking ? STILL : command, obs)) : new Float64Array(12));
+      // A jump in progress overrides the policy.
+      const action = jump?.active ? jump.next() : policy ? policy.act(task.observe(command, obs)) : new Float64Array(12);
       task.act(action);
       // The crouch of a jump brings the trunk near the feet on purpose: only a flip counts then.
       if (fellAt < 0 && (task.fell() || (!jump?.active && collapsed()))) {
@@ -175,7 +172,7 @@ function frame(now: number): void {
 /** Space bar: a jump with the robot's own legs (a hand-written sequence; see jump.ts). */
 function hop(): void {
   if (!policy || fellAt >= 0) return;
-  jump?.start();
+  jump?.start(command[0]);
 }
 
 function wireControls(): void {

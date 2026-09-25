@@ -44,6 +44,16 @@ export class BraxPolicy {
     this.buffers = [new Float64Array(this.inputSize), ...this.layers.map((l) => new Float64Array(l.n))];
   }
 
+  /** The last forward pass: the normalized input, each hidden layer (after swish) and the raw outputs. */
+  get trace(): readonly Float64Array[] {
+    return this.buffers;
+  }
+
+  /** The dense layers: weights row-major by output unit (w[j * m + i]), n outputs, m inputs. */
+  get dense(): ReadonlyArray<{ readonly w: Float64Array; readonly n: number; readonly m: number }> {
+    return this.layers;
+  }
+
   /** Deterministic action in [−1, 1] for one observation (a fresh array). */
   act(obs: ArrayLike<number>): Float64Array {
     const x = this.buffers[0];

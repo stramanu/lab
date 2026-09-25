@@ -10,6 +10,7 @@ import { initTheme } from '../../theme';
 import { BraxPolicy, type BraxPolicyExport } from '../brax-policy';
 import { GO1_DEFAULTS, Go1Task, type Go1Constants } from '../go1-controller';
 import { Go1Jump } from './jump';
+import { Go1NetworkView } from './network-view';
 import { SceneView } from './scene-view';
 
 const ASSETS = new URL('../assets/go1/', location.href);
@@ -41,6 +42,10 @@ let constants: Go1Constants = GO1_DEFAULTS;
 let terrain: Terrain = 'course';
 let feetSites: number[] = [];
 let jump: Go1Jump | null = null;
+let netView: Go1NetworkView | null = null;
+let netDrawn = 0;
+/** The network view redraws at most this often (ms): its edge search is the costly part. */
+const NET_EVERY = 80;
 let episode = 0;
 let falls = 0;
 let origin: [number, number] = [0, 0];
@@ -163,6 +168,14 @@ function frame(now: number): void {
     if (terrain === 'rough' && (Math.abs(qq[0]) > ROUGH_EDGE || Math.abs(qq[1]) > ROUGH_EDGE)) resetEpisode();
     const q = data.qpos as Float64Array;
     view.draw(data, [q[0], q[1], q[2]]);
+    if (netView && policy && now - netDrawn > NET_EVERY) {
+      netDrawn = now;
+      const idle = !!jump?.active;
+      netView.update(policy.trace, idle);
+      const state = $('go1-net-state');
+      state.dataset.idle = String(idle);
+      state.textContent = idle ? `hand-written jump (${jump!.phaseName}): the network is not driving` : 'the network is driving the 12 motors';
+    }
     const walked = Math.hypot(q[0] - origin[0], q[1] - origin[1]);
     $('go1-readout').textContent = `command ${command[0].toFixed(2)} m/s forward · ${command[1].toFixed(2)} sideways · ${command[2].toFixed(2)} rad/s turn   |   ${walked.toFixed(1)} m from the start · falls ${falls}${jump?.active ? ` · jump: ${jump.phaseName}` : ''}${fellAt >= 0 ? ' · fell, restarting…' : ''}`;
   }
@@ -243,6 +256,7 @@ async function main(): Promise<void> {
   await Promise.all([loadFiles(), loadPolicy()]);
   wireControls();
   build();
+  if (policy) netView = await Go1NetworkView.create($('go1-network'), policy.dense);
   status('');
   requestAnimationFrame(frame);
 }

@@ -61,16 +61,36 @@ kbd {
   }
 }
 
-.go1-about {
+.go1-about,
+.go1-network {
   grid-column: 1 / -1;
 }
 
-.go1-status-list {
-  margin: 0 0 10px;
-  padding-left: 18px;
+.go1-net-state {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  margin: 0;
+  font: 500 11px/1.4 var(--mono);
+  color: var(--ink-2);
+  pointer-events: none;
+}
+
+.go1-net-state[data-idle='true'] {
+  color: var(--guard);
 }
 
 .go1-status-list {
   margin: 0 0 10px;
   padding-left: 18px;
+}
+
+.go1-network .network-wrap {
+  height: 520px;
+}
+
+@media (max-width: 720px) {
+  .go1-network .network-wrap {
+    height: 380px;
+  }
 }

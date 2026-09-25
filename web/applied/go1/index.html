@@ -67,6 +67,17 @@
           step two times in five.
         </p>
       </section>
+      <section class="panel go1-network" aria-labelledby="go1-network-title">
+        <h2 id="go1-network-title">Inside the network</h2>
+        <p class="sub">
+          The policy's live forward pass, 50 times a second. Left, the 48 sensor values grouped by what they
+          measure; then three hidden layers of 512, 256 and 128 neurons, lit by their activations; right, the
+          12 joint targets, one row per leg (hip sideways, hip, knee). Only the connections that contribute most
+          are drawn (<span class="warm">positive</span>, <span class="cool">negative</span>). During a jump the
+          hand-written sequence drives the motors and the network dims. Drag to orbit.
+        </p>
+        <div class="network-wrap" id="go1-network"><p class="go1-net-state" id="go1-net-state"></p></div>
+      </section>
       <section class="panel go1-about" aria-labelledby="go1-about-title">
         <h2 id="go1-about-title">What this is</h2>
         <p>

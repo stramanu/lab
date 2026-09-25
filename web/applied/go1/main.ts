@@ -12,7 +12,16 @@ import { GO1_DEFAULTS, Go1Task, type Go1Constants } from '../go1-controller';
 import { SceneView } from './scene-view';
 
 const ASSETS = new URL('../assets/go1/', location.href);
-const FILES = ['scene_mjx_feetonly_flat_terrain.xml', 'scene_mjx_feetonly_rough_terrain.xml', 'go1_mjx_feetonly.xml', 'sensor_feet.xml', 'assets/hfield.png', 'assets/rocky_texture.png', 'meshes/trunk.stl', 'meshes/hip.stl', 'meshes/thigh.stl', 'meshes/thigh_mirror.stl', 'meshes/calf.stl'];
+/**
+ * The page's scenes use the full-collision robot, so a fallen robot lies on the ground; the policy was
+ * trained on the feet-only model, which is the same while walking (only the feet touch the ground).
+ */
+const FILES = ['page_flat.xml', 'page_rough.xml', 'page_course.xml', 'scene_mjx_fullcollisions_flat_terrain.xml', 'go1_mjx_fullcollisions.xml', 'sensor_feet.xml', 'sensor_fullcollision.xml', 'assets/hfield.png', 'assets/rocky_texture.png', 'meshes/trunk.stl', 'meshes/hip.stl', 'meshes/thigh.stl', 'meshes/thigh_mirror.stl', 'meshes/calf.stl'];
+type Terrain = 'flat' | 'rough' | 'course';
+/** Half-size of the rough heightfield that the robot may use before it restarts (the field is 20 × 20 m). */
+const ROUGH_EDGE = 9;
+/** A hop: the base's vertical velocity added by the space bar (m/s). The network was not trained to jump. */
+const HOP = 2.0;
 /** Command limits (m/s, m/s, rad/s) within Playground's training ranges. */
 const LIMITS = { vx: 1.0, vy: 0.6, yaw: 1.0 };
 /** Visitor pushes: base velocity change per metre dragged (m/s), and its cap. */
@@ -29,7 +38,8 @@ let task: Go1Task | null = null;
 let view: SceneView | null = null;
 let policy: BraxPolicy | null = null;
 let constants: Go1Constants = GO1_DEFAULTS;
-let terrain: 'flat' | 'rough' = 'flat';
+let terrain: Terrain = 'flat';
+let feetSites: number[] = [];
 let episode = 0;
 let falls = 0;
 let origin: [number, number] = [0, 0];
@@ -64,9 +74,10 @@ function build(): void {
   view?.dispose();
   data?.delete();
   model?.delete();
-  model = mujoco.MjModel.from_xml_path(`/go1/scene_mjx_feetonly_${terrain}_terrain.xml`);
+  model = mujoco.MjModel.from_xml_path(`/go1/page_${terrain}.xml`);
   data = new mujoco.MjData(model);
   task = new Go1Task(mujoco, model, data, constants);
+  feetSites = ['FR', 'FL', 'RR', 'RL'].map((n) => mujoco.mj_name2id(model!, mujoco.mjtObj.mjOBJ_SITE.value, n));
   view = new SceneView(
     THREE,
     $<HTMLCanvasElement>('go1-view'),
@@ -76,12 +87,39 @@ function build(): void {
   resetEpisode();
 }
 
+/** Read-only view of the live simulation, for automated checks of the page. */
+(window as unknown as { go1Debug: () => unknown }).go1Debug = () => ({
+  terrain,
+  episode,
+  falls,
+  fellAt,
+  z: data ? (data.qpos as Float64Array)[2] : null,
+  up: data ? (data.qpos as Float64Array).slice(3, 7) : null,
+  command: Array.from(command),
+  time: data ? (data.time as number) : null,
+});
+
 function resetEpisode(): void {
   if (!task || !data) return;
   task.reset(1 + episode++);
   const q = data.qpos as Float64Array;
+  if (terrain === 'course') {
+    // The course runs along +x: start at the origin, facing it.
+    q[0] = q[1] = 0;
+    q[3] = 1;
+    q[4] = q[5] = q[6] = 0;
+    mujoco.mj_forward(model!, data);
+  }
   origin = [q[0], q[1]];
   fellAt = -1;
+}
+
+/** A fall that is not a flip: the trunk down near the feet (lying on its side or belly). */
+function collapsed(): boolean {
+  const q = data!.qpos as Float64Array;
+  const s = data!.site_xpos as Float64Array;
+  const lowestFoot = Math.min(...feetSites.map((id) => s[3 * id + 2]));
+  return q[2] - lowestFoot < 0.12;
 }
 
 /** The command from the keyboard (held keys) or, when no key is held, from the sliders. */
@@ -110,12 +148,14 @@ function frame(now: number): void {
       simTime -= constants.ctrl_dt;
       const action = policy ? policy.act(task.observe(command, obs)) : new Float64Array(12);
       task.act(action);
-      if (fellAt < 0 && task.fell()) {
+      if (fellAt < 0 && (task.fell() || collapsed())) {
         falls++;
         fellAt = now;
       }
     }
     if (fellAt >= 0 && now - fellAt > 1500) resetEpisode();
+    const qq = data.qpos as Float64Array;
+    if (terrain === 'rough' && (Math.abs(qq[0]) > ROUGH_EDGE || Math.abs(qq[1]) > ROUGH_EDGE)) resetEpisode();
     const q = data.qpos as Float64Array;
     view.draw(data, [q[0], q[1], q[2]]);
     const walked = Math.hypot(q[0] - origin[0], q[1] - origin[1]);
@@ -124,7 +164,14 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
+/** Space bar: a push upward. It is not a learned jump; the network only has to land and recover. */
+function hop(): void {
+  if (!data || fellAt >= 0) return;
+  (data.qvel as Float64Array)[2] += HOP;
+}
+
 function wireControls(): void {
+  $('go1-hop').addEventListener('click', hop);
   for (const id of ['cmd-vx', 'cmd-vy', 'cmd-yaw']) {
     const input = $<HTMLInputElement>(id);
     const out = $(`${id}-out`);
@@ -140,11 +187,16 @@ function wireControls(): void {
   });
   $('go1-reset').addEventListener('click', resetEpisode);
   $<HTMLSelectElement>('go1-terrain').addEventListener('change', (e) => {
-    terrain = (e.target as HTMLSelectElement).value as 'flat' | 'rough';
+    terrain = (e.target as HTMLSelectElement).value as Terrain;
     build();
   });
   const drivingKeys = new Set(['w', 'a', 's', 'd', 'q', 'e', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
   addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === ' ' && !(e.target as HTMLElement).closest('input, select, textarea, button')) {
+      e.preventDefault();
+      if (!e.repeat) hop();
+      return;
+    }
     const k = e.key.toLowerCase();
     if (!drivingKeys.has(k) || (e.target as HTMLElement).closest('input, select, textarea')) return;
     keys.add(k);

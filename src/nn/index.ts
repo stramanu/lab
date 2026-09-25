@@ -5,3 +5,4 @@ export * from './mlp';
 export * from './serialize';
 export * from './train';
 export * from './ensemble';
+export * from './modular';

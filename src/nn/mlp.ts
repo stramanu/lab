@@ -35,7 +35,8 @@ export class Mlp {
   private dz2: Float64Array;
   private dz3: Float64Array;
 
-  constructor(config: MlpConfig, precision: Precision = 'f32') {
+  /** `buffer`: optional storage for the parameters (a view into a larger model's buffer, as in ModularNet). */
+  constructor(config: MlpConfig, precision: Precision = 'f32', buffer?: ParamBuffer) {
     this.config = config;
     this.precision = precision;
     const { inputSize: n0, hidden: [n1, n2], outputSize: n3 } = config;
@@ -47,7 +48,8 @@ export class Mlp {
     const b3 = w3 + n2 * n3;
     this.offsets = { w1, b1, w2, b2, w3, b3 };
     this.numParams = b3 + n3;
-    this.params = precision === 'f32' ? new Float32Array(this.numParams) : new Float64Array(this.numParams);
+    if (buffer && buffer.length !== this.numParams) throw new Error(`Parameter buffer of ${buffer.length} values for ${this.numParams} parameters`);
+    this.params = buffer ?? (precision === 'f32' ? new Float32Array(this.numParams) : new Float64Array(this.numParams));
     this.z1 = new Float64Array(n1);
     this.a1 = new Float64Array(n1);
     this.z2 = new Float64Array(n2);
@@ -160,6 +162,25 @@ export class Mlp {
     }
     this.backward(x, grad, scale);
     return loss;
+  }
+
+  /**
+   * Backward pass for a given output gradient, for networks composed of several MLPs: `x` must be the
+   * input of the last forward pass. Accumulates `scale * dLoss/dParams` into `grad` and, if `dInput` is
+   * given, writes the (unscaled) gradient with respect to the input into it.
+   */
+  accumulateFromOutput(x: ArrayLike<number>, dOut: ArrayLike<number>, grad: Float64Array, scale: number, dInput?: Float64Array): void {
+    for (let k = 0; k < this.config.outputSize; k++) this.dz3[k] = dOut[k];
+    this.backward(x, grad, scale);
+    if (!dInput) return;
+    const p = this.params;
+    const { inputSize: n0, hidden: [n1] } = this.config;
+    const w1 = this.offsets.w1;
+    for (let i = 0; i < n0; i++) {
+      let s = 0;
+      for (let j = 0; j < n1; j++) s += p[w1 + j * n0 + i] * this.dz1[j];
+      dInput[i] = s;
+    }
   }
 
   /** Backpropagates `dz3` (dLoss/dOutput, from the last forward pass) into `grad`. */

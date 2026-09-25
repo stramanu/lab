@@ -1,13 +1,15 @@
 /**
  * Height-scan spike for the quadruped (exploratory, dev seeds): does a System One that sees the ground
- * imitate and drive better on terrain than a blind one trained on the same data? Protocol and go/no-go
- * criteria C1–C5 are fixed in openspec/changes/add-quadruped-height-scan/design.md.
+ * imitate and drive better on terrain than a blind one trained on the same data, and does a modular one
+ * (scan encoder, proprioceptive encoder, motor network) do better than a single network? Protocol and
+ * go/no-go criteria C1–C6 are fixed in openspec/changes/add-quadruped-height-scan/design.md (with its
+ * declared revision).
  */
 import { availableParallelism } from 'node:os';
 import { mean } from '../src/core/stats';
 import { initQuadrupedPhysics, QuadrupedEnv, type TerrainKind } from '../src/games/quadruped';
 import { quadrupedAgrees } from '../src/games/registry';
-import { Ensemble, exportEnsemble, type EnsembleConfig } from '../src/nn';
+import { Ensemble, exportEnsemble, type EnsembleConfig, type ModularArchitecture } from '../src/nn';
 import { auroc, type ExperimentResult } from './common';
 import { Pool, type Reply } from './workers/pool';
 import type { Driver, EnvOptions, WorkerTask } from './workers/quadruped-worker';
@@ -106,9 +108,14 @@ export async function run(): Promise<ExperimentResult> {
     log(`planner: ${JSON.stringify(planner)}`);
 
     const results: Record<string, unknown> = {};
-    const nets: Record<string, { inputs: number; heightScan: boolean }> = { blind: { inputs: PROPRIO, heightScan: false }, scan: { inputs: data.xs[0].length, heightScan: true } };
-    for (const [name, { inputs, heightScan }] of Object.entries(nets)) {
-      const config: EnsembleConfig = { inputSize: inputs, hidden: [256, 256], low: [-1, -1, -1, -1], high: [1, 1, 1, 1], members: 5, seed: 1 };
+    const MODULAR: ModularArchitecture = { split: PROPRIO, encoderHidden: [64, 64], proprioLatent: 32, scanLatent: 16 };
+    const nets: Record<string, { inputs: number; heightScan: boolean; modular?: ModularArchitecture }> = {
+      blind: { inputs: PROPRIO, heightScan: false },
+      single: { inputs: data.xs[0].length, heightScan: true },
+      modular: { inputs: data.xs[0].length, heightScan: true, modular: MODULAR },
+    };
+    for (const [name, { inputs, heightScan, modular }] of Object.entries(nets)) {
+      const config: EnsembleConfig = { inputSize: inputs, hidden: [256, 256], low: [-1, -1, -1, -1], high: [1, 1, 1, 1], members: 5, seed: 1, ...(modular ? { modular } : {}) };
       const ensemble = new Ensemble(config);
       log(`${name}: training on ${inputs} inputs…`);
       await trainParallel(pool, ensemble, data, inputs);
@@ -135,18 +142,31 @@ export async function run(): Promise<ExperimentResult> {
       results[name] = { params: ensemble.members.reduce((a, m) => a + m.numParams, 0), perTerrain };
     }
 
-    // Go / no-go criteria (design.md).
+    // Go / no-go criteria (design.md): C3–C5 for the modular network (main candidate) and the single one
+    // (control); C6 compares them (descriptive).
     type T = { agreement: number; aloneVsPlanner: number; alone: { distance: number } };
     const r = (net: string, t: string) => (results[net] as { perTerrain: Record<string, T> }).perTerrain[t];
+    const judged = (net: string) => {
+      const c3 = { hills: r(net, 'hills').agreement - r('blind', 'hills').agreement, mixed: r(net, 'mixed').agreement - r('blind', 'mixed').agreement };
+      const c4 = r(net, 'hills').aloneVsPlanner;
+      const c5 = r(net, 'flat').alone.distance / r('blind', 'flat').alone.distance;
+      return {
+        C3: { measured: c3, pass: c3.hills >= 0.05 && c3.mixed >= 0.05 },
+        C4: { measured: c4, pass: c4 >= 0.85 },
+        C5: { measured: c5, pass: c5 >= 0.95 },
+      };
+    };
     const criteria = {
       C1: { measured: cost.overhead, pass: cost.overhead < 0.1 },
-      C3: { measured: { hills: r('scan', 'hills').agreement - r('blind', 'hills').agreement, mixed: r('scan', 'mixed').agreement - r('blind', 'mixed').agreement }, pass: r('scan', 'hills').agreement - r('blind', 'hills').agreement >= 0.05 && r('scan', 'mixed').agreement - r('blind', 'mixed').agreement >= 0.05 },
-      C4: { measured: r('scan', 'hills').aloneVsPlanner, pass: r('scan', 'hills').aloneVsPlanner >= 0.85 },
-      C5: { measured: r('scan', 'flat').alone.distance / r('blind', 'flat').alone.distance, pass: r('scan', 'flat').alone.distance / r('blind', 'flat').alone.distance >= 0.95 },
+      modular: judged('modular'),
+      single: judged('single'),
+      C6: Object.fromEntries(
+        ['hills', 'mixed'].map((t) => [t, { agreement: r('modular', t).agreement - r('single', t).agreement, aloneVsPlanner: r('modular', t).aloneVsPlanner - r('single', t).aloneVsPlanner }]),
+      ),
     };
-    for (const [id, c] of Object.entries(criteria)) log(`${id} ${c.pass ? 'PASS' : 'FAIL'} ${JSON.stringify(c.measured)}`);
+    log(`criteria: ${JSON.stringify(criteria)}`);
     return {
-      claim: 'Exploratory spike: a height scan lets the quadruped System One imitate and drive better on terrain than a blind one trained on the same planner data.',
+      claim: 'Exploratory spike: a height scan lets the quadruped System One imitate and drive better on terrain than a blind one trained on the same planner data; modular against single network.',
       split: 'dev',
       seeds: [...EVAL_SEEDS, ...AGREEMENT_SEEDS],
       config: { J, dataEpisodes: DATA_EPISODES, calibrationEpisodes: CALIBRATION_EPISODES, epochs: EPOCHS, hidden: [256, 256], terrains: TERRAINS, smoke: SMOKE },

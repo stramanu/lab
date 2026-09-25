@@ -120,8 +120,10 @@ function rebuildHybrid(): void {
   }
 }
 
-/** The network shown in 3D: the policy, or the first ensemble member. */
-const shownNet = (): Mlp => (ensemble ? ensemble.members[0] : student!.net);
+/** The first ensemble member when it is a single MLP (the 3D view draws single MLPs only). */
+const firstMlp = (e: Ensemble): Mlp | null => (e.members[0] instanceof Mlp ? e.members[0] : null);
+/** The network shown in 3D: the policy, or the first ensemble member (none for modular members). */
+const shownNet = (): Mlp | null => (ensemble ? firstMlp(ensemble) : student!.net);
 
 function setUntrained(): void {
   const hidden = hiddenOf(game);
@@ -146,7 +148,8 @@ function setEnsemble(e: Ensemble, info: string): void {
   student = null;
   rebuildHybrid();
   $('model-info').textContent = info;
-  network?.setModel(e.members[0], game.input, game.def.continuous!.actionLabels);
+  const net = firstMlp(e);
+  if (net) network?.setModel(net, game.input, game.def.continuous!.actionLabels);
 }
 
 function applyPolicy(policy: Weights, source: string): void {
@@ -277,8 +280,9 @@ function frame(now: number): void {
 }
 
 function updateNetwork(d: NonNullable<typeof shown>): void {
-  if (!network) return;
-  const trace = shownNet().trace(d.encoding);
+  const net = shownNet();
+  if (!network || !net) return;
+  const trace = net.trace(d.encoding);
   if (ensemble && game.def.continuous) {
     // Continuous outputs are normalized to [−1, 1]; size nodes by magnitude and label them with values.
     const labels = game.def.continuous.actionLabels;
@@ -459,7 +463,8 @@ let network: NetworkView | null = null;
 void import('./network-view').then(async ({ NetworkView }) => {
   network = await NetworkView.create($('network'));
   if (network) {
-    if (ensemble && game.def.continuous) network.setModel(ensemble.members[0], game.input, game.def.continuous.actionLabels);
+    const net = ensemble && firstMlp(ensemble);
+    if (net && game.def.continuous) network.setModel(net, game.input, game.def.continuous.actionLabels);
     else if (student) network.setModel(student.net, game.input, env.actionNames);
   }
 });

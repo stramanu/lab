@@ -1,6 +1,10 @@
 import { Rng } from '../core/rng';
 import { Adam } from './adam';
 import { Mlp } from './mlp';
+import { ModularNet, type ModularArchitecture } from './modular';
+
+/** An ensemble member: a single MLP, or a modular network (encoders and a motor network). */
+export type EnsembleMember = Mlp | ModularNet;
 
 export interface EnsembleConfig {
   inputSize: number;
@@ -10,6 +14,8 @@ export interface EnsembleConfig {
   high: number[];
   members: number;
   seed: number;
+  /** Modular members (their `hidden` is the motor network's); single MLPs when absent. */
+  modular?: ModularArchitecture;
 }
 
 /** Monotone non-increasing map from disagreement to confidence (piecewise constant over bins). */
@@ -42,7 +48,7 @@ const DEFAULT_MAP: ConfidenceMap = { edges: [0.02, 0.05, 0.1, 0.2], values: [0.9
  */
 export class Ensemble {
   readonly config: EnsembleConfig;
-  readonly members: Mlp[];
+  readonly members: EnsembleMember[];
   confidenceMap: ConfidenceMap = DEFAULT_MAP;
   private adams: Adam[];
   private rngs: Rng[];
@@ -51,7 +57,10 @@ export class Ensemble {
   constructor(config: EnsembleConfig) {
     this.config = config;
     const dim = config.low.length;
-    this.members = Array.from({ length: config.members }, (_, k) => new Mlp({ inputSize: config.inputSize, hidden: config.hidden, outputSize: dim, seed: config.seed * 31 + k }));
+    this.members = Array.from({ length: config.members }, (_, k) => {
+      const base = { inputSize: config.inputSize, hidden: config.hidden, outputSize: dim, seed: config.seed * 31 + k };
+      return config.modular ? new ModularNet({ ...base, ...config.modular }) : new Mlp(base);
+    });
     this.adams = this.members.map((m) => new Adam(m.numParams, { lr: 1e-3 }));
     this.rngs = this.members.map((_, k) => Rng.stream(config.seed * 31 + k, 'ensemble-shuffle'));
     this.grads = this.members.map((m) => new Float64Array(m.numParams));

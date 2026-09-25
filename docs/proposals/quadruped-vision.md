@@ -55,6 +55,32 @@ teacher; the network is the student with a sensor.
 - **Page:** the scan points drawn around the robot in the 3D view, coloured by height, and a "sensor
   off" switch to watch the blind network.
 
+## Follow-up question: one network or separate modules
+
+Perceptive locomotion on real robots is usually modular:
+- **ANYmal** (Miki et al. 2022):
+  - a height-scan encoder and a proprioceptive encoder feed a belief module, which learns to trust
+    perception less when it is unreliable;
+  - a policy network then acts on that belief.
+- **RMA** (Kumar et al. 2021): an adaptation module estimates the environment from recent history, and a
+  base policy uses that estimate.
+- **Hierarchical control** (e.g. DeepLoco, Peng et al. 2017): a high-level network sets goals, and a
+  low-level network moves the legs.
+- **Our quadruped is already two-level:** the network modulates a hand-written trot that plays the role of
+  a pattern generator.
+
+**Question:** at an equal number of parameters, does a modular System One beat a single network on the
+concatenated inputs? The modular version has a scan encoder, a proprioceptive encoder and a fused
+motor network, trained end to end.
+
+The lab-specific twist is **uncertainty per module**. If the scan encoder is unsure (sensor noise, thin
+branches) while the motor network is not, the robot could rely on proprioception instead of escalating to
+the planner.
+
+**What it needs:** end-to-end backpropagation through composed networks in the from-scratch library,
+meaning input gradients passed between modules, with gradient-checking tests. It will be declared as its
+own change after the height-scan spike.
+
 ## Feasibility spike (criteria to fix before running)
 
 - **Physics and cost.** The scan adds less than 10% to the physics time per decision, and ray casts are
@@ -82,3 +108,6 @@ teacher; the network is the student with a sensor.
 - Rudin, N., Hoeller, D., Reist, P., & Hutter, M. (2022). Learning to Walk in Minutes Using Massively Parallel Deep Reinforcement Learning. *CoRL 2021*, PMLR 164.
 - Lakshminarayanan, B., Pritzel, A., & Blundell, C. (2017). Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles. *NeurIPS 30*.
 - Zakka, K., et al. (2025). MuJoCo Playground. arXiv:2502.08844.
+- Kumar, A., Fu, Z., Pathak, D., & Malik, J. (2021). RMA: Rapid Motor Adaptation for Legged Robots. *Robotics: Science and Systems (RSS) 2021*.
+- Peng, X. B., Berseth, G., Yin, K., & van de Panne, M. (2017). DeepLoco: Dynamic Locomotion Skills Using Hierarchical Deep Reinforcement Learning. *ACM Transactions on Graphics*, 36(4), 41.
+- Chen, T., Goodfellow, I., & Shlens, J. (2016). Net2Net: Accelerating Learning via Knowledge Transfer. *ICLR 2016*.

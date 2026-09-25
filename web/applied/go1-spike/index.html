@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Go1 browser spike · Lab</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      body { font: 14px/1.5 ui-monospace, monospace; margin: 24px; background: #f2ede2; color: #2c3a34; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Go1 in the browser: feasibility spike A1</h1>
+    <p>
+      The Unitree Go1 scene of MuJoCo Playground (flat and rough terrain), simulated by DeepMind's MuJoCo
+      WebAssembly build for 20 simulated seconds, with a 48 → 512 → 256 → 128 → 12 MLP evaluated at 50 Hz
+      (random weights: this measures cost, not walking). Criterion: at least 1.0× real time.
+    </p>
+    <pre id="log">Loading MuJoCo…</pre>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

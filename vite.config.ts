@@ -16,6 +16,7 @@ export default defineConfig({
         lab: page('./web/index.html'),
         systemone: page('./web/systemone/index.html'),
         handwriting: page('./web/handwriting/index.html'),
+        go1Spike: page('./web/applied/go1-spike/index.html'),
       },
     },
   },

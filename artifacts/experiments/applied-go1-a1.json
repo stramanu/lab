@@ -1,0 +1,33 @@
+{
+  "name": "applied-go1-a1",
+  "createdAt": "2026-09-25T17:35:00.247616",
+  "claim": "Feasibility spike A1: DeepMind's MuJoCo WebAssembly build simulates the Playground Go1 scene in the browser far above real time, with a policy-sized MLP at 50 Hz.",
+  "split": "n/a (no seeds: timing)",
+  "config": {
+    "page": "web/applied/go1-spike/",
+    "package": "@mujoco/mujoco 3.14.0 (single-threaded)",
+    "scenes": [
+      "scene_mjx_feetonly_flat_terrain.xml",
+      "scene_mjx_feetonly_rough_terrain.xml"
+    ],
+    "simSeconds": 20,
+    "policy": "48-512-256-128-12 MLP, random weights, 50 Hz",
+    "browser": "Chromium 153 (Playwright), headless",
+    "machine": "Apple M4 Max"
+  },
+  "results": {
+    "pass": true,
+    "flat": {
+      "realTimeFactor": 100.9,
+      "policyShare": 0.64
+    },
+    "rough": {
+      "realTimeFactor": 86.2,
+      "policyShare": 0.55
+    },
+    "loadMs": {
+      "mujoco": 49,
+      "sceneFiles": 89
+    }
+  }
+}

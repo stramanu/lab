@@ -8,6 +8,8 @@ type Three = typeof THREE;
 
 /** Footprints kept on the ground (the most recent touchdowns, colored by who decided). */
 const FOOTPRINTS = 80;
+/** Physics steps between two recorded poses (20 ms of simulated time): the motion between decisions. */
+const POSE_EVERY = 4;
 /** Seconds a push arrow stays visible. */
 const PUSH_SHOWN = 0.7;
 /** Visitor pushes: impulse per metre dragged on the ground, and the cap (N·s). */
@@ -73,12 +75,17 @@ export class QuadrupedView implements BoardView {
   private disposed = false;
   private camX = 0;
   /**
-   * Poses of the 9 bodies (trunk, then thigh and shank per leg) after the previous and the latest
-   * decision. The view moves between them over the typical time between decisions, so motion stays
-   * continuous even when decisions arrive a few times per second (the planner is slow).
+   * Poses of the 9 bodies (trunk, then thigh and shank per leg) through the latest decision: the pose
+   * before it, then one every POSE_EVERY physics steps. The view plays them back over the typical time
+   * between decisions, so the real gait stays smooth even when decisions arrive a few times per second
+   * (while the planner thinks, the robot moves in slow motion, not in jumps).
    */
-  private prevPose: BodyPose[] | null = null;
+  private frames: BodyPose[][] | null = null;
   private currPose: BodyPose[] | null = null;
+  private substeps: BodyPose[][] = [];
+  private readonly onStep = (e: QuadrupedEnv) => {
+    if (e.steps % POSE_EVERY === 0) this.substeps.push(this.capture(e));
+  };
   private poseTime = 0;
   private poseInterval = 100;
   /** The environment last drawn (the target of the visitor's pushes), and the drag in progress. */
@@ -346,7 +353,8 @@ export class QuadrupedView implements BoardView {
   }
 
   reset(): void {
-    this.prevPose = this.currPose = null;
+    this.frames = this.currPose = null;
+    this.substeps = [];
     this.visitorPushes = 0;
     this.printCount = 0;
     if (this.prints) this.prints.count = 0;
@@ -378,8 +386,11 @@ export class QuadrupedView implements BoardView {
     if (e.world && e.handles) {
       const now = performance.now();
       if (this.currPose) this.poseInterval += (Math.min(500, now - this.poseTime) - this.poseInterval) * 0.2;
-      this.prevPose = this.currPose ?? this.capture(e);
-      this.currPose = this.capture(e);
+      const end = this.capture(e);
+      // The last recorded step is the decision's end (20 steps per decision, one pose every 4).
+      this.frames = [this.currPose ?? end, ...(this.substeps.length ? this.substeps : [end])];
+      this.substeps = [];
+      this.currPose = end;
       this.poseTime = now;
     }
     if (!this.T || !e.robot) return;
@@ -408,18 +419,28 @@ export class QuadrupedView implements BoardView {
   draw(env: Env, last: DecisionState): void {
     const e = env as QuadrupedEnv;
     this.env = e;
+    if (e.onPhysicsStep !== this.onStep) {
+      e.onPhysicsStep = this.onStep;
+      this.substeps = [];
+    }
     const T = this.T;
     if (!T || !this.renderer || !e.world || !e.handles) return;
     if (e.terrain !== this.shownTerrain) this.buildTerrain(e.terrain, e.config.terrain);
-    if (!this.currPose) this.prevPose = this.currPose = this.capture(e);
+    if (!this.currPose) this.currPose = this.capture(e);
+    const frames = this.frames ?? [this.currPose];
     const alpha = Math.min(1, (performance.now() - this.poseTime) / Math.max(1, this.poseInterval));
+    const at = alpha * (frames.length - 1);
+    const i = Math.min(frames.length - 1, Math.floor(at));
+    const from = frames[i];
+    const to = frames[Math.min(frames.length - 1, i + 1)];
+    const f = at - i;
     const qa = new T.Quaternion();
     const qb = new T.Quaternion();
     const body = (k: number, mesh: THREE.Object3D, offset?: [number, number, number]) => {
-      const a = this.prevPose![k];
-      const b = this.currPose![k];
-      mesh.position.set(a.p[0] + (b.p[0] - a.p[0]) * alpha, a.p[1] + (b.p[1] - a.p[1]) * alpha, a.p[2] + (b.p[2] - a.p[2]) * alpha);
-      mesh.quaternion.slerpQuaternions(qa.set(...a.q), qb.set(...b.q), alpha);
+      const a = from[k];
+      const b = to[k];
+      mesh.position.set(a.p[0] + (b.p[0] - a.p[0]) * f, a.p[1] + (b.p[1] - a.p[1]) * f, a.p[2] + (b.p[2] - a.p[2]) * f);
+      mesh.quaternion.slerpQuaternions(qa.set(...a.q), qb.set(...b.q), f);
       if (offset) mesh.position.add(new T.Vector3(...offset).applyQuaternion(mesh.quaternion));
     };
     body(0, this.trunk);

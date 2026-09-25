@@ -65,6 +65,8 @@ export class QuadrupedEnv implements ContinuousEnv {
   friction = 0;
   /** Terrain of this episode (seeded; flat by default). */
   terrain: TerrainSpec = FLAT_TERRAIN;
+  /** Called after every physics step of this environment (not of its copies); used by the page to animate. */
+  onPhysicsStep: ((env: QuadrupedEnv) => void) | null = null;
   private targets = new Float64Array(NUM_JOINTS);
 
   constructor(config: Partial<QuadrupedConfig> = {}, gait: Partial<GaitConfig> = {}) {
@@ -127,6 +129,7 @@ export class QuadrupedEnv implements ContinuousEnv {
       this.time += cfg.dt;
       this.steps++;
       simulated++;
+      this.onPhysicsStep?.(this);
     }
     this.decisions++;
     this.robot = readRobot(this.world, this.handles, cfg, this.terrain);

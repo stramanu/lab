@@ -31,8 +31,9 @@ export const DEFAULT_QUADRUPED_TEACHER: QuadrupedTeacherConfig = { horizon: 10, 
  * current state, then the base controller (a = 0) runs to the horizon; rollouts contain no pushes,
  * so the planner does not see the future. Score = forward progress, minus a stability term (the maximum
  * trunk tilt during the rollout) and a penalty for a fall.
- * Holding the candidate for one decision keeps the guarantee of doing no worse than the base
- * controller within the horizon. Cost = physics steps simulated.
+ * The base controller is always a candidate, so within a rollout's horizon (and without pushes) the chosen
+ * action scores at least as well as the base controller, up to the satisficing margin; over a whole
+ * episode the improvement is measured, not guaranteed. Cost = physics steps simulated.
  */
 export class QuadrupedTeacher implements ContinuousTeacher {
   readonly name: string;
@@ -46,19 +47,37 @@ export class QuadrupedTeacher implements ContinuousTeacher {
   score(env: QuadrupedEnv): TeacherResult {
     const snap = env.snapshot();
     const start = env.score();
-    const scores = new Float64Array(CANDIDATES.length);
+    const values = new Float64Array(CANDIDATES.length);
     let cost = 0;
     for (let a = 0; a < CANDIDATES.length; a++) {
-      const sim = env.restore(snap, { pushes: false });
-      cost += sim.advance(CANDIDATES[a]);
-      let maxTilt = tiltOf(sim.robot.rot);
-      for (let d = 1; d < this.config.horizon && !sim.end; d++) {
-        cost += sim.advance(ZERO);
-        maxTilt = Math.max(maxTilt, tiltOf(sim.robot.rot));
-      }
-      scores[a] = sim.score() - start - this.config.tiltWeight * maxTilt - (sim.end === 'fall' ? this.config.fallPenalty : 0);
-      sim.dispose();
+      const r = this.candidateValue(env, snap, start, a);
+      values[a] = r.value;
+      cost += r.cost;
     }
+    return this.combine(values, cost);
+  }
+
+  /**
+   * Raw value of one candidate from a snapshot: progress minus the stability term and the fall penalty.
+   * Candidates are independent, so they can be evaluated anywhere (the page splits them across workers)
+   * and combined with `combine`, with the same result as `score`.
+   */
+  candidateValue(env: QuadrupedEnv, snap: QuadrupedSnapshot, start: number, a: number): { value: number; cost: number } {
+    const sim = env.restore(snap, { pushes: false });
+    let cost = sim.advance(CANDIDATES[a]);
+    let maxTilt = tiltOf(sim.robot.rot);
+    for (let d = 1; d < this.config.horizon && !sim.end; d++) {
+      cost += sim.advance(ZERO);
+      maxTilt = Math.max(maxTilt, tiltOf(sim.robot.rot));
+    }
+    const value = sim.score() - start - this.config.tiltWeight * maxTilt - (sim.end === 'fall' ? this.config.fallPenalty : 0);
+    sim.dispose();
+    return { value, cost };
+  }
+
+  /** Scores from the candidates' raw values: satisficing, then the base controller's bonus. */
+  combine(values: ArrayLike<number>, cost: number): TeacherResult {
+    const scores = Float64Array.from(values);
     let best = -Infinity;
     for (const v of scores) best = Math.max(best, v);
     for (let a = 0; a < scores.length; a++) if (scores[a] >= best - this.config.satisfice) scores[a] = best;
@@ -68,7 +87,11 @@ export class QuadrupedTeacher implements ContinuousTeacher {
 
   /** The chosen candidate as a continuous action, with its cost (the regression label). */
   targetAction(env: QuadrupedEnv): { action: Float64Array; cost: number; scores: Float64Array } {
-    const r = this.score(env);
+    return this.choose(this.score(env));
+  }
+
+  /** The best-scoring candidate (the first on ties) as a continuous action. */
+  choose(r: TeacherResult): { action: Float64Array; cost: number; scores: Float64Array } {
     let best = 0;
     for (let a = 1; a < r.scores.length; a++) if (r.scores[a] > r.scores[best]) best = a;
     return { action: Float64Array.from(CANDIDATES[best]), cost: r.cost, scores: r.scores };

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { initQuadrupedPhysics, QuadrupedEnv, QuadrupedGuard, QuadrupedTeacher } from '../src/games/quadruped';
+import { CANDIDATES, initQuadrupedPhysics, QuadrupedEnv, QuadrupedGuard, QuadrupedTeacher } from '../src/games/quadruped';
 
 const ZERO = [0, 0, 0, 0];
 
@@ -33,6 +33,30 @@ describe('quadruped planner and guard', () => {
     expect(Array.from(a.scores)).toEqual(Array.from(b.scores));
     expect(a.cost).toBe(b.cost);
     expect(Array.from(env.encode())).toEqual(before);
+    env.dispose();
+  });
+
+  it('gives the same answer when its candidates are evaluated separately and combined (as the page does)', () => {
+    const env = new QuadrupedEnv();
+    env.reset(10005);
+    for (let d = 0; d < 15; d++) env.advance([0, 0, 0, 0]);
+    const t = new QuadrupedTeacher();
+    const whole = t.targetAction(env);
+    const snap = env.snapshot();
+    const values = new Float64Array(CANDIDATES.length);
+    let cost = 0;
+    // Three "workers", each with its own share of the candidates, in reverse order.
+    for (const share of [[20, 17, 14, 11, 8, 5, 2], [19, 16, 13, 10, 7, 4, 1], [18, 15, 12, 9, 6, 3, 0]]) {
+      for (const a of share) {
+        const r = t.candidateValue(env, snap, env.score(), a);
+        values[a] = r.value;
+        cost += r.cost;
+      }
+    }
+    const split = t.choose(t.combine(values, cost));
+    expect(Array.from(split.scores)).toEqual(Array.from(whole.scores));
+    expect(Array.from(split.action)).toEqual(Array.from(whole.action));
+    expect(split.cost).toBe(whole.cost);
     env.dispose();
   });
 

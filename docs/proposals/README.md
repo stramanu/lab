@@ -30,9 +30,10 @@ before any measurement.
     (the Rizzo Flow technique), against a large model as System Two.
   - Then distil a tiny model with escalation, on routing (RouteLLM, Ong et al. 2024; RouterBench, Hu et
     al. 2024) or tool-call guardrails.
-- **A Go1 that jumps with its own legs.** The page's hop only throws the robot upward. A real jump needs a
-  policy trained for it: a Playground environment with a jump reward (take-off height and a stable
-  landing), trained on Colab like the walking one.
+- **A Go1 that learns to jump.** The page's jump is a hand-written leg sequence: it cannot correct its
+  rotation in the air and sometimes falls, more often on rough ground. A learned jump needs a Playground
+  environment with a jump reward (take-off height and a stable landing), trained on Colab like the
+  walking one.
 - **Drone racing.** Quadrotor dynamics, a sampling MPC (MPPI) as System Two, and the network distilled
   from it. Reference: Kaufmann et al. (2023), Champion-level drone racing using deep reinforcement
   learning, *Nature* 620, 982–987.

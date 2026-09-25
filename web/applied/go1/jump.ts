@@ -1,22 +1,33 @@
 /**
  * A jump with the Go1's own legs, hand-written (not learned): the walking policy brakes, then the motors
  * follow a fixed sequence (crouch, push, legs back under the body in the air), then the policy takes over
- * again to land and walk on. Tuned in simulation on the page's scenes (12 episodes per setting):
- * - standing: ~11 cm of trunk rise, 12/12 landings;
- * - on rough ground at 0.5 and 0.8 m/s, with the 300 ms brake: 12/12 and 11/12 landings, ~10 cm.
- * Higher sequences (15–50 cm) made the robot pitch up to ~90° in the air and fall: a fixed sequence cannot
- * correct its own rotation, which is why agile jumps are learned (reinforcement learning).
+ * again to land and walk on.
+ *
+ * Thigh and calf have the same length, so a leg with knee = −2·hip keeps the foot straight under the hip:
+ * crouching and extending along that line pushes the trunk vertically. A forward lean (added to the hips)
+ * cancels the backward drift that a vertical push gets from the trunk's centre of mass.
+ *
+ * Tuned in simulation on the page's scenes (12 episodes per setting, 300 ms brake first):
+ * - flat, standing: ~34 cm of trunk rise, 12/12 landings, ~9 cm forward;
+ * - flat, walking at 0.5 and 0.8 m/s: 11/12 and 12/12 landings, ~35 cm;
+ * - rough ground: 9–10/12 landings, ~33 cm.
+ * A fixed sequence cannot correct its own rotation in the air (pitch reaches 50–90°), which is why agile
+ * jumps are learned (reinforcement learning).
  */
 import type { Go1Constants } from '../go1-controller';
 
-type Pose = { front: [number, number]; rear: [number, number] };
+/** A leg pose on the vertical line: hip = h + lean, knee = −2h (radians). */
+type Pose = { h: number; lean: number };
+
+/** Forward lean of the crouch and the push (radians at the hip). */
+const LEAN = 0.6;
 
 /** Phases in control steps (20 ms each). `null` target: the policy acts with a zero command (braking). */
 const PHASES: Array<{ name: string; steps: number; pose: Pose | null }> = [
   { name: 'brake', steps: 15, pose: null },
-  { name: 'crouch', steps: 10, pose: { front: [1.2, -2.4], rear: [1.2, -2.4] } },
-  { name: 'push', steps: 4, pose: { front: [0.95, -1.7], rear: [1.05, -2.3] } },
-  { name: 'air', steps: 10, pose: { front: [0.9, -1.8], rear: [0.9, -1.8] } },
+  { name: 'crouch', steps: 10, pose: { h: 1.3, lean: LEAN } },
+  { name: 'push', steps: 4, pose: { h: 0.7, lean: LEAN } },
+  { name: 'air', steps: 10, pose: { h: 0.9, lean: 0 } },
 ];
 
 export class Go1Jump {
@@ -54,8 +65,7 @@ export class Go1Jump {
     if (pose) {
       action = new Float64Array(12);
       for (let i = 0; i < 12; i++) {
-        const [hip, knee] = Math.floor(i / 3) < 2 ? pose.front : pose.rear;
-        const target = [this.c.default_pose[i], hip, knee][i % 3];
+        const target = [this.c.default_pose[i], pose.h + pose.lean, -2 * pose.h][i % 3];
         action[i] = (target - this.c.default_pose[i]) / this.c.action_scale;
       }
     }

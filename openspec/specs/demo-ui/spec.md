@@ -157,11 +157,11 @@ On the lander, the page SHALL offer a control that adds a constant wind (−0.8 
 - **THEN** the wind shown on the board and fed to the network and the planner includes the added 0.6 m/s²
 
 ### Requirement: Quadruped random pushes switch
-On the quadruped, the page SHALL offer a switch for the seeded random pushes, on by default. Turning it off SHALL drop the remaining pushes of the current episode and schedule none in later episodes; turning it on SHALL restore the pushes still due from the current time. Visitor pushes SHALL keep working either way, and no experiment SHALL be affected.
+On the quadruped, the page SHALL offer a switch for the seeded random pushes, off by default, and SHALL say that the experiments always push. Turning it on SHALL restore the pushes still due from the current time and schedule them in later episodes; turning it off SHALL drop the remaining pushes of the current episode and schedule none in later episodes. Visitor pushes SHALL keep working either way, and no experiment SHALL be affected.
 
 #### Scenario: Pushes off
-- **WHEN** the visitor turns random pushes off during an episode
-- **THEN** no further seeded push hits the robot in that episode or in the next ones
+- **WHEN** the visitor opens the quadruped
+- **THEN** no seeded push is applied until the switch is turned on, and dragging on the robot still pushes it
 
 ### Requirement: 3D board for the quadruped
 The page SHALL render the quadruped in 3D (three.js, loaded lazily) on its own canvas over the board: the trunk colored by who decided the last action, footprints colored the same way at every touchdown, pushes as arrows, and a camera following the robot. Between decisions, the view SHALL play back the robot's poses recorded every 20 ms of simulated time, so the real gait stays smooth when decisions are slow. The physics engine SHALL load only when the quadruped is selected, and in-tab training SHALL be disabled for it with an explanation.

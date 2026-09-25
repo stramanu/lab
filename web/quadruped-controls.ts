@@ -9,7 +9,7 @@ import { $ } from './dom';
  * The trot speed changes the base controller's commanded speed live (0.4 m/s in training).
  */
 export class QuadrupedControls {
-  private enabled = true;
+  private enabled = false;
   private env: Env | null = null;
   private episodeSeed: () => number = () => 0;
   private readonly input = $<HTMLInputElement>('random-pushes');
@@ -18,6 +18,7 @@ export class QuadrupedControls {
   private restart: () => void = () => {};
 
   constructor() {
+    this.enabled = this.input.checked; // off by default; the browser may restore a previous choice
     this.input.addEventListener('change', () => {
       this.enabled = this.input.checked;
       this.apply(true);

@@ -105,7 +105,7 @@
           <p class="hint" id="wind-hint">Added to the seeded wind, live: watch who has to react.</p>
         </div>
         <div class="racing-only" id="quadruped-controls" hidden>
-          <label class="check"><input id="random-pushes" type="checkbox" checked /> Random pushes</label>
+          <label class="check"><input id="random-pushes" type="checkbox" /> Random pushes</label>
           <label class="field inline terrain-field">
             <span>Terrain</span>
             <select id="terrain" aria-describedby="terrain-hint">
@@ -115,7 +115,7 @@
               <option value="mixed">Hills and branches</option>
             </select>
           </label>
-          <p class="hint">Seeded pushes every 1.5–3 s, as in the experiment. Drag on the robot to push it yourself.</p>
+          <p class="hint">Off by default. On: seeded pushes every 1.5–3 s, as in the experiments, where the robot is always pushed. Drag on the robot to push it yourself.</p>
           <label class="field trot-field">
             <span>Trot speed <span><output id="o-trot">0.40</output> m/s</span></span>
             <input id="trot-speed" type="range" min="0.2" max="0.7" step="0.05" value="0.4" aria-describedby="terrain-hint" />

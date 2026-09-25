@@ -48,3 +48,16 @@ Checked locally on 2026-09-25:
 - **Colab's GPU model and session limits vary.** The GPU and the times are recorded, and the budgets hold
   for the GPU actually used.
 - **Warp against MJX backends:** results may differ slightly between them. The backend is recorded.
+
+## Clarifications before any measurement (2026-09-25)
+
+- **A2's walking test measures progress along the robot's initial heading.** Playground's reset draws a
+  random heading, and the command is in the body frame.
+- **A4 runs on MJX's JAX backend (`impl='jax'`).** The Warp backend's state cannot be replicated into a
+  batch of copies. The "policy alone" reference for A4 is therefore re-measured on the same backend and
+  the same 10 episodes (seeds, command, terrain), so the comparison is paired on one engine. The planner
+  decides at every control step (50 Hz): N = 512 copies, horizon H = 25 steps (0.5 s), Gaussian action
+  noise σ = 0.3 around the policy's actions, copy 0 without noise, score = the task reward summed while
+  standing.
+- **JAX is pinned to 0.9.2.** brax 0.14.2, the latest, fails with JAX 0.10 and later; the local smoke
+  test found it.

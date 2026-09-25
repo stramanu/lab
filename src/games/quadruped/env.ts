@@ -1,12 +1,12 @@
 import type { World } from '@dimforge/rapier3d-deterministic-compat';
 import { Rng } from '../../core/rng';
 import type { ContinuousEnv, GameSummary, StepResult } from '../../core/types';
-import { CANDIDATE_NAMES, CANDIDATES, DEFAULT_QUADRUPED_CONFIG, NUM_JOINTS, type QuadrupedConfig } from './config';
+import { CANDIDATE_NAMES, CANDIDATES, DEFAULT_QUADRUPED_CONFIG, NUM_JOINTS, SCAN_ACROSS, SCAN_AHEAD, SCAN_SIZE, type QuadrupedConfig } from './config';
 import { controlStep, copyControllerState, DEFAULT_GAIT, initialControllerState, type ControllerState, type GaitConfig } from './controller';
 import { rotate, quatConj, tiltOf, yawOf, type Vec3 } from './kinematics';
 import { rapier } from './rapier';
 import { buildRobot, pushTrunk, readRobot, setJointTargets, standingHeight, type RobotHandles, type RobotState } from './robot';
-import { FLAT_TERRAIN, generateTerrain, hillHeight, type TerrainSpec } from './terrain';
+import { FLAT_TERRAIN, generateTerrain, hillHeight, surfaceHeight, type TerrainSpec } from './terrain';
 
 export const QUADRUPED_ENCODING_SIZE = 46;
 
@@ -40,7 +40,7 @@ export class QuadrupedEnv implements ContinuousEnv {
   readonly name = 'quadruped';
   readonly numActions = CANDIDATES.length;
   readonly actionNames = CANDIDATE_NAMES;
-  readonly encodingSize: number = QUADRUPED_ENCODING_SIZE;
+  readonly encodingSize: number;
   readonly defaultAction = 0;
   readonly actionDim = 4;
   readonly actionLow = [-1, -1, -1, -1] as const;
@@ -73,6 +73,7 @@ export class QuadrupedEnv implements ContinuousEnv {
     rapier(); // fails early, with a clear message, before the physics is initialised
     this.config = { ...DEFAULT_QUADRUPED_CONFIG, ...config };
     this.gait = { ...DEFAULT_GAIT, ...gait };
+    this.encodingSize = QUADRUPED_ENCODING_SIZE + (this.config.heightScan ? SCAN_SIZE : 0);
   }
 
   reset(seed: number): void {
@@ -161,7 +162,7 @@ export class QuadrupedEnv implements ContinuousEnv {
    * trunk linear and angular velocity in the trunk frame, 12 joint angles and velocities,
    * 4 foot contacts, gait phase (sin, cos) and the last action.
    */
-  encode(out = new Float32Array(QUADRUPED_ENCODING_SIZE)): Float32Array {
+  encode(out = new Float32Array(this.encodingSize)): Float32Array {
     const r = this.robot;
     const inv = quatConj(r.rot);
     const g = rotate(inv, [0, -1, 0]);
@@ -181,7 +182,30 @@ export class QuadrupedEnv implements ContinuousEnv {
     out[o++] = Math.sin(2 * Math.PI * this.controller.phase);
     out[o++] = Math.cos(2 * Math.PI * this.controller.phase);
     for (let k = 0; k < 4; k++) out[o++] = this.lastAction[k];
+    if (this.config.heightScan) o = this.encodeScan(out, o);
     return out;
+  }
+
+  /**
+   * Height scan: for each grid point in the trunk's heading frame, (trunk height − ground surface height
+   * − nominal standing height) / 0.1 m, rows along the heading, then columns across. Zero on flat ground
+   * when standing. The analytic surface matches the physics ground within 1 cm (terrain tests).
+   */
+  private encodeScan(out: Float32Array, o: number): number {
+    const r = this.robot;
+    const yaw = yawOf(r.rot);
+    const fx = Math.cos(yaw);
+    const fz = -Math.sin(yaw);
+    const nominal = standingHeight(this.config) + this.config.footRadius;
+    for (const a of SCAN_AHEAD) {
+      for (const c of SCAN_ACROSS) {
+        // Right of the heading is (−fz, 0, fx) in world coordinates (z to the right of +x).
+        const x = r.pos[0] + a * fx - c * fz;
+        const z = r.pos[2] + a * fz + c * fx;
+        out[o++] = (r.pos[1] - surfaceHeight(this.terrain, x, z) - nominal) / 0.1;
+      }
+    }
+    return o;
   }
 
   isDone(): boolean {

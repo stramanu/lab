@@ -43,6 +43,8 @@ export interface QuadrupedConfig {
 
   /** Procedural terrain (flat by default, as in training and in the published study). */
   terrain: TerrainConfig;
+  /** Height-scan sensor appended to the encoding (off by default: the published networks are blind). */
+  heightScan: boolean;
 }
 
 export const DEFAULT_QUADRUPED_CONFIG: QuadrupedConfig = {
@@ -80,7 +82,13 @@ export const DEFAULT_QUADRUPED_CONFIG: QuadrupedConfig = {
   pushImpulse: 8,
 
   terrain: DEFAULT_TERRAIN,
+  heightScan: false,
 };
+
+/** Height-scan grid in the trunk's heading frame (m): rows along the heading, columns across (right positive). */
+export const SCAN_AHEAD = Array.from({ length: 11 }, (_, i) => -0.2 + 0.1 * i);
+export const SCAN_ACROSS = Array.from({ length: 7 }, (_, j) => -0.3 + 0.1 * j);
+export const SCAN_SIZE = SCAN_AHEAD.length * SCAN_ACROSS.length;
 
 export const LEG_NAMES = ['FR', 'FL', 'HR', 'HL'] as const;
 export const JOINTS_PER_LEG = 3;

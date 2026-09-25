@@ -37,6 +37,19 @@ export class Pool<Task extends { id: number }> {
     });
   }
 
+  /** Sends a task to one specific worker (for workers that keep state, like ensemble members). */
+  runOn(i: number, task: Omit<Task, 'id'>, transfer: ArrayBuffer[] = []): Promise<Reply> {
+    const worker = this.workers[i];
+    const slot = this.idle.indexOf(worker);
+    if (slot < 0) return Promise.reject(new Error(`Worker ${i} is busy: runOn needs it idle`));
+    const id = this.nextId++;
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { worker, resolve, reject });
+      this.idle.splice(slot, 1);
+      worker.postMessage({ ...task, id }, transfer);
+    });
+  }
+
   private pump(): void {
     while (this.idle.length && this.queue.length) {
       const w = this.idle.shift()!;

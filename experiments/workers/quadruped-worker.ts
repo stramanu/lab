@@ -3,15 +3,21 @@
  * or evaluation of a driver) and trains single ensemble members. Deterministic per task.
  */
 import { parentPort } from 'node:worker_threads';
-import { CANDIDATES, initQuadrupedPhysics, QuadrupedEnv, QuadrupedTeacher } from '../../src/games/quadruped';
+import { CANDIDATES, DEFAULT_TERRAIN, initQuadrupedPhysics, QuadrupedEnv, QuadrupedTeacher, type TerrainKind } from '../../src/games/quadruped';
 import { Ensemble, importEnsemble, type EnsembleConfig, type SerializedEnsemble } from '../../src/nn';
 
 /** Who plays the actions: the planner, the base controller, or a named ensemble version. */
 export type Driver = 'planner' | 'base' | { key: string; model: SerializedEnsemble };
 
+/** Optional environment: terrain kind and height-scan sensor (defaults: flat, blind, as in the flat experiments). */
+export interface EnvOptions {
+  terrain?: TerrainKind;
+  heightScan?: boolean;
+}
+
 export type WorkerTask =
-  | { type: 'collect'; id: number; seed: number; J: number; driver: Driver }
-  | { type: 'play'; id: number; seed: number; J: number; driver: Driver }
+  | { type: 'collect'; id: number; seed: number; J: number; driver: Driver; env?: EnvOptions }
+  | { type: 'play'; id: number; seed: number; J: number; driver: Driver; env?: EnvOptions }
   | { type: 'member-init'; id: number; config: EnsembleConfig; k: number }
   | { type: 'member-train'; id: number; xs: Float32Array; targets: Float32Array; n: number; epochs: number };
 
@@ -28,13 +34,16 @@ function driverOf(d: Driver): (env: QuadrupedEnv) => ArrayLike<number> {
   return (env) => e.decide(env.encode()).action;
 }
 
+const makeEnv = (J: number, o: EnvOptions = {}) =>
+  new QuadrupedEnv({ pushImpulse: J, terrain: { ...DEFAULT_TERRAIN, kind: o.terrain ?? 'flat' }, heightScan: o.heightScan ?? false });
+
 parentPort!.on('message', async (task: WorkerTask) => {
   try {
     await ready;
     if (task.type === 'collect') {
       // Every visited state labelled by the planner; the driver chooses the action actually played.
       const drive = task.driver === 'planner' ? null : driverOf(task.driver);
-      const env = new QuadrupedEnv({ pushImpulse: task.J });
+      const env = makeEnv(task.J, task.env);
       env.reset(task.seed);
       const xs: number[] = [];
       const ys: number[] = [];
@@ -51,7 +60,7 @@ parentPort!.on('message', async (task: WorkerTask) => {
       parentPort!.postMessage({ id: task.id, xs: X, ys: Y }, [X.buffer, Y.buffer]);
     } else if (task.type === 'play') {
       const drive = driverOf(task.driver);
-      const env = new QuadrupedEnv({ pushImpulse: task.J });
+      const env = makeEnv(task.J, task.env);
       env.reset(task.seed);
       while (!env.isDone()) env.advance(drive(env));
       const result = { fell: env.end === 'fall', distance: env.score(), time: env.time };

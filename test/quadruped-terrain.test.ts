@@ -7,6 +7,9 @@ import {
   initQuadrupedPhysics,
   QuadrupedEnv,
   rapier,
+  SCAN_ACROSS,
+  SCAN_AHEAD,
+  SCAN_SIZE,
   surfaceHeight,
   type TerrainKind,
 } from '../src/games/quadruped';
@@ -94,5 +97,49 @@ describe('quadruped terrain', () => {
     expect(a[0]).toBe(a[1]);
     expect(a[2]).toBe(a[3]);
     expect(run()).toEqual(a);
+  });
+});
+
+describe('quadruped height scan', () => {
+  beforeAll(async () => {
+    await initQuadrupedPhysics();
+  });
+
+  it('is off by default and leaves the 46-value encoding unchanged', () => {
+    const env = new QuadrupedEnv();
+    env.reset(10001);
+    expect(env.encodingSize).toBe(46);
+    expect(env.encode().length).toBe(46);
+    const scan = new QuadrupedEnv({ heightScan: true });
+    scan.reset(10001);
+    expect(scan.encodingSize).toBe(46 + SCAN_SIZE);
+    expect(Array.from(scan.encode().slice(0, 46))).toEqual(Array.from(env.encode()));
+    env.dispose();
+    scan.dispose();
+  });
+
+  it('reads zero on flat ground when standing, and sees a hill ahead', () => {
+    const env = new QuadrupedEnv({ heightScan: true });
+    env.reset(10001);
+    const flat = env.encode().slice(46);
+    for (const v of flat) expect(Math.abs(v)).toBeLessThan(0.05);
+    // A 10 cm bump centred 0.6 m ahead (the physics is unchanged; the scan reads the terrain description).
+    env.terrain = { kind: 'hills', hills: [{ x: 0.6, width: 0.6, height: 0.1, lateral: 0, k: 1, phase: 0 }], branches: [] };
+    const scan = env.encode().slice(46);
+    const at = (a: number, c: number) => scan[SCAN_AHEAD.findIndex((x) => Math.abs(x - a) < 1e-9) * SCAN_ACROSS.length + SCAN_ACROSS.findIndex((x) => Math.abs(x - c) < 1e-9)];
+    expect(at(0.6, 0)).toBeCloseTo(-1, 1); // ground 10 cm higher: one unit closer to the trunk
+    expect(Math.abs(at(-0.2, 0))).toBeLessThan(0.05);
+    expect(Math.abs(at(0, 0.3))).toBeLessThan(0.05);
+    env.dispose();
+  });
+
+  it('is identical after a snapshot is restored, on terrain', () => {
+    const env = new QuadrupedEnv({ heightScan: true, terrain: terrain('mixed') });
+    env.reset(10003);
+    for (let d = 0; d < 30 && !env.isDone(); d++) env.advance([0, 0, 0, 0]);
+    const copy = env.restore(env.snapshot());
+    expect(Array.from(copy.encode())).toEqual(Array.from(env.encode()));
+    env.dispose();
+    copy.dispose();
   });
 });

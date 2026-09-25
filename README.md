@@ -30,6 +30,9 @@ write-up.
 - **Handwriting**: 83.9% of letters right on 20 unseen writers, against 83.2% for the classic recogniser,
   for 1,302× less arithmetic; the 90% target is missed.
 
+Planned next, with their rationale and references: [docs/proposals/](docs/proposals/README.md) (a quadruped
+that sees the ground, then a rocket booster landing under a safety monitor).
+
 ## How experiments are run
 
 - **Targets first.** What would count as success is written down before measuring, and never changed.
@@ -88,7 +91,7 @@ data/             derived handwriting dataset (uppercase UJI Pen Characters v2) 
 scripts/          Node CLIs (train, eval, study with a worker pool, data, benchmarks, site build)
 experiments/      one reproducible script per supporting claim (dev data only)
 web/              the site: lab home, /systemone/ (game views, 3D views, charts, workers), /handwriting/
-docs/             one write-up per experiment, with results and references
+docs/             one write-up per experiment, with results and references; proposals/ for planned ones
 openspec/         specifications and the archived history of every change
 ```
 

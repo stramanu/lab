@@ -1,30 +1,45 @@
 import type { Env } from '../src/core/types';
-import { DEFAULT_QUADRUPED_CONFIG, QuadrupedEnv, schedulePushes } from '../src/games/quadruped';
+import { DEFAULT_QUADRUPED_CONFIG, DEFAULT_TERRAIN, QuadrupedEnv, schedulePushes, type TerrainKind } from '../src/games/quadruped';
 import { $ } from './dom';
 
 /**
- * The quadruped's random-pushes switch (demo only; the experiments always push). Off: the rest of the
- * episode's seeded pushes are dropped and later episodes have none. On: the pushes still due are restored.
+ * The quadruped's controls. The random-pushes switch (demo only; the experiments always push): off drops
+ * the rest of the episode's seeded pushes and later episodes have none; on restores the pushes still due.
+ * The terrain selector restarts the run on seeded terrain of the chosen kind (flat, as in training, by default).
  */
 export class QuadrupedControls {
   private enabled = true;
   private env: Env | null = null;
   private episodeSeed: () => number = () => 0;
   private readonly input = $<HTMLInputElement>('random-pushes');
+  private readonly terrain = $<HTMLSelectElement>('terrain');
+  private restart: () => void = () => {};
 
   constructor() {
     this.input.addEventListener('change', () => {
       this.enabled = this.input.checked;
       this.apply(true);
     });
+    this.terrain.addEventListener('change', () => {
+      this.applyTerrain();
+      this.restart();
+    });
   }
 
-  /** Shows the control for the quadruped and applies the switch to its environment. */
-  attach(env: Env, episodeSeed: () => number): void {
+  /** Shows the controls for the quadruped and applies them to its environment; `restart` replays the run. */
+  attach(env: Env, episodeSeed: () => number, restart: () => void): void {
     this.env = env;
     this.episodeSeed = episodeSeed;
+    this.restart = restart;
     $('quadruped-controls').hidden = !(env instanceof QuadrupedEnv);
+    this.applyTerrain();
     this.apply(true);
+  }
+
+  /** Terrain for the next episodes (the calibrated defaults of the terrain spike). */
+  private applyTerrain(): void {
+    if (!(this.env instanceof QuadrupedEnv)) return;
+    this.env.config.terrain = { ...DEFAULT_TERRAIN, kind: this.terrain.value as TerrainKind };
   }
 
   private apply(now: boolean): void {

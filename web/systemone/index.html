@@ -106,7 +106,17 @@
         </div>
         <div class="racing-only" id="quadruped-controls" hidden>
           <label class="check"><input id="random-pushes" type="checkbox" checked /> Random pushes</label>
+          <label class="field inline terrain-field">
+            <span>Terrain</span>
+            <select id="terrain" aria-describedby="terrain-hint">
+              <option value="flat">Flat</option>
+              <option value="hills">Hills</option>
+              <option value="branches">Branches</option>
+              <option value="mixed">Hills and branches</option>
+            </select>
+          </label>
           <p class="hint">Seeded pushes every 1.5–3 s, as in the experiment. Drag on the robot to push it yourself.</p>
+          <p class="hint" id="terrain-hint">The network was trained on flat ground only and cannot see the terrain; the planner simulates it. Changing the terrain restarts the run.</p>
         </div>
         <div class="racing-only" id="telemetry-block" hidden>
           <h3>Telemetry <small>last 20 s · red bands: decided by the planner</small></h3>

@@ -376,7 +376,7 @@ async function selectGame(name: string): Promise<void> {
   view = game.createView(boardCanvas);
   racing.configure(view, game.def);
   wind.attach(env);
-  quadruped.attach(env, () => seed + episode - 1);
+  quadruped.attach(env, () => seed + episode - 1, () => resetGame(seed));
   root.style.setProperty('--board-aspect', game.aspect);
   for (const b of document.querySelectorAll<HTMLButtonElement>('#game-tabs button')) b.setAttribute('aria-current', String(b.dataset.game === name));
   $('game-blurb').textContent = game.def.title + ' — ' + game.blurb;

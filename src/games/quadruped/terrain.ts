@@ -30,11 +30,12 @@ export interface TerrainConfig {
   cell: number;
 }
 
+/** Slope and branch density calibrated in the terrain spike (EXPERIMENTS.md, decision 37). */
 export const DEFAULT_TERRAIN: TerrainConfig = {
   kind: 'flat',
-  maxSlopeDeg: 8,
+  maxSlopeDeg: 16,
   hillWidth: [2, 4],
-  branchDensity: 0.6,
+  branchDensity: 1,
   branchRadius: [0.012, 0.025],
   branchLength: [0.5, 1.2],
   start: 1.5,

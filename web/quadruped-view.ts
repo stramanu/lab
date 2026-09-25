@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import type { Env } from '../src/core/types';
-import { pushTrunk, type Push, type QuadrupedEnv } from '../src/games/quadruped';
+import { hillHeight, pushTrunk, surfaceHeight, type Push, type QuadrupedEnv, type TerrainConfig, type TerrainSpec } from '../src/games/quadruped';
 import { cssVar } from './charts';
 import { STATE_VAR, type BoardView, type DecisionState } from './game-view';
 
@@ -86,6 +86,9 @@ export class QuadrupedView implements BoardView {
   private dragStart: THREE.Vector3 | null = null;
   private dragArrow: THREE.Group | null = null;
   private visitorPushes = 0;
+  /** Meshes of the current episode's hills and branches, and the terrain they show. */
+  private terrainGroup: THREE.Group | null = null;
+  private shownTerrain: TerrainSpec | null = null;
 
   constructor(private readonly board: HTMLCanvasElement) {
     const wrap = board.parentElement!;
@@ -192,6 +195,73 @@ export class QuadrupedView implements BoardView {
     g.lineWidth = 3;
     g.strokeRect(0, 0, 256, 256);
     return c;
+  }
+
+  /** Rebuilds the hills (a surface with the ground's grid, sampled every 20 cm) and the branches of `spec`. */
+  private buildTerrain(spec: TerrainSpec, cfg: TerrainConfig): void {
+    const T = this.T!;
+    if (this.terrainGroup) {
+      this.scene.remove(this.terrainGroup);
+      this.terrainGroup.traverse((o) => {
+        const m = o as THREE.Mesh;
+        m.geometry?.dispose();
+        (m.material as THREE.Material | undefined)?.dispose();
+      });
+    }
+    this.shownTerrain = spec;
+    this.terrainGroup = new T.Group();
+    this.scene.add(this.terrainGroup);
+    if (spec.hills.length) {
+      const step = 0.2;
+      const nx = Math.round(cfg.length / step);
+      const nz = Math.round((2 * cfg.halfWidth) / step);
+      const pos: number[] = [];
+      const uv: number[] = [];
+      const shade: number[] = [];
+      const index: number[] = [];
+      for (let i = 0; i <= nz; i++) {
+        for (let j = 0; j <= nx; j++) {
+          const x = -2 + j * step;
+          const z = -cfg.halfWidth + i * step;
+          const h = hillHeight(spec, x, z);
+          pos.push(x, h + 0.003, z);
+          uv.push(x, -z);
+          // Darker with height, so gentle slopes read at a glance.
+          const k = Math.max(0.6, 1 - 2 * h);
+          shade.push(k, k, k);
+        }
+      }
+      for (let i = 0; i < nz; i++) {
+        for (let j = 0; j < nx; j++) {
+          const a = i * (nx + 1) + j;
+          index.push(a, a + nx + 1, a + 1, a + 1, a + nx + 1, a + nx + 2);
+        }
+      }
+      const geometry = new T.BufferGeometry();
+      geometry.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+      geometry.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+      geometry.setAttribute('color', new T.Float32BufferAttribute(shade, 3));
+      geometry.setIndex(index);
+      geometry.computeVertexNormals();
+      const texture = new T.CanvasTexture(this.gridCanvas());
+      texture.wrapS = texture.wrapT = T.RepeatWrapping;
+      texture.anisotropy = 4;
+      const hills = new T.Mesh(geometry, new T.MeshStandardMaterial({ map: texture, roughness: 1, vertexColors: true }));
+      hills.receiveShadow = true;
+      this.terrainGroup.add(hills);
+    }
+    const bark = new T.MeshStandardMaterial({ color: 0x7a5a3a, roughness: 0.9 });
+    const up = new T.Vector3(0, 1, 0);
+    for (const br of spec.branches) {
+      const a = new T.Vector3(...br.a);
+      const b = new T.Vector3(...br.b);
+      const dir = b.clone().sub(a);
+      const m = new T.Mesh(new T.CylinderGeometry(br.radius, br.radius, dir.length(), 12), bark);
+      m.position.copy(a).add(b).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(up, dir.normalize());
+      m.castShadow = m.receiveShadow = true;
+      this.terrainGroup.add(m);
+    }
   }
 
   /** Where the pointer meets the horizontal plane at trunk height, in world coordinates. */
@@ -320,7 +390,7 @@ export class QuadrupedView implements BoardView {
       if (c && !this.contacts[leg]) {
         const f = e.robot.feet[leg];
         const slot = this.printCount++ % FOOTPRINTS;
-        m.makeRotationX(-Math.PI / 2).setPosition(f[0], 0.003, f[2]);
+        m.makeRotationX(-Math.PI / 2).setPosition(f[0], surfaceHeight(e.terrain, f[0], f[2]) + 0.006, f[2]);
         this.prints.setMatrixAt(slot, m);
         this.prints.setColorAt(slot, color);
         this.prints.count = Math.min(this.printCount, FOOTPRINTS);
@@ -340,6 +410,7 @@ export class QuadrupedView implements BoardView {
     this.env = e;
     const T = this.T;
     if (!T || !this.renderer || !e.world || !e.handles) return;
+    if (e.terrain !== this.shownTerrain) this.buildTerrain(e.terrain, e.config.terrain);
     if (!this.currPose) this.prevPose = this.currPose = this.capture(e);
     const alpha = Math.min(1, (performance.now() - this.poseTime) / Math.max(1, this.poseInterval));
     const qa = new T.Quaternion();
@@ -379,8 +450,8 @@ export class QuadrupedView implements BoardView {
 
     // Camera: three-quarter view from behind and to the side, following the trunk smoothly.
     this.camX += (this.trunk.position.x - this.camX) * 0.5;
-    const target = new T.Vector3(this.camX, 0.2, this.trunk.position.z);
-    this.camera.position.set(target.x - 0.7, 0.9, target.z + 1.0);
+    const target = new T.Vector3(this.camX, hillHeight(e.terrain, this.camX, this.trunk.position.z) + 0.2, this.trunk.position.z);
+    this.camera.position.set(target.x - 0.7, target.y + 0.7, target.z + 1.0);
     this.camera.lookAt(target);
     const sun = (this.scene.userData as { sun: THREE.DirectionalLight }).sun;
     sun.position.set(target.x - 2, 5, 3);

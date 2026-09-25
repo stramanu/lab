@@ -308,6 +308,39 @@ its falls: with it, System One walks 91% as far as the planner, with as few fall
 less compute. The planner's horizon trades distance against safety: 0.5 s rollouts walk farther but fall
 twice as often as 1 s rollouts, and 2 s rollouts fall least.
 
+#### Uneven terrain (exploratory, dev seeds)
+
+System One was trained on flat ground only, and it perceives nothing of the ground: its inputs are
+proprioceptive. The planner simulates the real physics, so it "sees" any terrain through its rollouts. On
+seeded hills (raised-cosine bumps up to 16°) and branches lying across the path (1 per metre, 2.4–5 cm
+thick), the published network (run 1), unchanged, was evaluated on 40 dev seeds with the usual pushes
+(`pnpm exp quadruped-terrain`). The difficulty was calibrated on the planner alone, by a rule fixed in
+advance: the hardest level at which it falls on at most 20% of the seeds. At every level tried, it fell on
+at most 5 of 40.
+
+| Terrain | Planner | Hand-written trot | System One alone | Its mean confidence | Hybrid @ 0.9: escalated | Hybrid @ 0.9 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Flat | 8.93 m, 2 falls | 5.77 m, 7 falls | 8.25 m (92%), 3 falls | 0.62 | 78% | 9.08 m, 2 falls |
+| Branches | 8.87 m, 2 falls | 5.12 m, 13 falls | 7.83 m (88%), 5 falls | 0.60 | 81% | 9.05 m, 1 fall |
+| Hills | 9.00 m, 3 falls | 3.64 m, 25 falls | 6.60 m (73%), 10 falls | 0.53 | 90% | 8.91 m, 2 falls |
+| Hills and branches | 9.07 m, 3 falls | 3.65 m, 22 falls | 6.31 m (70%), 10 falls | 0.52 | 91% | 8.51 m, 5 falls |
+
+- **Transfer is partial.** Alone, the network still walks much better than the hand-written trot it
+  modulates, but on hills it covers only 70–73% of the planner's distance and falls about three times as
+  often as on flat ground. Branches of this size barely affect it.
+- **It knows, in part, that it does not know.** Its ensemble is less confident exactly where it transfers
+  worst: mean confidence drops from 0.62 on flat ground to 0.52–0.53 on hills. With no change to the
+  threshold, the hybrid therefore hands more decisions to the planner by itself (78% → 90–91% at 0.9, 46%
+  → 68–69% at 0.7 with the guard) and keeps 94–99% of the planner's distance. This is the behaviour the
+  System One / System Two split is meant to have, and the first time the lab tests it under a change of
+  conditions.
+- **The price is compute.** On hills the hybrid costs 2,800–3,700 units per move instead of 1,900–3,200 on
+  flat ground. By the rule fixed before measuring (System One alone below 90% of the planner on a terrain
+  where the planner is viable), a retraining on terrain is warranted.
+
+Caveats: one network, 40 dev seeds, no test split; the confidence shift is descriptive, not a
+pre-registered hypothesis.
+
 ### What the numbers say: five regimes
 
 The same pipeline, network family, hybrid and guard produce different outcomes on the five environments.

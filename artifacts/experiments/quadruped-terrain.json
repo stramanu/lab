@@ -1,0 +1,452 @@
+{
+  "name": "quadruped-terrain",
+  "createdAt": "2026-09-25T06:49:19.096Z",
+  "claim": "Exploratory: how the quadruped System One trained on flat ground transfers to seeded hills and branches, and whether its ensemble confidence falls there.",
+  "split": "dev",
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020,
+    10021,
+    10022,
+    10023,
+    10024,
+    10025,
+    10026,
+    10027,
+    10028,
+    10029,
+    10030,
+    10031,
+    10032,
+    10033,
+    10034,
+    10035,
+    10036,
+    10037,
+    10038,
+    10039,
+    10040
+  ],
+  "config": {
+    "model": "artifacts/quadruped/study/run-1",
+    "pushImpulse": 8,
+    "slopes": [
+      4,
+      8,
+      12,
+      16
+    ],
+    "densities": [
+      0.3,
+      0.6,
+      1
+    ],
+    "maxPlannerFalls": 0.2,
+    "retrainBelow": 0.9,
+    "terrainDefaults": {
+      "kind": "flat",
+      "maxSlopeDeg": 8,
+      "hillWidth": [
+        2,
+        4
+      ],
+      "branchDensity": 0.6,
+      "branchRadius": [
+        0.012,
+        0.025
+      ],
+      "branchLength": [
+        0.5,
+        1.2
+      ],
+      "start": 1.5,
+      "length": 22,
+      "halfWidth": 4,
+      "cell": 0.1
+    },
+    "smoke": false
+  },
+  "results": {
+    "calibration": {
+      "slope": {
+        "rows": [
+          {
+            "level": 4,
+            "plannerFalls": 0,
+            "plannerDistance": 9.26831350326538
+          },
+          {
+            "level": 8,
+            "plannerFalls": 3,
+            "plannerDistance": 9.208247488737106
+          },
+          {
+            "level": 12,
+            "plannerFalls": 5,
+            "plannerDistance": 9.145413982868195
+          },
+          {
+            "level": 16,
+            "plannerFalls": 3,
+            "plannerDistance": 9.004812276363372
+          }
+        ],
+        "chosen": 16,
+        "anyQualified": true
+      },
+      "density": {
+        "rows": [
+          {
+            "level": 0.3,
+            "plannerFalls": 2,
+            "plannerDistance": 8.980420768260956
+          },
+          {
+            "level": 0.6,
+            "plannerFalls": 2,
+            "plannerDistance": 8.942189371585846
+          },
+          {
+            "level": 1,
+            "plannerFalls": 2,
+            "plannerDistance": 8.868518376350403
+          }
+        ],
+        "chosen": 1,
+        "anyQualified": true
+      }
+    },
+    "terrains": {
+      "flat": {
+        "kind": "flat"
+      },
+      "hills": {
+        "kind": "hills",
+        "maxSlopeDeg": 16
+      },
+      "branches": {
+        "kind": "branches",
+        "branchDensity": 1
+      },
+      "mixed": {
+        "kind": "mixed",
+        "maxSlopeDeg": 16,
+        "branchDensity": 1
+      }
+    },
+    "results": {
+      "flat": {
+        "base controller": {
+          "distance": 5.771926298737526,
+          "falls": 7,
+          "costPerMove": 1,
+          "escalation": 0,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 0.00034068168442397633
+        },
+        "system2 (level 2)": {
+          "distance": 8.927759969234467,
+          "falls": 2,
+          "costPerMove": 4102.852760736197,
+          "escalation": 1,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 217.8684177194529
+        },
+        "system1": {
+          "distance": 8.247613859176635,
+          "falls": 3,
+          "costPerMove": 5,
+          "escalation": 0,
+          "meanConfidence": 0.6174147466910238,
+          "agreement": 0.4030456852791878,
+          "auroc": 0.8069577957127435,
+          "msPerMove": 0.4256186668362933
+        },
+        "guard only": {
+          "distance": 8.214137521386146,
+          "falls": 3,
+          "costPerMove": 47.74042771161481,
+          "escalation": 0.001536688436419516,
+          "meanConfidence": 0.6183573892446397,
+          "agreement": 0.4039938556067588,
+          "auroc": 0.8075715704336691,
+          "msPerMove": 2.8214583790488135
+        },
+        "hybrid ensemble@0.9": {
+          "distance": 9.079436242580414,
+          "falls": 2,
+          "costPerMove": 3216.806712086803,
+          "escalation": 0.7841281857178904,
+          "meanConfidence": 0.6739008568581286,
+          "agreement": 0.6791120080726539,
+          "auroc": 0.8058456456119694,
+          "msPerMove": 172.1276803116337
+        },
+        "hybrid+guard ensemble@0.7": {
+          "distance": 8.850927609205247,
+          "falls": 1,
+          "costPerMove": 1896.5595162316995,
+          "escalation": 0.4607256524506684,
+          "meanConfidence": 0.6833662677484517,
+          "agreement": 0.6272912423625254,
+          "auroc": 0.7789895811156057,
+          "msPerMove": 101.76258894551144
+        },
+        "hybrid+guard ensemble@0.9": {
+          "distance": 9.079436242580414,
+          "falls": 2,
+          "costPerMove": 3225.4289679535705,
+          "escalation": 0.7841281857178904,
+          "meanConfidence": 0.6739008568581286,
+          "agreement": 0.6791120080726539,
+          "auroc": 0.8058456456119694,
+          "msPerMove": 172.7722125148879
+        }
+      },
+      "hills": {
+        "base controller": {
+          "distance": 3.6430727183818816,
+          "falls": 25,
+          "costPerMove": 1,
+          "escalation": 0,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 0.00024074925529224075
+        },
+        "system2 (level 2)": {
+          "distance": 9.004812276363372,
+          "falls": 3,
+          "costPerMove": 4098.632124352332,
+          "escalation": 1,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 382.89887611878265
+        },
+        "system1": {
+          "distance": 6.601261347532272,
+          "falls": 10,
+          "costPerMove": 5,
+          "escalation": 0,
+          "meanConfidence": 0.5309506116548468,
+          "agreement": 0.26898914905768134,
+          "auroc": 0.7753483280254777,
+          "msPerMove": 0.41084384382389394
+        },
+        "guard only": {
+          "distance": 6.969780421257019,
+          "falls": 6,
+          "costPerMove": 49.59180905885544,
+          "escalation": 0.0025766205587198264,
+          "meanConfidence": 0.5278269902914319,
+          "agreement": 0.26327193932827736,
+          "auroc": 0.7752927559912854,
+          "msPerMove": 4.897565468945687
+        },
+        "hybrid ensemble@0.9": {
+          "distance": 8.90752377808094,
+          "falls": 2,
+          "costPerMove": 3699.532934909705,
+          "escalation": 0.9034688839807717,
+          "meanConfidence": 0.564489894081729,
+          "agreement": 0.5407792207792208,
+          "auroc": 0.7331582710672387,
+          "msPerMove": 344.7002390489771
+        },
+        "hybrid+guard ensemble@0.7": {
+          "distance": 8.89213877916336,
+          "falls": 4,
+          "costPerMove": 2799.833181877191,
+          "escalation": 0.6824613786836298,
+          "meanConfidence": 0.568090533978,
+          "agreement": 0.48598130841121495,
+          "auroc": 0.690700271950272,
+          "msPerMove": 256.8788629202865
+        },
+        "hybrid+guard ensemble@0.9": {
+          "distance": 8.90752377808094,
+          "falls": 2,
+          "costPerMove": 3703.3915811355073,
+          "escalation": 0.9034688839807717,
+          "meanConfidence": 0.564489894081729,
+          "agreement": 0.5407792207792208,
+          "auroc": 0.7331582710672387,
+          "msPerMove": 336.9257570956202
+        }
+      },
+      "branches": {
+        "base controller": {
+          "distance": 5.115002611279488,
+          "falls": 13,
+          "costPerMove": 1,
+          "escalation": 0,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 0.00012496866474098962
+        },
+        "system2 (level 2)": {
+          "distance": 8.868518376350403,
+          "falls": 2,
+          "costPerMove": 4100.471517777494,
+          "escalation": 1,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 217.9764246494219
+        },
+        "system1": {
+          "distance": 7.832009965181351,
+          "falls": 5,
+          "costPerMove": 5,
+          "escalation": 0,
+          "meanConfidence": 0.5975951264251379,
+          "agreement": 0.36012526096033404,
+          "auroc": 0.8022365652410336,
+          "msPerMove": 0.38908345970184655
+        },
+        "guard only": {
+          "distance": 7.949191835522652,
+          "falls": 4,
+          "costPerMove": 52.053824362606235,
+          "escalation": 0.003090394025238218,
+          "meanConfidence": 0.5980838672945499,
+          "agreement": 0.36284096757591355,
+          "auroc": 0.8007172401150334,
+          "msPerMove": 2.998236198815381
+        },
+        "hybrid ensemble@0.9": {
+          "distance": 9.052858436107636,
+          "falls": 1,
+          "costPerMove": 3323.9969758064517,
+          "escalation": 0.8101058467741935,
+          "meanConfidence": 0.6518890410956765,
+          "agreement": 0.6391129032258065,
+          "auroc": 0.7950121600902313,
+          "msPerMove": 175.62458407812642
+        },
+        "hybrid+guard ensemble@0.7": {
+          "distance": 8.804759830236435,
+          "falls": 1,
+          "costPerMove": 2176.4831317632083,
+          "escalation": 0.5278166772756206,
+          "meanConfidence": 0.6518027234440249,
+          "agreement": 0.5789205702647657,
+          "auroc": 0.7676749629639082,
+          "msPerMove": 115.63598342291408
+        },
+        "hybrid+guard ensemble@0.9": {
+          "distance": 9.052858436107636,
+          "falls": 1,
+          "costPerMove": 3331.5751008064517,
+          "escalation": 0.8101058467741935,
+          "meanConfidence": 0.6518890410956765,
+          "agreement": 0.6391129032258065,
+          "auroc": 0.7950121600902313,
+          "msPerMove": 176.24060433051665
+        }
+      },
+      "mixed": {
+        "base controller": {
+          "distance": 3.652889722585678,
+          "falls": 22,
+          "costPerMove": 1,
+          "escalation": 0,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 0.0002124522699239017
+        },
+        "system2 (level 2)": {
+          "distance": 9.071388280391693,
+          "falls": 3,
+          "costPerMove": 4101.773386372385,
+          "escalation": 1,
+          "meanConfidence": null,
+          "agreement": null,
+          "auroc": null,
+          "msPerMove": 374.3633283284976
+        },
+        "system1": {
+          "distance": 6.305330443382263,
+          "falls": 10,
+          "costPerMove": 5,
+          "escalation": 0,
+          "meanConfidence": 0.5171841173762254,
+          "agreement": 0.2560768795929904,
+          "auroc": 0.8007449492407925,
+          "msPerMove": 0.3953109268012306
+        },
+        "guard only": {
+          "distance": 6.783162623643875,
+          "falls": 3,
+          "costPerMove": 61.033688643242535,
+          "escalation": 0.006579813133307014,
+          "meanConfidence": 0.5105369400405976,
+          "agreement": 0.2477643345607575,
+          "auroc": 0.7923403560346236,
+          "msPerMove": 5.600130906830743
+        },
+        "hybrid ensemble@0.9": {
+          "distance": 8.506724444031715,
+          "falls": 5,
+          "costPerMove": 3731.5677966101694,
+          "escalation": 0.909427966101695,
+          "meanConfidence": 0.5520164152422586,
+          "agreement": 0.5119110640550556,
+          "auroc": 0.718806851702719,
+          "msPerMove": 339.06625423344497
+        },
+        "hybrid+guard ensemble@0.7": {
+          "distance": 8.771467137336732,
+          "falls": 3,
+          "costPerMove": 2816.8616059901883,
+          "escalation": 0.686547895688097,
+          "meanConfidence": 0.563810946299292,
+          "agreement": 0.4950955085183273,
+          "auroc": 0.6934114651637378,
+          "msPerMove": 257.50684664252543
+        },
+        "hybrid+guard ensemble@0.9": {
+          "distance": 8.506724444031715,
+          "falls": 5,
+          "costPerMove": 3735.188029661017,
+          "escalation": 0.909427966101695,
+          "meanConfidence": 0.5520164152422586,
+          "agreement": 0.5119110640550556,
+          "auroc": 0.718806851702719,
+          "msPerMove": 343.4730744657042
+        }
+      }
+    },
+    "system1OverPlanner": {
+      "hills": 0.7330815063030072,
+      "branches": 0.8831249632483031,
+      "mixed": 0.6950788841231262
+    },
+    "retrain": true
+  }
+}

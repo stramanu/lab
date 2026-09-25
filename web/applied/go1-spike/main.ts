@@ -3,8 +3,10 @@
  * Go1 scene at least at real time with a policy-sized MLP at 50 Hz? Writes the result as JSON into
  * `window.spikeResult` and the page.
  */
-import loadMujoco from '@mujoco/mujoco';
+import loadMujoco, { type MainModule } from '@mujoco/mujoco';
 import { Rng } from '../../../src/core/rng';
+import { BraxPolicy, type BraxPolicyExport } from '../brax-policy';
+import { GO1_DEFAULTS, Go1Task, type Go1Constants } from '../go1-controller';
 
 const FILES = [
   'scene_mjx_feetonly_flat_terrain.xml',
@@ -90,9 +92,68 @@ async function main(): Promise<void> {
     model.delete();
   }
   const pass = Object.values(results).every((r) => (r as { realTimeFactor: number }).realTimeFactor >= 1);
-  const out = { criterion: 'A1: at least 1.0x real time with a policy-sized MLP at 50 Hz', pass, userAgent: navigator.userAgent, results };
+  const a3 = await runA3(mujoco);
+  const out = { criterion: 'A1: at least 1.0x real time with a policy-sized MLP at 50 Hz', pass, userAgent: navigator.userAgent, results, a3 };
   (window as unknown as { spikeResult: unknown }).spikeResult = out;
   say(`A1 ${pass ? 'PASS' : 'FAIL'}`);
+}
+
+/**
+ * Spike A3, when the policy exported by the Colab notebook is present (../go1/go1-policy.json): the
+ * TypeScript policy against JAX's recorded actions, then 10 episodes of 20 s with a forward command of
+ * 0.5 m/s, on flat ground (the criterion) and on rough terrain (reported).
+ */
+async function runA3(mujoco: MainModule): Promise<unknown> {
+  const res = await fetch(new URL('../go1/go1-policy.json', location.href));
+  if (!res.ok) {
+    say('A3: no exported policy yet (../go1/go1-policy.json), skipped');
+    return null;
+  }
+  const exp = (await res.json()) as BraxPolicyExport & { constants?: Go1Constants; pairs: Array<{ state: number[]; action: number[] }> };
+  const policy = new BraxPolicy(exp);
+  let worst = 0;
+  for (const p of exp.pairs) {
+    const a = policy.act(p.state);
+    p.action.forEach((v, k) => (worst = Math.max(worst, Math.abs(v - a[k]))));
+  }
+  say(`A3 equivalence: max |TS − JAX| = ${worst.toExponential(2)} over ${exp.pairs.length} recorded observations`);
+  const constants = { ...GO1_DEFAULTS, ...(exp.constants ?? {}) };
+  const command = [0.5, 0, 0];
+  const out: Record<string, unknown> = { equivalenceMaxAbs: worst };
+  for (const terrain of ['flat', 'rough']) {
+    const model = mujoco.MjModel.from_xml_path(`/go1/scene_mjx_feetonly_${terrain}_terrain.xml`);
+    const data = new mujoco.MjData(model);
+    const task = new Go1Task(mujoco, model, data, constants);
+    const episodes = [];
+    const obs = new Float64Array(48);
+    for (let ep = 0; ep < 10; ep++) {
+      task.reset(1000 + ep);
+      const [hx, hy] = task.heading();
+      const q = data.qpos as Float64Array;
+      const [x0, y0] = [q[0], q[1]];
+      let fell = false;
+      let t = 0;
+      for (; t < Math.round(20 / constants.ctrl_dt); t++) {
+        task.act(policy.act(task.observe(command, obs)));
+        if (task.fell()) {
+          fell = true;
+          break;
+        }
+      }
+      const forward = ((data.qpos as Float64Array)[0] - x0) * hx + ((data.qpos as Float64Array)[1] - y0) * hy;
+      episodes.push({ seed: 1000 + ep, fell, seconds: (t + 1) * constants.ctrl_dt, forward });
+    }
+    const falls = episodes.filter((e) => e.fell).length;
+    const speed = episodes.reduce((a, e) => a + e.forward / 20, 0) / episodes.length;
+    out[terrain] = { falls, meanForwardSpeed: speed, episodes };
+    say(`A3 ${terrain}: ${falls} falls in 10, mean forward speed ${speed.toFixed(3)} m/s`);
+    data.delete();
+    model.delete();
+  }
+  const flat = out.flat as { falls: number; meanForwardSpeed: number };
+  out.pass = worst <= 1e-4 && flat.falls <= 1 && flat.meanForwardSpeed >= 0.35;
+  say(`A3 ${out.pass ? 'PASS' : 'FAIL'}`);
+  return out;
 }
 
 main().catch((err) => {

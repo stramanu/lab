@@ -46,21 +46,21 @@
       </section>
       <section class="panel go1-controls" aria-labelledby="go1-controls-title">
         <h2 id="go1-controls-title">Drive it</h2>
-        <p class="hint">Keyboard: <kbd>W</kbd> <kbd>S</kbd> forward and back, <kbd>A</kbd> <kbd>D</kbd> sideways, <kbd>Q</kbd> <kbd>E</kbd> turn (or the arrows), <kbd>Space</kbd> hop. Otherwise the sliders set the command.</p>
+        <p class="hint">Keyboard: <kbd>W</kbd> <kbd>S</kbd> forward and back, <kbd>A</kbd> <kbd>D</kbd> sideways, <kbd>Q</kbd> <kbd>E</kbd> turn (or the arrows), <kbd>Space</kbd> jump. Otherwise the sliders set the command.</p>
         <label class="field"><span>Forward <span><output id="cmd-vx-out">0.50</output> m/s</span></span><input id="cmd-vx" type="range" min="-0.6" max="1" step="0.05" value="0.5" /></label>
         <label class="field"><span>Sideways <span><output id="cmd-vy-out">0.00</output> m/s</span></span><input id="cmd-vy" type="range" min="-0.6" max="0.6" step="0.05" value="0" /></label>
         <label class="field"><span>Turn <span><output id="cmd-yaw-out">0.00</output> rad/s</span></span><input id="cmd-yaw" type="range" min="-1" max="1" step="0.05" value="0" /></label>
         <div class="go1-buttons">
           <button id="cmd-stop" type="button" class="ghost">Stop</button>
           <button id="go1-reset" type="button" class="ghost">Restart</button>
-          <button id="go1-hop" type="button" class="ghost">Hop</button>
+          <button id="go1-hop" type="button" class="ghost">Jump</button>
           <label class="field inline"><span>Terrain</span>
             <select id="go1-terrain"><option value="flat">Flat</option><option value="rough">Rough</option><option value="course">Obstacle course</option></select>
           </label>
         </div>
         <p class="hint" id="go1-policy">Policy: loading…</p>
         <p class="hint">
-          <b>Hop</b> throws the whole robot upward (about 20 cm): its legs do not push, because the network was never trained to jump. It only has to land and walk on.
+          <b>Jump</b> uses the robot's own legs: it brakes, crouches and pushes (about 10 cm), following a hand-written sequence, because the network was never trained to jump; then the network lands it. Higher hand-written jumps made it spin in the air and fall: agile jumps are learned.
           <b>Obstacle course</b>, straight ahead: ramps, steps of 2–6 cm and bumps, then steps of 8, 10 and 12 cm.
           The network cannot see the ground, and on dev tests it cleared the first part every time and the 8 cm
           step two times in five.

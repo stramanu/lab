@@ -9,6 +9,7 @@ import { $ } from '../../dom';
 import { initTheme } from '../../theme';
 import { BraxPolicy, type BraxPolicyExport } from '../brax-policy';
 import { GO1_DEFAULTS, Go1Task, type Go1Constants } from '../go1-controller';
+import { Go1Jump } from './jump';
 import { SceneView } from './scene-view';
 
 const ASSETS = new URL('../assets/go1/', location.href);
@@ -20,8 +21,7 @@ const FILES = ['page_flat.xml', 'page_rough.xml', 'page_course.xml', 'scene_mjx_
 type Terrain = 'flat' | 'rough' | 'course';
 /** Half-size of the rough heightfield that the robot may use before it restarts (the field is 20 × 20 m). */
 const ROUGH_EDGE = 9;
-/** A hop: the base's vertical velocity added by the space bar (m/s). The network was not trained to jump. */
-const HOP = 2.0;
+
 /** Command limits (m/s, m/s, rad/s) within Playground's training ranges. */
 const LIMITS = { vx: 1.0, vy: 0.6, yaw: 1.0 };
 /** Visitor pushes: base velocity change per metre dragged (m/s), and its cap. */
@@ -40,6 +40,8 @@ let policy: BraxPolicy | null = null;
 let constants: Go1Constants = GO1_DEFAULTS;
 let terrain: Terrain = 'flat';
 let feetSites: number[] = [];
+let jump: Go1Jump | null = null;
+const STILL = new Float64Array(3);
 let episode = 0;
 let falls = 0;
 let origin: [number, number] = [0, 0];
@@ -77,6 +79,7 @@ function build(): void {
   model = mujoco.MjModel.from_xml_path(`/go1/page_${terrain}.xml`);
   data = new mujoco.MjData(model);
   task = new Go1Task(mujoco, model, data, constants);
+  jump = new Go1Jump(constants);
   feetSites = ['FR', 'FL', 'RR', 'RL'].map((n) => mujoco.mj_name2id(model!, mujoco.mjtObj.mjOBJ_SITE.value, n));
   view = new SceneView(
     THREE,
@@ -112,6 +115,7 @@ function resetEpisode(): void {
   }
   origin = [q[0], q[1]];
   fellAt = -1;
+  jump?.cancel();
 }
 
 /** A fall that is not a flip: the trunk down near the feet (lying on its side or belly). */
@@ -146,9 +150,13 @@ function frame(now: number): void {
     // Real time: one control step (20 ms) per 20 ms of wall-clock time.
     while (simTime >= constants.ctrl_dt) {
       simTime -= constants.ctrl_dt;
-      const action = policy ? policy.act(task.observe(command, obs)) : new Float64Array(12);
+      // A jump in progress overrides the policy (except while braking, when the policy stands still).
+      const scripted = jump?.active ? jump.next() : null;
+      const braking = jump?.active && !scripted;
+      const action = scripted ?? (policy ? policy.act(task.observe(braking ? STILL : command, obs)) : new Float64Array(12));
       task.act(action);
-      if (fellAt < 0 && (task.fell() || collapsed())) {
+      // The crouch of a jump brings the trunk near the feet on purpose: only a flip counts then.
+      if (fellAt < 0 && (task.fell() || (!jump?.active && collapsed()))) {
         falls++;
         fellAt = now;
       }
@@ -159,15 +167,15 @@ function frame(now: number): void {
     const q = data.qpos as Float64Array;
     view.draw(data, [q[0], q[1], q[2]]);
     const walked = Math.hypot(q[0] - origin[0], q[1] - origin[1]);
-    $('go1-readout').textContent = `command ${command[0].toFixed(2)} m/s forward · ${command[1].toFixed(2)} sideways · ${command[2].toFixed(2)} rad/s turn   |   ${walked.toFixed(1)} m from the start · falls ${falls}${fellAt >= 0 ? ' · fell, restarting…' : ''}`;
+    $('go1-readout').textContent = `command ${command[0].toFixed(2)} m/s forward · ${command[1].toFixed(2)} sideways · ${command[2].toFixed(2)} rad/s turn   |   ${walked.toFixed(1)} m from the start · falls ${falls}${jump?.active ? ` · jump: ${jump.phaseName}` : ''}${fellAt >= 0 ? ' · fell, restarting…' : ''}`;
   }
   requestAnimationFrame(frame);
 }
 
-/** Space bar: a push upward. It is not a learned jump; the network only has to land and recover. */
+/** Space bar: a jump with the robot's own legs (a hand-written sequence; see jump.ts). */
 function hop(): void {
-  if (!data || fellAt >= 0) return;
-  (data.qvel as Float64Array)[2] += HOP;
+  if (!policy || fellAt >= 0) return;
+  jump?.start();
 }
 
 function wireControls(): void {

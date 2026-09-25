@@ -341,6 +341,41 @@ at most 5 of 40.
 Caveats: one network, 40 dev seeds, no test split; the confidence shift is descriptive, not a
 pre-registered hypothesis.
 
+#### Retraining on terrain, still blind (test study)
+
+The terrain spike met its retraining rule, so a study asked whether the network learns the new terrain
+from its own escalations. Its targets were fixed in advance (change `retrain-quadruped-terrain`).
+- **Training.** Each of the 5 published flat networks was fine-tuned on varied terrain (flat, hills,
+  branches or both, drawn per episode) through the same loop: 100 planner-driven episodes, then 5
+  escalation iterations.
+- **Evaluation.** Old and new networks on 100 test seeds, on flat and on mixed terrain (hills and
+  branches), with pushes (`pnpm tsx scripts/terrain-study.ts --split test`; 6.1 h).
+
+| Mixed terrain (planner: 9.10 m, 6 falls) | Old network | Fine-tuned network |
+| --- | --- | --- |
+| System One alone | 6.37 ± 0.18 m, 134 falls | 6.41 ± 0.18 m, 141 falls |
+| Hybrid + guard @ 0.7 | 8.85 m, 2,648 units/move, 64% escalated | 8.93 m, 3,078 units/move, 75% escalated |
+| Hybrid + guard @ 0.9 | 8.89 m, 91% escalated | 8.86 m, 92% escalated |
+
+Falls are summed over the 5 runs × 100 seeds.
+
+| | Measured (mean of 5 runs) | Outcome | Holds in |
+| --- | --- | --- | --- |
+| T1: on mixed terrain, System One alone ≥ 90% of the planner | 70.4% | not confirmed | 0/5 runs |
+| T2: on flat ground, ≥ 95% of the old network | 97.4% | **confirmed** | 5/5 runs |
+| T3: on mixed terrain, less escalation at 0.9 | 90.8% → 91.9% | not confirmed | 1/5 runs |
+| T4: on mixed terrain, ≥ 95% of the planner at 0.7 for less compute | 98.1%, but 3,078 vs 2,648 units per move | not confirmed | 0/5 runs |
+
+**A clear negative result.** Learning from its own escalations did not teach the blind network the
+terrain.
+- Alone, it walks as far as before (70% of the planner).
+- It is *less* confident after training on harder data, so the hybrid escalates more and costs more.
+- On flat ground it keeps 97% of its distance, but falls more often (61 against 41 in 500 episodes).
+
+The likely reason is the one the spike suggested: a network that cannot perceive the ground can only
+react to it, and more data of the same kind does not change that. It motivates the next experiment, a
+System One with a height scan ([docs/proposals/quadruped-vision.md](proposals/quadruped-vision.md)).
+
 ### What the numbers say: five regimes
 
 The same pipeline, network family, hybrid and guard produce different outcomes on the five environments.

@@ -26,6 +26,14 @@ artifacts/warehouse/*
 !artifacts/warehouse/study/
 artifacts/warehouse/study/*
 !artifacts/warehouse/study/study-test-200.json
+!artifacts/quadruped/
+artifacts/quadruped/*
+!artifacts/quadruped/study/
+artifacts/quadruped/study/*
+!artifacts/quadruped/study/study-test-200.json
+!artifacts/quadruped/terrain-study/
+artifacts/quadruped/terrain-study/*
+!artifacts/quadruped/terrain-study/study-terrain-test-100.json
 !artifacts/handwriting/
 artifacts/handwriting/*
 !artifacts/handwriting/study/
@@ -39,3 +47,9 @@ site/
 
 # Local Claude Code commands and skills (OpenSpec workflow); not part of the published lab.
 .claude/
+
+# Applied experiments (Python)
+.venv/
+__pycache__/
+*.egg-info/
+applied/**/checkpoints/

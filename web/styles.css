@@ -1196,6 +1196,11 @@ input[type='number'] {
   margin: 0;
 }
 
+#quadruped-controls .trot-field {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+
 #lander-controls .hint {
   grid-column: 1 / -1;
   margin: 0;

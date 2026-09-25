@@ -116,7 +116,11 @@
             </select>
           </label>
           <p class="hint">Seeded pushes every 1.5–3 s, as in the experiment. Drag on the robot to push it yourself.</p>
-          <p class="hint" id="terrain-hint">The network was trained on flat ground only and cannot see the terrain; the planner simulates it. Changing the terrain restarts the run.</p>
+          <label class="field trot-field">
+            <span>Trot speed <span><output id="o-trot">0.40</output> m/s</span></span>
+            <input id="trot-speed" type="range" min="0.2" max="0.7" step="0.05" value="0.4" aria-describedby="terrain-hint" />
+          </label>
+          <p class="hint" id="terrain-hint">The network was trained on flat ground at 0.4 m/s and sees neither the terrain nor the trot speed; the planner simulates both. The speed changes live; the terrain restarts the run.</p>
         </div>
         <div class="racing-only" id="telemetry-block" hidden>
           <h3>Telemetry <small>last 20 s · red bands: decided by the planner</small></h3>

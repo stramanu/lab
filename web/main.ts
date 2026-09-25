@@ -5,7 +5,7 @@
  */
 import { argmax, type ContinuousEnv, type Env, type MoveRecord, type Player } from '../src/core/types';
 import { QuadrupedEnv } from '../src/games/quadruped';
-import { ContinuousHybridPlayer, HybridPlayer, NetStudent } from '../src/hybrid';
+import { ContinuousHybridPlayer, ContinuousStudentPlayer, HybridPlayer, NetStudent, StudentPlayer } from '../src/hybrid';
 import { Ensemble, Mlp, importEnsemble, importPolicy } from '../src/nn';
 import { DEFAULT_CONTINUOUS_PIPELINE, DEFAULT_PIPELINE } from '../src/training';
 import { drawBars, drawGauges } from './bars';
@@ -33,6 +33,7 @@ const barsCanvas = $<HTMLCanvasElement>('bars');
 const thresholdInput = $<HTMLInputElement>('threshold');
 const speedInput = $<HTMLInputElement>('speed');
 const guardInput = $<HTMLInputElement>('guard');
+const plannerInput = $<HTMLInputElement>('planner-on');
 const seedInput = $<HTMLInputElement>('seed');
 const btnPretrained = $<HTMLButtonElement>('btn-pretrained');
 const btnRecord = $<HTMLButtonElement>('btn-record');
@@ -48,6 +49,7 @@ let ensemble: Ensemble | null = null;
 let hybrid!: Player;
 let threshold = Number(thresholdInput.value);
 let guardOn = guardInput.checked;
+let plannerOn = plannerInput.checked;
 
 // ——— Live play ———
 let seed = Number(seedInput.value) || 1;
@@ -104,6 +106,13 @@ function livePoint(): FrontierPoint | null {
 // ——— Models ———
 function rebuildHybrid(): void {
   const c = game.def.continuous;
+  // Planner off: System One decides every move alone (no threshold, no guard, which would hand moves to the planner).
+  guardInput.disabled = thresholdInput.disabled = !plannerOn;
+  if (!plannerOn) {
+    if (c && ensemble) hybrid = new ContinuousStudentPlayer(ensemble);
+    else if (student) hybrid = new StudentPlayer(student);
+    return;
+  }
   if (c && ensemble) {
     hybrid = new ContinuousHybridPlayer(ensemble, c.makeTeacher(game.def.referenceLevel), c.agrees, { threshold, auditRate: 0 }, guardOn ? c.makeGuard() : undefined);
   } else if (student) {
@@ -317,6 +326,11 @@ thresholdInput.addEventListener('input', () => {
 speedInput.addEventListener('input', syncOutputs);
 guardInput.addEventListener('change', () => {
   guardOn = guardInput.checked;
+  rebuildHybrid();
+});
+plannerInput.addEventListener('change', () => {
+  plannerOn = plannerInput.checked;
+  planner.cancel();
   rebuildHybrid();
 });
 seedInput.addEventListener('change', () => resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1)));

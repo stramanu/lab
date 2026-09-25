@@ -190,3 +190,10 @@ The quadruped's controls SHALL offer a terrain selector (flat, hills, branches, 
 #### Scenario: Hills
 - **WHEN** the visitor selects hills
 - **THEN** the next episode is played on seeded hills, drawn in the 3D view, with the same network and planner
+
+### Requirement: Planner switch
+The controls SHALL offer a planner switch, on by default. When it is off, System One SHALL decide every move alone, and the confidence threshold and the guard SHALL be disabled; turning it back on SHALL restore the hybrid with the current threshold and guard setting.
+
+#### Scenario: Network alone
+- **WHEN** the visitor turns the planner off
+- **THEN** every following move is decided by System One and the planner's share stays at 0%

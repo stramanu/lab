@@ -339,18 +339,22 @@ btnPause.addEventListener('click', () => {
   btnPause.textContent = paused ? 'Resume' : 'Pause';
 });
 
-btnPretrained.addEventListener('click', async () => {
+/** Loads the published network (run 1 of the study); ignored if the visitor switched game meanwhile. */
+async function loadPretrained(): Promise<void> {
+  const name = game.def.name;
   btnPretrained.disabled = true;
   try {
-    const res = await fetch(`../data/${game.def.name}-weights.json`);
+    const res = await fetch(`../data/${name}-weights.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    applyPolicy((await res.json()) as Weights, 'pretrained (run 1 of the 5-run study)');
+    const weights = (await res.json()) as Weights;
+    if (game.def.name === name && !training.running) applyPolicy(weights, 'pretrained (run 1 of the 5-run study)');
   } catch (err) {
-    $('model-info').textContent = `Could not load the pretrained weights: ${String(err)}`;
+    if (game.def.name === name) $('model-info').textContent = `Could not load the pretrained weights: ${String(err)}`;
   } finally {
     btnPretrained.disabled = training.running || Boolean(game.preview);
   }
-});
+}
+btnPretrained.addEventListener('click', () => void loadPretrained());
 
 // ——— Recorder ———
 const recorder = new CanvasRecorder(boardCanvas);
@@ -404,7 +408,7 @@ async function selectGame(name: string): Promise<void> {
   training.reset(
     game.scoreMax,
     game.def.name === 'quadruped'
-      ? 'Training this game takes hours (every planner decision simulates 21 futures in the physics engine), so it is done offline; load the pretrained model instead.'
+      ? 'Training this game takes hours (every planner decision simulates 21 futures in the physics engine), so it is done offline; the page uses the published network.'
       : null,
   );
   setUntrained();
@@ -412,6 +416,11 @@ async function selectGame(name: string): Promise<void> {
   $('policy-title').textContent = game.def.continuous ? "System One's action" : "System One's policy";
   $('s1-cost').textContent = game.def.continuous ? 'ensemble of 5 · 5 units' : 'network alone · 1 unit';
   resetGame(Math.max(1, Math.floor(Number(seedInput.value)) || 1));
+  // Every game starts with its published network; "Train in this tab" starts again from random weights.
+  if (!game.preview) {
+    $('model-info').textContent = 'Model: loading the published network…';
+    void loadPretrained();
+  }
   void frontier.load(name, game.def.referenceLevel, () => game.def.name);
   history.replaceState(null, '', `#${name}`);
 }

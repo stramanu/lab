@@ -455,7 +455,7 @@ options such as `--seeds 30`, `--levels 1,2`, `--threshold 0.9`, `--tau 0.1`, `-
 - visitor disturbances: extra wind on the lander, and pushes on the quadruped by dragging on its 3D view;
 - video recording of the board.
 
-The pretrained weights are run 1 of each study, a choice fixed in advance rather than the best run.
+Each game opens with its published weights: run 1 of its study, a choice fixed in advance rather than the best run. "Train in this tab" starts again from random weights.
 
 ## References
 

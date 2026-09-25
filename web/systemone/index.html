@@ -69,7 +69,7 @@
             <p><b>System One</b> is a small neural network. From the game's state (its inputs are listed under “This game”), it proposes a move in a single pass, 1 unit (5 for an ensemble of five networks), together with a <em>confidence</em>.</p>
             <p><b>The threshold and the guard.</b> If the confidence is below the threshold (the slider), the planner decides instead. If it is above, a cheap <em>guard</em> checks the move for immediate danger; if the move fails, the planner decides too.</p>
             <p><b>How System One learns.</b> It first imitates the planner on games the planner plays. Then the hybrid plays, and every state where it had to ask the planner is labelled by the planner and added to its training data. The network gets more data where it was unsure or wrong.</p>
-            <p><b>The percentages.</b> “Who decided” counts the last 1,000 moves. With untrained (random) weights the confidence is low, so the planner decides almost everything: System Two near 100%, System One near 0%. As the network trains, its confidence grows and System One's share rises (watch it with “Train in this tab”, and in the “Share of moves” chart). How far it rises depends on the game: for the lander, racing and the quadruped, the planner still decides most moves at the end of training. Moving the threshold down gives more moves to System One: cheaper, but riskier.</p>
+            <p><b>The percentages.</b> “Who decided” counts the last 1,000 moves. Each game starts with the published network (run 1 of the study). “Train in this tab” starts again from random weights: then the confidence is low, so the planner decides almost everything, System Two near 100% and System One near 0%. As the network trains, its confidence grows and System One's share rises (watch it in the “Share of moves” chart). How far it rises depends on the game: for the lander, racing and the quadruped, the planner still decides most moves at the end of training. Moving the threshold down gives more moves to System One: cheaper, but riskier.</p>
             <p><b>The cost.</b> The large number is the mean compute per move over the same 1,000 moves. The “Cost vs quality” chart compares it with the planner alone, from the published study.</p>
           </div>
         </div>
@@ -170,7 +170,7 @@
 
       <section class="panel controls-panel" aria-labelledby="controls-title">
         <h2 id="controls-title">Controls</h2>
-        <p class="model" id="model-info">Model: untrained (random weights)</p>
+        <p class="model" id="model-info">Model: loading the published network…</p>
         <div class="buttons">
           <button id="btn-pretrained" type="button">Load pretrained</button>
           <button id="btn-train" type="button" class="primary">Train in this tab</button>

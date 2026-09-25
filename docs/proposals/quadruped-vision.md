@@ -1,7 +1,10 @@
 # Proposal: a quadruped that sees the ground
 
-Status: **proposed**, next in line (after the terrain retraining study). Nothing here is pre-registered
-yet. Targets and go/no-go criteria are fixed in an OpenSpec change before any measurement.
+Status: **spike done, negative** (EXPERIMENTS.md, decision 41). A height scan barely helps: System One
+alone stays at 70–77% of the planner on hills, and the modular network does not beat the single one.
+The bottleneck appears to be the planner's ambiguous labels and the trot-modulation action, not
+perception. The question moves to the applied quadruped (`mujoco-quadruped.md`), which has joint-level
+control and a GPU planner.
 
 ## Why
 

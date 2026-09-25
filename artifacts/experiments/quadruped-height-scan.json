@@ -1,18 +1,65 @@
 {
   "name": "quadruped-height-scan",
-  "createdAt": "2026-09-25T15:20:30.287Z",
+  "createdAt": "2026-09-25T16:09:30.384Z",
   "claim": "Exploratory spike: a height scan lets the quadruped System One imitate and drive better on terrain than a blind one trained on the same planner data; modular against single network.",
   "split": "dev",
   "seeds": [
     10001,
     10002,
-    10041
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019,
+    10020,
+    10021,
+    10022,
+    10023,
+    10024,
+    10025,
+    10026,
+    10027,
+    10028,
+    10029,
+    10030,
+    10031,
+    10032,
+    10033,
+    10034,
+    10035,
+    10036,
+    10037,
+    10038,
+    10039,
+    10040,
+    10041,
+    10042,
+    10043,
+    10044,
+    10045,
+    10046,
+    10047,
+    10048,
+    10049,
+    10050
   ],
   "config": {
     "J": 8,
-    "dataEpisodes": 6,
-    "calibrationEpisodes": 2,
-    "epochs": 1,
+    "dataEpisodes": 300,
+    "calibrationEpisodes": 20,
+    "epochs": 12,
     "hidden": [
       256,
       256
@@ -22,26 +69,26 @@
       "hills",
       "mixed"
     ],
-    "smoke": true
+    "smoke": false
   },
   "results": {
     "cost": {
-      "blindMs": 1.5470288200000002,
-      "scanMs": 1.559475,
-      "overhead": 0.008045215343822631
+      "blindMs": 1.5729299999999997,
+      "scanMs": 1.56893354,
+      "overhead": -0.0025407742239004216
     },
     "planner": {
       "flat": {
-        "distance": 8.1834077835083,
-        "falls": 1
+        "distance": 8.927759969234467,
+        "falls": 2
       },
       "hills": {
-        "distance": 9.389090538024902,
-        "falls": 0
+        "distance": 9.004812276363372,
+        "falls": 3
       },
       "mixed": {
-        "distance": 9.145403385162354,
-        "falls": 0
+        "distance": 9.071388280391693,
+        "falls": 3
       }
     },
     "networks": {
@@ -49,34 +96,34 @@
         "params": 394260,
         "perTerrain": {
           "flat": {
-            "agreement": 0.685,
-            "auroc": 0.6049704553354188,
-            "meanConfidence": 0.6114999999999996,
+            "agreement": 0.624,
+            "auroc": 0.7151101336606656,
+            "meanConfidence": 0.6116831476865588,
             "alone": {
-              "distance": 4.884456038475037,
-              "falls": 1
+              "distance": 7.832500052452088,
+              "falls": 4
             },
-            "aloneVsPlanner": 0.5968731080856667
+            "aloneVsPlanner": 0.8773197397155946
           },
           "hills": {
-            "agreement": 0.595,
-            "auroc": 0.607583774250441,
-            "meanConfidence": 0.6056249999999999,
+            "agreement": 0.5186891961085509,
+            "auroc": 0.728399424502741,
+            "meanConfidence": 0.5483692984704323,
             "alone": {
-              "distance": 5.529189825057983,
-              "falls": 1
+              "distance": 6.643154963850975,
+              "falls": 9
             },
-            "aloneVsPlanner": 0.5888951440680333
+            "aloneVsPlanner": 0.7377338649566871
           },
           "mixed": {
-            "agreement": 0.545,
-            "auroc": 0.535437040024196,
-            "meanConfidence": 0.5872499999999994,
+            "agreement": 0.5073606729758149,
+            "auroc": 0.7042341062037922,
+            "meanConfidence": 0.5385034274343341,
             "alone": {
-              "distance": 3.8340660333633423,
-              "falls": 2
+              "distance": 6.49080029129982,
+              "falls": 9
             },
-            "aloneVsPlanner": 0.4192342176599658
+            "aloneVsPlanner": 0.7155244699788723
           }
         }
       },
@@ -84,34 +131,34 @@
         "params": 492820,
         "perTerrain": {
           "flat": {
-            "agreement": 0.65,
-            "auroc": 0.6234065934065934,
-            "meanConfidence": 0.571250000000001,
+            "agreement": 0.6355,
+            "auroc": 0.7631446027721926,
+            "meanConfidence": 0.6538658345017411,
             "alone": {
-              "distance": 6.387907266616821,
-              "falls": 1
+              "distance": 7.852146328985691,
+              "falls": 4
             },
-            "aloneVsPlanner": 0.7805925643214455
+            "aloneVsPlanner": 0.8795203226839211
           },
           "hills": {
-            "agreement": 0.575,
-            "auroc": 0.611918158567775,
-            "meanConfidence": 0.4970000000000014,
+            "agreement": 0.5529953917050692,
+            "auroc": 0.7478962496287811,
+            "meanConfidence": 0.5460094793732545,
             "alone": {
-              "distance": 3.8657002449035645,
-              "falls": 1
+              "distance": 6.911821459233761,
+              "falls": 7
             },
-            "aloneVsPlanner": 0.4117225442920009
+            "aloneVsPlanner": 0.7675697446105035
           },
           "mixed": {
-            "agreement": 0.54,
-            "auroc": 0.6161433172302737,
-            "meanConfidence": 0.47400000000000114,
+            "agreement": 0.5215562565720294,
+            "auroc": 0.7166075859624247,
+            "meanConfidence": 0.5442205777166379,
             "alone": {
-              "distance": 3.7495290637016296,
-              "falls": 1
+              "distance": 6.304187177121639,
+              "falls": 10
             },
-            "aloneVsPlanner": 0.40999056091773106
+            "aloneVsPlanner": 0.6949528542117955
           }
         }
       },
@@ -119,88 +166,88 @@
         "params": 494020,
         "perTerrain": {
           "flat": {
-            "agreement": 0.675,
-            "auroc": 0.6282051282051282,
-            "meanConfidence": 0.6085000000000004,
+            "agreement": 0.634,
+            "auroc": 0.7807694876833704,
+            "meanConfidence": 0.625347850781533,
             "alone": {
-              "distance": 4.926279067993164,
-              "falls": 1
+              "distance": 8.068779802322387,
+              "falls": 4
             },
-            "aloneVsPlanner": 0.601983818760798
+            "aloneVsPlanner": 0.9037854769984665
           },
           "hills": {
-            "agreement": 0.58,
-            "auroc": 0.6217672413793104,
-            "meanConfidence": 0.5841249999999998,
+            "agreement": 0.5350742447516641,
+            "auroc": 0.7712702611554918,
+            "meanConfidence": 0.5591311300847962,
             "alone": {
-              "distance": 1.9884339570999146,
-              "falls": 2
+              "distance": 6.299219813942909,
+              "falls": 10
             },
-            "aloneVsPlanner": 0.21178131673637085
+            "aloneVsPlanner": 0.6995392708493945
           },
           "mixed": {
-            "agreement": 0.535,
-            "auroc": 0.6270224098080595,
-            "meanConfidence": 0.5732499999999996,
+            "agreement": 0.5236593059936908,
+            "auroc": 0.7461329866929085,
+            "meanConfidence": 0.549875089463141,
             "alone": {
-              "distance": 2.8767160177230835,
-              "falls": 2
+              "distance": 5.8873572021722795,
+              "falls": 13
             },
-            "aloneVsPlanner": 0.31455321286213717
+            "aloneVsPlanner": 0.6490028891055328
           }
         }
       }
     },
     "criteria": {
       "C1": {
-        "measured": 0.008045215343822631,
+        "measured": -0.0025407742239004216,
         "pass": true
       },
       "modular": {
         "C3": {
           "measured": {
-            "hills": -0.015000000000000013,
-            "mixed": -0.010000000000000009
+            "hills": 0.016385048643113187,
+            "mixed": 0.01629863301787593
           },
           "pass": false
         },
         "C4": {
-          "measured": 0.21178131673637085,
+          "measured": 0.6995392708493945,
           "pass": false
         },
         "C5": {
-          "measured": 1.008562474344878,
+          "measured": 1.0301665813326524,
           "pass": true
         }
       },
       "single": {
         "C3": {
           "measured": {
-            "hills": -0.020000000000000018,
-            "mixed": -0.0050000000000000044
+            "hills": 0.03430619559651826,
+            "mixed": 0.014195583596214534
           },
           "pass": false
         },
         "C4": {
-          "measured": 0.4117225442920009,
+          "measured": 0.7675697446105035,
           "pass": false
         },
         "C5": {
-          "measured": 1.3078032059863054,
+          "measured": 1.0025083021260184,
           "pass": true
         }
       },
       "C6": {
         "hills": {
-          "agreement": 0.0050000000000000044,
-          "aloneVsPlanner": -0.19994122755563004
+          "agreement": -0.017921146953405076,
+          "aloneVsPlanner": -0.06803047376110904
         },
         "mixed": {
-          "agreement": -0.0050000000000000044,
-          "aloneVsPlanner": -0.0954373480555939
+          "agreement": 0.002103049421661396,
+          "aloneVsPlanner": -0.0459499651062627
         }
       }
     },
-    "trainingStates": 1200
+    "trainingStates": 58950
   }
 }

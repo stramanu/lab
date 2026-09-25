@@ -376,6 +376,41 @@ The likely reason is the one the spike suggested: a network that cannot perceive
 react to it, and more data of the same kind does not change that. It motivates the next experiment, a
 System One with a height scan ([docs/proposals/quadruped-vision.md](proposals/quadruped-vision.md)).
 
+#### Seeing the ground (exploratory spike, dev seeds)
+
+If the network fails on terrain because it is blind, a sensor should help. A spike gave System One a height
+scan: 77 ground heights around the trunk, in its heading frame. Its protocol, with a declared revision
+before measuring, is in change `add-quadruped-height-scan` (`pnpm exp quadruped-height-scan`, 41 min).
+- **Data:** 300 planner-driven episodes on varied terrain (58,950 states).
+- **Networks:** three ensembles trained on the same states with the same epochs:
+  - blind (46 inputs);
+  - a single network with the scan (123 inputs);
+  - a modular one: a scan encoder, a proprioceptive encoder and a motor network trained end to end, with
+    the same number of parameters (+0.2%).
+- **Evaluation:** 40 dev seeds.
+
+| System One alone, % of the planner (falls / 40) | Blind | Single, with scan | Modular, with scan |
+| --- | --- | --- | --- |
+| Flat | 88% (4) | 88% (4) | 90% (4) |
+| Hills | 74% (9) | 77% (7) | 70% (10) |
+| Hills and branches | 72% (9) | 70% (10) | 65% (13) |
+| Agreement with the planner, hills | 51.9% | 55.3% | 53.5% |
+| AUROC of 1 − confidence, hills | 0.73 | 0.75 | 0.77 |
+
+**Another negative result.** The scan costs nothing (C1 ✓) and loses nothing on flat ground (C5 ✓), but
+it barely helps:
+- agreement rises by 1–3 points instead of the 5 required (C3 ✗);
+- on hills, System One alone stays at 70–77% of the planner instead of the 85% required (C4 ✗);
+- the modular network does not beat the single one, although its confidence separates its errors best.
+
+Together with the retraining study, this points away from perception as the bottleneck. With the scan,
+agreement stays near 50–55% on terrain: the planner's labels are hard to imitate whatever the network
+sees. This is the ambiguity already met in racing, where several modulations are about equally good. The
+network also acts only through four modulations of a hand-written trot. Both limits belong to this
+simulated set-up rather than to the network. The applied quadruped (a real robot model in MuJoCo, with
+joint-level control and a GPU planner; [docs/proposals/mujoco-quadruped.md](proposals/mujoco-quadruped.md))
+is designed to lift them.
+
 ### What the numbers say: five regimes
 
 The same pipeline, network family, hybrid and guard produce different outcomes on the five environments.

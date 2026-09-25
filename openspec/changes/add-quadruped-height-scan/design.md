@@ -47,3 +47,27 @@
 If C3–C5 pass, a full study follows: the escalation loop, 5 runs and the test split, as a separate change
 with its own targets. If they fail, the result is reported, and the next question is declared before
 re-measuring: noise, a convolutional front-end, or a swing-height action.
+
+## Revision before any measurement (2026-09-25): three networks, one of them modular
+
+At the author's request, the main candidate becomes a **modular System One**: three networks joined and
+trained end to end, as in perceptive locomotion on real robots (Miki et al. 2022). To tell the effect of
+seeing apart from the effect of modularity, the spike trains three networks on the same data, with the
+same epochs and seeds:
+
+1. **Blind:** 46 → 256 → 256 → 4 per member (the ablation).
+2. **Single, with scan:** 123 → 256 → 256 → 4 per member, 98,564 parameters (the control).
+3. **Modular, with scan:** per member, 98,804 parameters (+0.2% over the control):
+   - a scan encoder, 77 → 64 → 64 → 16;
+   - a proprioceptive encoder, 46 → 64 → 64 → 32;
+   - a motor network, 48 → 256 → 256 → 4.
+   - The encoders' outputs are linear; the motor network receives both latents.
+
+**Criteria**, unchanged in form:
+- C3–C5 are judged for the modular network, the main candidate, and reported for the single one as well.
+- C3 compares each against the blind network.
+- **C6**, descriptive: the modular network against the single one, on agreement and on driving alone on
+  hills and mixed terrain.
+
+**What follows:** if the modular network passes C3–C5, the full study uses it. If only the single one
+passes, the full study uses the single one, and the modular result is reported.

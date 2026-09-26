@@ -1,7 +1,8 @@
 /**
  * 3D view of the Go1 policy's live forward pass (48 → 512 → 256 → 128 → 12), in the style of the System
  * One network view: inputs grouped by what they measure, hidden layers as square grids lit by their
- * activations, the 12 joint targets laid out as legs × joints, and only the strongest connections.
+ * activations, the 12 joint targets laid out as legs × joints, and every connection (about 190,000), each
+ * as bright as its contribution |weight × activation| to this forward pass.
  * While a hand-written jump drives the motors, the network is not used and the view dims.
  */
 import type * as THREE from 'three';
@@ -24,9 +25,14 @@ const INPUT_GROUPS = [
 /** Actuator order: four legs, three joints each. */
 const LEGS = ['front right', 'front left', 'rear right', 'rear left'];
 const LAYER_X = [-6, -3, 0, 3, 6];
-/** Connections drawn per transition, and how many of the most active source neurons are searched. */
-const EDGES = [60, 70, 50, 40];
-const SOURCES = [48, 32, 32, 32];
+/**
+ * Edge opacity: the contribution relative to SCALE × the layer's mean contribution, raised to GAMMA, so every
+ * layer shows its structure whatever its typical magnitude.
+ */
+const SCALE = 8;
+const GAMMA = 1.5;
+/** The view redraws at most this often (ms): 190,000 blended lines would otherwise slow the whole page. */
+const FRAME_MS = 33;
 const WARM = '#e8793a';
 const COOL = '#3a86e8';
 
@@ -36,24 +42,6 @@ function opaque(css: string): string {
   const m = /^rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)$/i.exec(v.replace(/\s+/g, ''));
   if (m) return `rgb(${m[1]},${m[2]},${m[3]})`;
   return v || '#888888';
-}
-
-/**
- * The `k` largest |w_ji · a_i| of a dense layer, searched among the `sources` most active inputs (exact
- * when `sources` covers the layer; otherwise it skips weak sources, which keeps it fast enough to redraw
- * several times a second).
- */
-function topEdges(d: Dense, act: Float64Array, k: number, sources: number): Array<{ from: number; to: number; value: number }> {
-  const order = Array.from({ length: d.m }, (_, i) => i)
-    .sort((a, b) => Math.abs(act[b]) - Math.abs(act[a]))
-    .slice(0, sources);
-  const all: Array<{ from: number; to: number; value: number }> = [];
-  for (const i of order) {
-    if (act[i] === 0) continue;
-    for (let j = 0; j < d.n; j++) all.push({ from: i, to: j, value: d.w[j * d.m + i] * act[i] });
-  }
-  all.sort((x, y) => Math.abs(y.value) - Math.abs(x.value));
-  return all.slice(0, k);
 }
 
 export class Go1NetworkView {
@@ -66,6 +54,8 @@ export class Go1NetworkView {
   private edges!: THREE.LineSegments;
   private labels: Array<{ div: HTMLDivElement; at: THREE.Vector3; side: 'left' | 'right' }> = [];
   private runningMax = [1, 1, 1];
+  /** Per transition: the dense layer, its number of targets drawn, and the first edge's index. */
+  private transitions: Array<{ d: Dense; n: number; first: number }> = [];
   private extent = 1;
   private visible = true;
   private running = false;
@@ -95,7 +85,7 @@ export class Go1NetworkView {
     view.controls = new OrbitControls(view.camera, view.renderer.domElement);
     view.controls.enableDamping = true;
     view.controls.autoRotate = true;
-    view.controls.autoRotateSpeed = 0.5;
+    view.controls.autoRotateSpeed = 1; // per update, at ~30 updates a second
     view.controls.enablePan = false;
     view.controls.minDistance = 5;
     view.controls.maxDistance = 35;
@@ -174,11 +164,30 @@ export class Go1NetworkView {
       this.layers.push(mesh);
     });
 
-    const max = EDGES.reduce((a, b) => a + b, 0);
+    // Every connection, positioned once; each update only rewrites the colours (RGBA).
+    let total = 0;
+    this.transitions = this.dense.map((d, l) => {
+      const n = l === this.dense.length - 1 ? 12 : d.n; // the last layer's other half is the action noise scale
+      const t = { d, n, first: total };
+      total += d.m * n;
+      return t;
+    });
+    const position = new Float32Array(total * 6);
+    let v = 0;
+    this.transitions.forEach(({ d, n }, l) => {
+      for (let i = 0; i < d.m; i++) {
+        const a = this.positions[l][i];
+        for (let j = 0; j < n; j++) {
+          const b = this.positions[l + 1][j];
+          position.set([a.x, a.y, a.z, b.x, b.y, b.z], v);
+          v += 6;
+        }
+      }
+    });
     const geo = new T.BufferGeometry();
-    geo.setAttribute('position', new T.BufferAttribute(new Float32Array(max * 6), 3));
-    geo.setAttribute('color', new T.BufferAttribute(new Float32Array(max * 6), 3));
-    this.edges = new T.LineSegments(geo, new T.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 }));
+    geo.setAttribute('position', new T.BufferAttribute(position, 3));
+    geo.setAttribute('color', new T.BufferAttribute(new Uint8Array(total * 8), 4, true).setUsage(T.DynamicDrawUsage));
+    this.edges = new T.LineSegments(geo, new T.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false }));
     this.scene.add(this.edges);
   }
 
@@ -218,26 +227,39 @@ export class Go1NetworkView {
     outMesh.instanceMatrix.needsUpdate = true;
     for (const mesh of this.layers) mesh.instanceColor!.needsUpdate = true;
 
-    const pos = this.edges.geometry.getAttribute('position') as THREE.BufferAttribute;
     const col = this.edges.geometry.getAttribute('color') as THREE.BufferAttribute;
-    let v = 0;
-    if (!idle) {
-      [input, a1, a2, a3].forEach((act, l) => {
-        const d = l < 3 ? this.dense[l] : { ...this.dense[3], n: 12 }; // only the joint targets' outputs
-        const list = topEdges(d, act, EDGES[l], SOURCES[l]);
-        const max = Math.max(...list.map((c) => Math.abs(c.value)), 1e-9);
-        for (const c of list) {
-          const tint = dim.clone().lerp(c.value >= 0 ? warm : cool, 0.25 + 0.75 * (Math.abs(c.value) / max));
-          for (const p of [this.positions[l][c.from], this.positions[l + 1][c.to]]) {
-            pos.setXYZ(v, p.x, p.y, p.z);
-            col.setXYZ(v, tint.r, tint.g, tint.b);
-            v++;
+    const rgba = col.array as Uint8Array;
+    const byte = (c: THREE.Color) => [Math.round(c.r * 255), Math.round(c.g * 255), Math.round(c.b * 255)];
+    const [wr, wg, wb] = byte(warm);
+    const [cr, cg, cb] = byte(cool);
+    const [dr, dg, db] = byte(dim);
+    [input, a1, a2, a3].forEach((act, l) => {
+      const { d, n, first } = this.transitions[l];
+      const w = d.w;
+      const m = d.m;
+      let sum = 0;
+      if (!idle) for (let i = 0; i < m; i++) { const a = Math.abs(act[i]); for (let j = 0; j < n; j++) sum += Math.abs(w[j * m + i]) * a; }
+      const inv = (m * n) / (SCALE * Math.max(sum, 1e-9));
+      let o = first * 8;
+      for (let i = 0; i < m; i++) {
+        const a = act[i];
+        for (let j = 0; j < n; j++) {
+          const value = w[j * m + i] * a;
+          let r = dr, g = dg, b = db, alpha = 3;
+          if (!idle) {
+            const t = Math.min(1, Math.abs(value) * inv);
+            alpha = Math.round(255 * t ** GAMMA);
+            if (value >= 0) (r = wr), (g = wg), (b = wb);
+            else (r = cr), (g = cg), (b = cb);
           }
+          rgba[o] = rgba[o + 4] = r;
+          rgba[o + 1] = rgba[o + 5] = g;
+          rgba[o + 2] = rgba[o + 6] = b;
+          rgba[o + 3] = rgba[o + 7] = alpha;
+          o += 8;
         }
-      });
-    }
-    this.edges.geometry.setDrawRange(0, v);
-    pos.needsUpdate = true;
+      }
+    });
     col.needsUpdate = true;
     this.loop();
   }
@@ -258,15 +280,18 @@ export class Go1NetworkView {
   private loop(): void {
     if (this.running || !this.visible || document.hidden) return;
     this.running = true;
-    const tick = () => {
+    let last = 0;
+    const tick = (now: number) => {
       if (!this.visible || document.hidden) {
         this.running = false;
         return;
       }
+      requestAnimationFrame(tick);
+      if (now - last < FRAME_MS) return;
+      last = now;
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
       this.placeLabels();
-      requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }

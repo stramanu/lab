@@ -158,7 +158,30 @@ function recognize(strokes: number[][]): void {
   }
 }
 
-const pad = new Pad($('pad') as HTMLCanvasElement, recognize, () => ($('pad-hint').dataset.off = 'true'));
+/**
+ * While a letter is being written, the 3D view shows the network's forward pass on the ink so far,
+ * prepared exactly as a finished letter (what it would read if the finger lifted now): at most once
+ * per animation frame. The letter is only committed, and the text only changes, after the finger lifts.
+ */
+let liveInk: readonly number[][] | null = null;
+function showLive(strokes: readonly number[][]): void {
+  if (!model || !network) return;
+  const first = liveInk === null;
+  liveInk = strokes;
+  if (!first) return;
+  requestAnimationFrame(() => {
+    const ink = liveInk;
+    liveInk = null;
+    if (!ink || !model || !network || ink.reduce((n, s) => n + s.length, 0) < 4) return;
+    const x = model.input(ink.map((s) => [...s]));
+    const probs = model.net.probs(x, null, model.temperature);
+    let best = 0;
+    for (let k = 1; k < probs.length; k++) if (probs[k] > probs[best]) best = k;
+    network.update({ trace: model.net.trace(x), probs, chosen: best, threshold: 0, deciderVar: '--s1' }, LAYOUT);
+  });
+}
+
+const pad = new Pad($('pad') as HTMLCanvasElement, recognize, () => ($('pad-hint').dataset.off = 'true'), showLive);
 
 // ——— Model and 3D view ———
 async function loadModel(): Promise<void> {

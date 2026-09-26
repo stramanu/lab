@@ -2,6 +2,7 @@
  * Round touchpad: captures one character as strokes from finger, pen or mouse (pointer events),
  * draws the ink as it is written, and commits the character 600 ms after the last pointer-up.
  * A stroke that starts before then belongs to the same character, so multistroke letters work.
+ * `onInk` sees the letter in progress after every pointer event (the live network view).
  */
 export const COMMIT_DELAY_MS = 600;
 
@@ -18,6 +19,7 @@ export class Pad {
     private readonly canvas: HTMLCanvasElement,
     private readonly onCommit: (strokes: number[][]) => void,
     private readonly onStart: () => void = () => {},
+    private readonly onInk: (strokes: readonly number[][]) => void = () => {},
   ) {
     this.ctx = canvas.getContext('2d')!;
     new ResizeObserver(() => this.resize()).observe(canvas);
@@ -52,6 +54,7 @@ export class Pad {
     this.strokes.push(this.current);
     this.onStart();
     this.draw();
+    this.onInk(this.strokes);
   }
 
   private move(e: PointerEvent): void {
@@ -63,6 +66,7 @@ export class Pad {
       this.current.push(x, y);
     }
     this.draw();
+    this.onInk(this.strokes);
   }
 
   private up(e: PointerEvent): void {

@@ -520,6 +520,15 @@ h1 em {
   grid-area: network;
 }
 
+.layout[data-split='true'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'board network'
+    'decision controls'
+    'about about'
+    'training frontier';
+}
+
 @media (max-width: 1080px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -542,6 +551,10 @@ h1 em {
   .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'board' 'decision' 'controls' 'about' 'network' 'training' 'frontier';
+  }
+  .layout[data-split='true'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'board' 'network' 'decision' 'controls' 'about' 'training' 'frontier';
   }
 }
 
@@ -1269,4 +1282,51 @@ input[type='number'] {
   display: block;
   width: 100%;
   height: 150px;
+}
+
+/* ——— Network next to the animation (web/network-split.ts) ——— */
+
+.panel-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}
+
+.split-toggle {
+  font: 500 12px/1 var(--mono);
+  padding: 6px 10px;
+}
+
+.split-toggle[aria-pressed='true'] {
+  background: transparent;
+  color: var(--s1);
+  border-color: var(--s1);
+}
+
+/* Beside the animation, the network panel fills the row's height and drops its long description. */
+[data-split='true'] .network-panel {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-split='true'] .network-panel .sub {
+  display: none;
+}
+
+[data-split='true'] .network-panel .network-wrap {
+  flex: 1;
+  height: auto;
+  min-height: 360px;
+}
+
+/* On a phone the network sits right under the animation: short enough for both to fit the screen. */
+@media (max-width: 720px) {
+  [data-split='true'] .network-panel h2 {
+    display: none;
+  }
+  [data-split='true'] .network-panel .network-wrap {
+    flex: none;
+    height: 44vh;
+  }
 }

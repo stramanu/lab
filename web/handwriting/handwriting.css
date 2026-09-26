@@ -23,6 +23,25 @@
   align-items: start;
 }
 
+.hw-layout[data-split='true'] {
+  grid-template-areas:
+    'device network'
+    'reading reading'
+    'study study';
+}
+
+/* The pad is tall and the network wide: a full-height view would shrink it, so it keeps a landscape box. */
+@media (min-width: 861px) {
+  .hw-layout[data-split='true'] .network-panel {
+    align-self: start;
+  }
+
+  .hw-layout[data-split='true'] .network-panel .network-wrap {
+    flex: none;
+    height: 460px;
+  }
+}
+
 .device-panel {
   grid-area: device;
   animation-delay: 0.05s;
@@ -44,6 +63,9 @@
   .hw-layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'device' 'reading' 'network' 'study';
+  }
+  .hw-layout[data-split='true'] {
+    grid-template-areas: 'device' 'network' 'reading' 'study';
   }
 }
 

@@ -41,6 +41,7 @@
     </header>
     <main class="go1-layout">
       <section class="panel go1-view-panel" aria-label="Simulation">
+        <div class="panel-tools"><button type="button" id="split-toggle" class="ghost split-toggle" aria-pressed="false">Network ⇄</button></div>
         <canvas id="go1-view" class="go1-view" aria-label="Unitree Go1, 3D view" role="img"></canvas>
         <p class="go1-status" id="go1-status"></p>
         <p class="go1-readout" id="go1-readout"></p>
@@ -67,7 +68,7 @@
           step two times in five.
         </p>
       </section>
-      <section class="panel go1-network" aria-labelledby="go1-network-title">
+      <section class="panel network-panel go1-network" aria-labelledby="go1-network-title">
         <h2 id="go1-network-title">Inside the network</h2>
         <p class="sub">
           The policy's live forward pass, 50 times a second (on a phone held upright it runs top to bottom).

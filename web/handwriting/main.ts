@@ -3,6 +3,7 @@ import { MlpRecognizer, type Candidate } from '../../src/handwriting/recognizer'
 import type { SerializedPolicy } from '../../src/nn/serialize';
 import type { InputLayout } from '../games';
 import { NetworkView } from '../network-view';
+import { initNetworkSplit } from '../network-split';
 import { initTheme } from '../theme';
 import { Pad } from './pad';
 import type { PDollarRequest, PDollarResponse } from './pdollar-worker';
@@ -26,6 +27,7 @@ let mlpOps = 0;
 
 // ——— Theme ———
 initTheme();
+initNetworkSplit(document.querySelector<HTMLElement>('.hw-layout')!, document.getElementById('split-toggle') as HTMLButtonElement);
 
 // ——— Display ———
 function renderText(): void {

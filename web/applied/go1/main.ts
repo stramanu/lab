@@ -6,6 +6,7 @@
 import loadMujoco, { type MainModule, type MjData, type MjModel } from '@mujoco/mujoco';
 import { cssVar } from '../../charts';
 import { $ } from '../../dom';
+import { initNetworkSplit } from '../../network-split';
 import { initTheme } from '../../theme';
 import { BraxPolicy, type BraxPolicyExport } from '../brax-policy';
 import { GO1_DEFAULTS, Go1Task, type Go1Constants } from '../go1-controller';
@@ -30,6 +31,7 @@ const DRAG_GAIN = 2.5;
 const DRAG_MAX = 1.5;
 
 initTheme();
+initNetworkSplit(document.querySelector<HTMLElement>('.go1-layout')!, $<HTMLButtonElement>('split-toggle'));
 
 let mujoco: MainModule;
 let THREE: typeof import('three');

@@ -24,6 +24,7 @@ import { QuadrupedControls } from './quadruped-controls';
 import type { Weights } from './protocol';
 import { RacingExtras } from './racing-extras';
 import { CanvasRecorder, download } from './recorder';
+import { initNetworkSplit } from './network-split';
 import { initTheme } from './theme';
 import { TrainingPanel } from './training-panel';
 
@@ -470,6 +471,7 @@ void import('./network-view').then(async ({ NetworkView }) => {
 });
 
 // ——— Theme and resize ———
+initNetworkSplit(document.querySelector<HTMLElement>('main.layout')!, $<HTMLButtonElement>('split-toggle'));
 initTheme(() => {
   training.draw();
   frontier.draw();

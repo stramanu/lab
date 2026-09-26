@@ -321,9 +321,10 @@ export class Go1NetworkView {
     this.root.rotation.z = this.portrait ? -Math.PI / 2 : 0;
     this.root.updateMatrixWorld();
     for (const l of this.labels) l.div.textContent = this.portrait && l.short ? l.short : l.text;
-    // Step back just enough for the whole network (7 either side along the layers) to fit the frame.
+    // Step back just enough for the whole network to fit the frame: 7 either side along the layers, plus
+    // room for the side labels in landscape.
     const tan = Math.tan((this.camera.fov * Math.PI) / 360);
-    const [hx, hy] = this.portrait ? [this.extent + 0.4, 7] : [7, this.extent + 0.4];
+    const [hx, hy] = this.portrait ? [this.extent + 0.4, 7] : [9, this.extent + 0.4];
     const fit = Math.max(hy / tan, hx / (tan * this.camera.aspect));
     this.camera.position.setLength(Math.min(this.controls.maxDistance, 1.12 * fit + 1));
     this.loop();
@@ -372,6 +373,7 @@ export class Go1NetworkView {
   private placeLabels(): void {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
+    const upright: Array<{ div: HTMLDivElement; x: number }> = [];
     for (const { div, at, side, short } of this.labels) {
       const p = this.root.localToWorld(at.clone()).project(this.camera);
       const x = ((p.x + 1) / 2) * w;
@@ -380,11 +382,16 @@ export class Go1NetworkView {
         // Upright: the legs' short names sit under the outputs; the input groups are described in the text.
         div.style.transform = `translate(${x - div.offsetWidth / 2}px, ${y + 12}px)`;
         div.style.visibility = short && p.z < 1 ? 'visible' : 'hidden';
+        if (short) upright.push({ div, x });
         continue;
       }
       const left = side === 'left' ? x - 12 - div.offsetWidth : x + 12;
       div.style.transform = `translate(${left}px, ${y - 6}px)`;
       div.style.visibility = p.z < 1 ? 'visible' : 'hidden';
     }
+    // Too close to read (a short view, or seen edge-on while orbiting): hide them all rather than overlap.
+    upright.sort((a, b) => a.x - b.x);
+    const crowded = upright.some((l, n) => n > 0 && l.x - upright[n - 1].x < l.div.offsetWidth + 4);
+    if (crowded) for (const l of upright) l.div.style.visibility = 'hidden';
   }
 }

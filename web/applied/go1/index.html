@@ -70,9 +70,10 @@
       <section class="panel go1-network" aria-labelledby="go1-network-title">
         <h2 id="go1-network-title">Inside the network</h2>
         <p class="sub">
-          The policy's live forward pass, 50 times a second. Left, the 48 sensor values grouped by what they
-          measure; then three hidden layers of 512, 256 and 128 neurons, lit by their activations; right, the
-          12 joint targets, one row per leg (hip sideways, hip, knee). Every connection is drawn, about 190,000,
+          The policy's live forward pass, 50 times a second (on a phone held upright it runs top to bottom).
+          Left, the 48 sensor values grouped by what they measure (body velocity, turn rate, tilt, joint angles,
+          joint speeds, last action, command); then three hidden layers of 512, 256 and 128 neurons, lit by their activations; right, the
+          12 joint targets, one row per leg (FR, FL, RR, RL: front or rear, right or left; hip sideways, hip, knee). Every connection is drawn, about 190,000,
           each as bright as its contribution to this step (<span class="warm">positive</span>, <span class="cool">negative</span>). During a jump the
           hand-written sequence drives the motors and the network dims. Drag to orbit.
         </p>

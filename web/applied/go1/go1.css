@@ -91,6 +91,6 @@ kbd {
 
 @media (max-width: 720px) {
   .go1-network .network-wrap {
-    height: 380px;
+    height: min(620px, 80vh);
   }
 }

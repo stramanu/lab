@@ -24,6 +24,9 @@ const INPUT_GROUPS = [
 ];
 /** Actuator order: four legs, three joints each. */
 const LEGS = ['front right', 'front left', 'rear right', 'rear left'];
+const LEGS_SHORT = ['FR', 'FL', 'RR', 'RL'];
+/** Below this width/height ratio the network is laid out top to bottom (phones held upright). */
+const PORTRAIT = 0.9;
 const LAYER_X = [-6, -3, 0, 3, 6];
 /**
  * Edge opacity: the contribution relative to SCALE × the layer's mean contribution, raised to GAMMA, so every
@@ -31,8 +34,21 @@ const LAYER_X = [-6, -3, 0, 3, 6];
  */
 const SCALE = 8;
 const GAMMA = 1.5;
-/** The view redraws at most this often (ms): 190,000 blended lines would otherwise slow the whole page. */
-const FRAME_MS = 33;
+/**
+ * Adaptive quality: the view starts at the screen's full resolution, redrawing at most every 33 ms. When the
+ * page's frame interval grows well past the one measured before the view appeared, it steps down, one
+ * level per 2 s window: lower resolutions first, then fewer redraws. 190,000 blended lines are cheap on a
+ * laptop GPU and heavy on a small one.
+ */
+const DPR = Math.min(globalThis.devicePixelRatio || 1, 3);
+const QUALITY = [
+  { ratio: DPR, frameMs: 33 },
+  { ratio: Math.min(DPR, 2), frameMs: 33 },
+  { ratio: Math.min(DPR, 1.5), frameMs: 33 },
+  { ratio: 1, frameMs: 33 },
+  { ratio: 1, frameMs: 66 },
+].filter((q, i, all) => i === 0 || q.ratio !== all[i - 1].ratio || q.frameMs !== all[i - 1].frameMs);
+const WINDOW_MS = 2000;
 const WARM = '#e8793a';
 const COOL = '#3a86e8';
 
@@ -52,13 +68,19 @@ export class Go1NetworkView {
   private layers: THREE.InstancedMesh[] = [];
   private positions: THREE.Vector3[][] = [];
   private edges!: THREE.LineSegments;
-  private labels: Array<{ div: HTMLDivElement; at: THREE.Vector3; side: 'left' | 'right' }> = [];
+  /** Every node and edge, turned by −90° about z in portrait so the layers run top to bottom. */
+  private root!: THREE.Group;
+  private portrait = false;
+  private labels: Array<{ div: HTMLDivElement; at: THREE.Vector3; side: 'left' | 'right'; text: string; short: string | null }> = [];
   private runningMax = [1, 1, 1];
   /** Per transition: the dense layer, its number of targets drawn, and the first edge's index. */
   private transitions: Array<{ d: Dense; n: number; first: number }> = [];
   private extent = 1;
   private visible = true;
   private running = false;
+  private quality = 0;
+  /** The page's frame interval (ms) before the view was drawn, the reference for slowdowns. */
+  private baseFrame = 1000 / 60;
 
   private constructor(
     private readonly T: Three,
@@ -77,7 +99,7 @@ export class Go1NetworkView {
       container.insertAdjacentHTML('beforeend', '<p class="fallback">3D view unavailable: this browser could not start WebGL.</p>');
       return null;
     }
-    view.renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
+    view.renderer.setPixelRatio(QUALITY[0].ratio);
     container.append(view.renderer.domElement);
     view.scene = new T.Scene();
     view.camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
@@ -88,7 +110,7 @@ export class Go1NetworkView {
     view.controls.autoRotateSpeed = 1; // per update, at ~30 updates a second
     view.controls.enablePan = false;
     view.controls.minDistance = 5;
-    view.controls.maxDistance = 35;
+    view.controls.maxDistance = 60;
     view.controls.addEventListener('start', () => (view.controls.autoRotate = false));
     view.scene.add(new T.AmbientLight(0xffffff, 0.9));
     const light = new T.DirectionalLight(0xffffff, 0.8);
@@ -102,19 +124,23 @@ export class Go1NetworkView {
     }).observe(container);
     document.addEventListener('visibilitychange', () => view.loop());
     view.resize();
+    await view.measureBase();
     return view;
   }
 
-  private label(text: string, at: THREE.Vector3, side: 'left' | 'right'): void {
+  /** A node label; in portrait, `short` replaces the text, and labels without one are hidden. */
+  private label(text: string, at: THREE.Vector3, side: 'left' | 'right', short: string | null = null): void {
     const div = document.createElement('div');
     div.className = 'net-label';
     div.textContent = text;
     this.container.append(div);
-    this.labels.push({ div, at, side });
+    this.labels.push({ div, at, side, text, short });
   }
 
   private build(): void {
     const { T } = this;
+    this.root = new T.Group();
+    this.scene.add(this.root);
     const grid = (n: number, cols: number, x: number, gap: number) =>
       Array.from({ length: n }, (_, k) => {
         const rows = Math.ceil(n / cols);
@@ -142,7 +168,7 @@ export class Go1NetworkView {
 
     const [h1, h2, h3] = this.dense.slice(0, 3).map((d) => d.n);
     const outputs = grid(12, 3, LAYER_X[4], 0.6);
-    LEGS.forEach((leg, k) => this.label(leg, outputs[3 * k + 2], 'right'));
+    LEGS.forEach((leg, k) => this.label(leg, outputs[3 * k + 2], 'right', LEGS_SHORT[k]));
     this.positions = [
       inputs,
       grid(h1, Math.ceil(Math.sqrt(h1)), LAYER_X[1], 0.2),
@@ -160,7 +186,7 @@ export class Go1NetworkView {
         mesh.setMatrixAt(k, m.makeTranslation(p.x, p.y, p.z));
         mesh.setColorAt(k, new T.Color(0x888888));
       });
-      this.scene.add(mesh);
+      this.root.add(mesh);
       this.layers.push(mesh);
     });
 
@@ -188,7 +214,7 @@ export class Go1NetworkView {
     geo.setAttribute('position', new T.BufferAttribute(position, 3));
     geo.setAttribute('color', new T.BufferAttribute(new Uint8Array(total * 8), 4, true).setUsage(T.DynamicDrawUsage));
     this.edges = new T.LineSegments(geo, new T.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false }));
-    this.scene.add(this.edges);
+    this.root.add(this.edges);
   }
 
   /**
@@ -264,6 +290,26 @@ export class Go1NetworkView {
     this.loop();
   }
 
+  /** The current quality level (0 = full resolution) and its pixel ratio, for automated checks. */
+  get qualityState(): { level: number; ratio: number; baseFrame: number } {
+    return { level: this.quality, ratio: QUALITY[this.quality].ratio, baseFrame: this.baseFrame };
+  }
+
+  /** The page's mean frame interval over one second, before this view renders anything. */
+  private measureBase(): Promise<void> {
+    return new Promise((done) => {
+      const t0 = performance.now();
+      let frames = 0;
+      const tick = (now: number) => {
+        frames++;
+        if (now - t0 < 1000) return void requestAnimationFrame(tick);
+        this.baseFrame = (now - t0) / frames;
+        done();
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
   private resize(): void {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
@@ -271,8 +317,15 @@ export class Go1NetworkView {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    // Wider than tall: step back on narrow panels so the whole network stays in frame.
-    this.camera.position.setLength(13.5 * Math.max(1, 2.2 / this.camera.aspect) * Math.max(1, this.extent / 3.4));
+    this.portrait = this.camera.aspect < PORTRAIT;
+    this.root.rotation.z = this.portrait ? -Math.PI / 2 : 0;
+    this.root.updateMatrixWorld();
+    for (const l of this.labels) l.div.textContent = this.portrait && l.short ? l.short : l.text;
+    // Step back just enough for the whole network (7 either side along the layers) to fit the frame.
+    const tan = Math.tan((this.camera.fov * Math.PI) / 360);
+    const [hx, hy] = this.portrait ? [this.extent + 0.4, 7] : [7, this.extent + 0.4];
+    const fit = Math.max(hy / tan, hx / (tan * this.camera.aspect));
+    this.camera.position.setLength(Math.min(this.controls.maxDistance, 1.12 * fit + 1));
     this.loop();
   }
 
@@ -281,13 +334,32 @@ export class Go1NetworkView {
     if (this.running || !this.visible || document.hidden) return;
     this.running = true;
     let last = 0;
+    let prev = 0;
+    let windowStart = 0;
+    let sum = 0;
+    let frames = 0;
     const tick = (now: number) => {
       if (!this.visible || document.hidden) {
         this.running = false;
         return;
       }
       requestAnimationFrame(tick);
-      if (now - last < FRAME_MS) return;
+      if (prev) {
+        sum += now - prev;
+        frames++;
+      } else windowStart = now;
+      prev = now;
+      if (now - windowStart > WINDOW_MS) {
+        const mean = sum / frames;
+        if (mean > Math.max(1.3 * this.baseFrame, this.baseFrame + 5) && this.quality < QUALITY.length - 1) {
+          this.quality++;
+          this.renderer.setPixelRatio(QUALITY[this.quality].ratio);
+          this.resize();
+        }
+        windowStart = now;
+        sum = frames = 0;
+      }
+      if (now - last < QUALITY[this.quality].frameMs) return;
       last = now;
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
@@ -300,11 +372,18 @@ export class Go1NetworkView {
   private placeLabels(): void {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
-    for (const { div, at, side } of this.labels) {
-      const p = at.clone().project(this.camera);
+    for (const { div, at, side, short } of this.labels) {
+      const p = this.root.localToWorld(at.clone()).project(this.camera);
       const x = ((p.x + 1) / 2) * w;
+      const y = ((1 - p.y) / 2) * h;
+      if (this.portrait) {
+        // Upright: the legs' short names sit under the outputs; the input groups are described in the text.
+        div.style.transform = `translate(${x - div.offsetWidth / 2}px, ${y + 12}px)`;
+        div.style.visibility = short && p.z < 1 ? 'visible' : 'hidden';
+        continue;
+      }
       const left = side === 'left' ? x - 12 - div.offsetWidth : x + 12;
-      div.style.transform = `translate(${left}px, ${((1 - p.y) / 2) * h - 6}px)`;
+      div.style.transform = `translate(${left}px, ${y - 6}px)`;
       div.style.visibility = p.z < 1 ? 'visible' : 'hidden';
     }
   }

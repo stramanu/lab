@@ -104,6 +104,7 @@ function build(): void {
   up: data ? (data.qpos as Float64Array).slice(3, 7) : null,
   command: Array.from(command),
   time: data ? (data.time as number) : null,
+  network: netView?.qualityState ?? null,
 });
 
 function resetEpisode(): void {
